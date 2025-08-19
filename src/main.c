@@ -23,6 +23,7 @@
 #include "terminal/highlight.h"
 #include "terminal/click_handler.h"
 #include "advanced/lsp/lsp_client.h"
+#include "advanced/tree-sitter/tree_sitter_highlighter.h"
 #include "config/config.h"
 
 #define SHOW_ERROR true
@@ -30,8 +31,10 @@
 
 
 /**   TODO list :
- *       - Patch conditional jump (valgrind) when opening untitled file from a workspace.
- *       - Upgrade mouse handle to be more portable.
+ *      - Implement lsp bitch !!
+ *      - Implement tree-sitter injections
+ *      - Patch conditional jump (valgrind) when opening untitled file from a workspace.
+ *      - Upgrade mouse handle to be more portable.
  *
  */
 
@@ -73,7 +76,7 @@ int main(int file_count, char** args) {
 
   setlocale(LC_ALL, "");
   // TODO Remove when lsp_logs.txt will be unused.
-  // system("echo "" > lsp_logs.txt");
+  system("echo "" > lsp_logs.txt");
   // system("echo "" > tree_logs.txt");
 
   // remove first args which is the executable file name.
@@ -219,6 +222,7 @@ int main(int file_count, char** args) {
     assert(checkByteCountIntegrity(*root) == true);
 
   read_input:
+    ;
     int c = getch();
     int hash = c;
 

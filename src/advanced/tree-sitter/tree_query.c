@@ -4,30 +4,29 @@
 #include <stdio.h>
 #include <string.h>
 
-
 void printQueryLoadError(uint32_t error_offset, TSQueryError error_type) {
   switch (error_type) {
-    case TSQueryErrorCapture:
-      fprintf(stderr, "ERROR : Query Capture Error\n");
-      break;
-    case TSQueryErrorField:
-      fprintf(stderr, "ERROR : Query Field Error\n");
-      break;
-    case TSQueryErrorLanguage:
-      fprintf(stderr, "ERROR : Query Language Error\n");
-      break;
-    case TSQueryErrorNone:
-      fprintf(stderr, "ERROR : No error.\n");
-      break;
-    case TSQueryErrorStructure:
-      fprintf(stderr, "ERROR : Query Structure Error\n");
-      break;
-    case TSQueryErrorSyntax:
-      fprintf(stderr, "ERROR : Query Syntax Error\n");
-      break;
-    case TSQueryErrorNodeType:
-      fprintf(stderr, "ERROR : Query NodeType Error\n");
-      break;
+  case TSQueryErrorCapture:
+    fprintf(stderr, "ERROR : Query Capture Error\n");
+    break;
+  case TSQueryErrorField:
+    fprintf(stderr, "ERROR : Query Field Error\n");
+    break;
+  case TSQueryErrorLanguage:
+    fprintf(stderr, "ERROR : Query Language Error\n");
+    break;
+  case TSQueryErrorNone:
+    fprintf(stderr, "ERROR : No error.\n");
+    break;
+  case TSQueryErrorStructure:
+    fprintf(stderr, "ERROR : Query Structure Error\n");
+    break;
+  case TSQueryErrorSyntax:
+    fprintf(stderr, "ERROR : Query Syntax Error\n");
+    break;
+  case TSQueryErrorNodeType:
+    fprintf(stderr, "ERROR : Query NodeType Error\n");
+    break;
   }
   fprintf(stderr, "Syntax error at %d byte_offset.", error_offset);
 }
@@ -118,15 +117,14 @@ bool match(ProcessPredicatePayload payload, bool any, bool not) {
   return !any;
 }
 
-
 bool executeCurrentPredicate(ProcessPredicatePayload payload) {
   String str;
   predicates_consumeString(payload.stream, payload.query, &str);
 
-  // No need to check the str.content length. Query parser assert that there is atleast a predicate with 1 letter.
-  // Minimal predicate '#a?'.
-  if (str.content[str.length - 1] != '?') {
-    fprintf(stderr, "Unsupported predicates '?' : '%s'.\n", str.content);
+  // No need to check the str.content length. Query parser assert that there is
+  // atleast a predicate with 1 letter. Minimal predicate '#a?'.
+  if (str.content[str.length - 1] != '?' && str.content[str.length - 1] != '!') {
+    fprintf(stderr, "Unsupported predicates '%c' : '%s'.\n", str.content[str.length - 1], str.content);
     return false;
   }
 
@@ -157,14 +155,39 @@ bool executeCurrentPredicate(ProcessPredicatePayload payload) {
   if (strncmp(str.content, "any-not-match", str.length - 1) == 0) {
     return match(payload, true, true);
   }
-
+  if (strncmp(str.content, "set", str.length - 1) == 0) {
+    uint32_t test;
+    int length = payload.stream->length;
+    for (;;) {
+      String str_value;
+      switch (predicates_peekType(payload.stream)) {
+      case TSQueryPredicateStepTypeCapture:
+        predicates_consumeCapture(payload.stream, payload.query, &str_value);
+        fprintf(stderr, "@%s -> ", str_value.content);
+        break;
+      case TSQueryPredicateStepTypeString:
+        predicates_consumeString(payload.stream, payload.query, &str_value);
+        fprintf(stderr, "'%s' -> ", str_value.content);
+        break;
+      default:
+        break;
+      }
+      if (predicates_peekType(payload.stream) == TSQueryPredicateStepTypeDone) {
+        payload.qmatch.
+        break;
+      }
+    }
+    fprintf(stderr, " END\n");
+    return true;
+  }
 
   fprintf(stderr, "Unsupported predicates : '%s'.\n", str.content);
   return false;
 }
 
 
-bool arePredicatesMatching(Cursor* tmp, TSQuery* query, TSQueryMatch qmatch, const TSQueryPredicateStep* predicates, uint32_t length, RegexMap *regex_map) {
+bool arePredicatesMatching(Cursor* tmp, TSQuery* query, TSQueryMatch qmatch, const TSQueryPredicateStep* predicates,
+                           uint32_t length, RegexMap* regex_map) {
   PredicateStream stream = predicates_stream(predicates, length);
   ProcessPredicatePayload payload;
   payload.qmatch = qmatch;
@@ -183,8 +206,8 @@ bool arePredicatesMatching(Cursor* tmp, TSQuery* query, TSQueryMatch qmatch, con
   return true;
 }
 
-
-bool TSQueryCursorNextMatchWithPredicates(Cursor* tmp, TSQuery* query, TSQueryCursor* qcursor, TSQueryMatch* qmatch, RegexMap *regex_map) {
+bool TSQueryCursorNextMatchWithPredicates(Cursor* tmp, TSQuery* query, TSQueryCursor* qcursor, TSQueryMatch* qmatch,
+                                          RegexMap* regex_map) {
   TSQueryMatch _qmatch;
   while (ts_query_cursor_next_match(qcursor, &_qmatch)) {
     uint32_t length;
@@ -207,7 +230,6 @@ bool TSQueryCursorNextMatchWithPredicates(Cursor* tmp, TSQuery* query, TSQueryCu
 
   return false;
 }
-
 
 String getCaptureString(TSQuery* query, uint32_t index) {
   String str;
@@ -240,7 +262,6 @@ bool isRegexMatchingToNodeContent(Cursor* tmp, regex_t regex, TSNode node) {
   return match_result == 0;
 }
 
-
 PredicateStream predicates_stream(const TSQueryPredicateStep* self, uint32_t length) {
   PredicateStream stream;
   stream.index = 0;
@@ -260,9 +281,7 @@ TSQueryPredicateStep predicates_consume(PredicateStream* self) {
   return step;
 }
 
-TSQueryPredicateStepType predicates_peekType(const PredicateStream* self) {
-  return predicates_peek(self).type;
-}
+TSQueryPredicateStepType predicates_peekType(const PredicateStream* self) { return predicates_peek(self).type; }
 
 TSQueryPredicateStep predicates_consumeCapture(PredicateStream* self, TSQuery* query, String* str) {
   TSQueryPredicateStep step = predicates_consume(self);
@@ -285,6 +304,4 @@ void predicates_consumeEND(PredicateStream* self) {
   assert(step.type == TSQueryPredicateStepTypeDone);
 }
 
-bool predicates_hasNext(const PredicateStream* self) {
-  return self->index < self->length;
-}
+bool predicates_hasNext(const PredicateStream* self) { return self->index < self->length; }

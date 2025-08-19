@@ -70,7 +70,4 @@ TextPartHighlightDescriptor* whd_tphd_forCursorWithOffsetIndex(WindowHighlightDe
 
 void initColorsForTheme(HighlightThemeList theme_list, int* color_index, int* color_pair);
 
-void highlightCurrentFile(FileHighlightDatas* highlight_data, WINDOW* ftw, int screen_x, int screen_y, Cursor cursor,
-                          WindowHighlightDescriptor* highlight_descriptor);
-
 #endif //HIGHLIGHT_H
