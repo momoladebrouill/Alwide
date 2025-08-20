@@ -198,7 +198,7 @@ bool arePredicatesMatching(Cursor* tmp, TSQuery* query, TSQueryMatch qmatch, con
   return true;
 }
 
-bool setupInjectionDescriptorForMatch(Cursor* cursor, TSQuery* query, TSQueryMatch* qmatch,
+bool extractInjectionDataFromCapture(Cursor* cursor, TSQuery* query, TSQueryMatch* qmatch,
                                       InjectionDescriptor* injection, const char* override_lang_id) {
   injection_init(injection);
   if (override_lang_id != NULL) {
@@ -221,6 +221,20 @@ bool setupInjectionDescriptorForMatch(Cursor* cursor, TSQuery* query, TSQueryMat
   return injection_isActive(injection);
 }
 
+void extractInjectionData(Cursor* tmp, TSQuery* query, InjectionDescriptor* injection, TSQueryMatch _qmatch,
+                          cJSON* predicate_result) {
+  char* override_lang_id = NULL;
+  cJSON* lang_item = cJSON_GetObjectItem(predicate_result, "injection.language");
+  if (lang_item != NULL) {
+    override_lang_id = cJSON_GetStringValue(lang_item);
+  }
+  extractInjectionDataFromCapture(tmp, query, &_qmatch, injection, override_lang_id);
+
+  if (injection_isActive(injection)) {
+    injection_print(injection, tmp);
+  }
+}
+
 bool TSQueryCursorNextMatchWithPredicates(Cursor* tmp, TSQuery* query, TSQueryCursor* qcursor, TSQueryMatch* qmatch,
                                           RegexMap* regex_map, InjectionDescriptor* injection) {
   TSQueryMatch _qmatch;
@@ -235,16 +249,7 @@ bool TSQueryCursorNextMatchWithPredicates(Cursor* tmp, TSQuery* query, TSQueryCu
       *qmatch = _qmatch;
 
       // Check if the current match is an injection.
-      char* override_lang_id = NULL;
-      cJSON* lang_item = cJSON_GetObjectItem(predicate_result, "injection.language");
-      if (lang_item != NULL) {
-        override_lang_id = cJSON_GetStringValue(lang_item);
-      }
-      setupInjectionDescriptorForMatch(tmp, query, &_qmatch, injection, override_lang_id);
-
-      if (injection_isActive(injection)) {
-        injection_print(injection, tmp);
-      }
+      extractInjectionData(tmp, query, injection, _qmatch, predicate_result);
 
       cJSON_Delete(predicate_result);
       return true;

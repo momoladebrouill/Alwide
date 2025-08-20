@@ -15,14 +15,14 @@
 
 void initGUIContext(GUIContext* gui_context) {
   // Init GUI vars
-  gui_context->ftw = NULL; // File Text Window
-  gui_context->lnw = NULL; // Line Number Window
-  gui_context->ofw = NULL; // Opened Files Window
-  gui_context->few = NULL; // File Explorer Window
+  gui_context->ftw = NULL;         // File Text Window
+  gui_context->lnw = NULL;         // Line Number Window
+  gui_context->ofw = NULL;         // Opened Files Window
+  gui_context->few = NULL;         // File Explorer Window
   gui_context->refresh_edw = true; // Need to reprint editor window
   gui_context->refresh_ofw = true; // Need to reprint opened file window
   gui_context->refresh_few = true; // Need to reprint file explorer window
-  gui_context->focus_w = NULL; // Used to set the window where start mouse drag
+  gui_context->focus_w = NULL;     // Used to set the window where start mouse drag
 
   // EDW Datas
 

@@ -17,14 +17,14 @@ int wcwidth(const wint_t wc);
 
 typedef struct {
   // Init GUI vars
-  WINDOW* ftw; // File Text Window
-  WINDOW* lnw; // Line Number Window
-  WINDOW* ofw; // Opened Files Window
-  WINDOW* few; // File Explorer Window
+  WINDOW* ftw;      // File Text Window
+  WINDOW* lnw;      // Line Number Window
+  WINDOW* ofw;      // Opened Files Window
+  WINDOW* few;      // File Explorer Window
   bool refresh_edw; // Need to reprint editor window
   bool refresh_ofw; // Need to reprint opened file window
   bool refresh_few; // Need to reprint file explorer window
-  WINDOW* focus_w; // Used to set the window where start mouse drag
+  WINDOW* focus_w;  // Used to set the window where start mouse drag
 
   // EDW Datas
 

@@ -9,6 +9,11 @@
 #include "../../utils/global-variables.h"
 #include "tree_query.h"
 
+
+void executeHighlightQuery(TSQuery* query, TSQueryCursor* qcursor, RegexMap* regex_map, HighlightThemeList theme_list,
+                           Cursor cursor, WindowHighlightDescriptor* highlight_descriptor, int injection_depth);
+
+
 void saveCaptureToHighlightDescriptor(HighlightThemeList theme_list, Cursor tmp, TSNode node, const char* result,
                                       WindowHighlightDescriptor* highlight_descriptor, uint16_t priority) {
   if (result == NULL) {
@@ -43,13 +48,10 @@ void saveCaptureToHighlightDescriptor(HighlightThemeList theme_list, Cursor tmp,
   Cursor end_cursor = byteCursorToCursor(tmp, end_point.row, end_point.column);
   whd_insertDescriptor(highlight_descriptor, begin_cursor, end_cursor, color, attr, priority, true);
 }
-void executeHighlightQuery(TSQuery* query, TSQueryCursor* qcursor, RegexMap* regex_map, HighlightThemeList theme_list,
-                           Cursor cursor, WindowHighlightDescriptor* highlight_descriptor, int injection_depth);
 
 
-void highlightInjection(TSQuery* query, TSQueryCursor* qcursor, RegexMap* regex_map, HighlightThemeList theme_list,
-                        Cursor cursor, WindowHighlightDescriptor* highlight_descriptor, InjectionDescriptor* injection,
-                        int injection_depth) {
+void executeInjectionHighlightQuery(Cursor cursor, WindowHighlightDescriptor* highlight_descriptor,
+                                    InjectionDescriptor* injection, int injection_depth) {
   ParserContainer* injected_parser = getParserForLanguage(&parsers, injection->lang_id);
   if (injected_parser == NULL) {
     return;
@@ -76,8 +78,8 @@ void highlightInjection(TSQuery* query, TSQueryCursor* qcursor, RegexMap* regex_
 
   ts_query_cursor_exec(injected_qcursor, injected_parser->queries, ts_tree_root_node(injected_tree));
 
-  executeHighlightQuery(injected_parser->queries, injected_qcursor, &injected_parser->regex_map, theme_list, cursor,
-                        highlight_descriptor, injection_depth + 1);
+  executeHighlightQuery(injected_parser->queries, injected_qcursor, &injected_parser->regex_map,
+                        injected_parser->theme_list, cursor, highlight_descriptor, injection_depth + 1);
 
   ts_tree_delete(injected_tree);
 }
@@ -89,22 +91,22 @@ void executeHighlightQuery(TSQuery* query, TSQueryCursor* qcursor, RegexMap* reg
   TSQueryMatch query_match;
   InjectionDescriptor injection;
   while (TSQueryCursorNextMatchWithPredicates(&tmp, query, qcursor, &query_match, regex_map, &injection)) {
+
+    // highlight matches
     for (int index = 0; index < query_match.capture_count; index++) {
       TSNode node = query_match.captures[index].node;
-      // fprintf(stderr, "Node (%d, %d) -> (%d, %d) : (index: %d) \n", ts_node_start_point(node).row,
-      // ts_node_start_point(node).column, ts_node_end_point(node).row,
 
       uint32_t size = 0;
       const char* result = ts_query_capture_name_for_id(query, query_match.captures[index].index, &size);
-      // fprintf(stderr, " -> capture name : %s\n", result);
 
       uint16_t priority = query_match.captures[index].index + injection_depth * 1000;
       // If a capture.
       saveCaptureToHighlightDescriptor(theme_list, tmp, node, result, highlight_descriptor, priority);
     }
+
+    // highlight injection
     if (injection_isActive(&injection)) {
-      highlightInjection(query, qcursor, regex_map, theme_list, cursor, highlight_descriptor, &injection,
-                         injection_depth);
+      executeInjectionHighlightQuery(cursor, highlight_descriptor, &injection, injection_depth);
     }
   }
 }

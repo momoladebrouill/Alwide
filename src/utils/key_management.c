@@ -2,7 +2,6 @@
 
 #include "key_management.h"
 
-#include "constants.h"
 #include "tools.h"
 
 time_val lastPress = 0;

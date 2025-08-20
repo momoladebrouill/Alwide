@@ -5,7 +5,7 @@ BasedOnStyle: LLVM
 AlignConsecutiveAssignments: false
 AlignConsecutiveDeclarations: false
 AlignOperands: false
-AlignTrailingComments: false
+AlignTrailingComments: true
 AlwaysBreakTemplateDeclarations: Yes
 BraceWrapping: 
   AfterCaseLabel: false
@@ -17,13 +17,13 @@ BraceWrapping:
   AfterStruct: false
   AfterUnion: false
   AfterExternBlock: false
-  BeforeCatch: false
+  BeforeCatch: true
   BeforeElse: true
-  BeforeLambdaBody: false
-  BeforeWhile: false
-  SplitEmptyFunction: false
-  SplitEmptyRecord: false
-  SplitEmptyNamespace: false
+  BeforeLambdaBody: true
+  BeforeWhile: true
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
 BreakBeforeBraces: Custom
 BreakConstructorInitializers: AfterColon
 BreakConstructorInitializersBeforeComma: false
