@@ -1,0 +1,28 @@
+name: Editor compilation workflow
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+
+# Dependencies
+    - name: Building dependencies - tree-sitter
+      run: sudo make -C lib/tree-sitter/ install
+    
+
+# Check project status
+    - name: Compile project - building - parsers, cJSON, al.
+      run: make
+
+    - name: Executing installation script
+      run: make install
