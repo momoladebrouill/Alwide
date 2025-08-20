@@ -46,7 +46,7 @@ bool isStringEqualToNodeContent(Cursor* tmp, String str, TSNode node);
 bool isRegexMatchingToNodeContent(Cursor* tmp, regex_t regex, TSNode node);
 
 void injection_init(InjectionDescriptor* self);
-bool injection_isActive(InjectionDescriptor *self);
+bool injection_isActive(InjectionDescriptor* self);
 void injection_print(InjectionDescriptor* self, Cursor* cursor);
 
 ///// -------- STREAM --------

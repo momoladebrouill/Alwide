@@ -2,11 +2,11 @@
 
 #include <assert.h>
 #include <ctype.h>
-#include <stdio.h>
-#include <string.h>
 #include <dirent.h>
 #include <libgen.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 void initFolder(char* path, ExplorerFolder* folder) {
   folder->folders = NULL;
@@ -35,7 +35,8 @@ void discoverFolder(ExplorerFolder* folder) {
   d = opendir(folder->path);
   if (d) {
     while ((dir = readdir(d)) != NULL) {
-      if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0 && strcmp(dir->d_name, ".git") != 0 && strcmp(dir->d_name, ".idea") != 0) {
+      if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0 && strcmp(dir->d_name, ".git") != 0 &&
+          strcmp(dir->d_name, ".idea") != 0) {
         char abs_path[PATH_MAX];
         sprintf(abs_path, "%s/%s", folder->path, dir->d_name);
         if (dir->d_type == DT_DIR) {
@@ -50,7 +51,8 @@ void discoverFolder(ExplorerFolder* folder) {
               break;
             }
           }
-          memmove(folder->folders + i + 1, folder->folders + i, (folder->folder_count - i - 1) * sizeof(ExplorerFolder));
+          memmove(folder->folders + i + 1, folder->folders + i,
+                  (folder->folder_count - i - 1) * sizeof(ExplorerFolder));
           initFolder(abs_path, folder->folders + i);
         }
         else {

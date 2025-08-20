@@ -18,9 +18,7 @@ void setLspDatas(LSP_Datas* lsp_datas, IO_FileID io_file) {
 }
 
 
-void initLSPServerList(LSPServerLinkedList* list) {
-  list->head = NULL;
-}
+void initLSPServerList(LSPServerLinkedList* list) { list->head = NULL; }
 
 void destroyLSPServerList(LSPServerLinkedList* list) {
   LSPServerLinkedList_Cell* cell = list->head;

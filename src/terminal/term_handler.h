@@ -1,13 +1,13 @@
 #ifndef NCURSES_HANDLER_H
 #define NCURSES_HANDLER_H
-#include <wchar.h>
 #include <ncurses.h>
+#include <wchar.h>
 
 
-#include "highlight.h"
 #include "../data-management/file_management.h"
 #include "../data-management/file_structure.h"
 #include "../io_management/io_explorer.h"
+#include "highlight.h"
 
 /* Unix call, use 'man wcwidth' to see explication. */
 int wcwidth(const wint_t wc);
@@ -30,7 +30,8 @@ typedef struct {
 
   // OFW Datas
   int current_file_offset;
-  int ofw_height; // Height of Opened Files Window. 0 => Disabled on start.   OPENED_FILE_WINDOW_HEIGHT => Enabled on start.
+  int ofw_height; // Height of Opened Files Window. 0 => Disabled on start.   OPENED_FILE_WINDOW_HEIGHT => Enabled on
+                  // start.
 
   // Few Datas
   int few_width; // File explorer width
@@ -78,4 +79,4 @@ LineIdentifier getLineIdForScreenX(LineIdentifier line_id, int screen_x, int x_c
 void setDesiredColumn(Cursor cursor, int* desired_column);
 
 
-#endif //NCURSES_HANDLER_H
+#endif // NCURSES_HANDLER_H

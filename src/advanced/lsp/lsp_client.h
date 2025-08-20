@@ -1,5 +1,6 @@
 /*
- * Partial implementation of : https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/
+ * Partial implementation of :
+ * https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/
  */
 #ifndef CLIENT_H
 #define CLIENT_H
@@ -9,11 +10,7 @@
 
 #include "../../../lib/cJSON/cJSON.h"
 
-typedef enum {
-  REQUEST,
-  NOTIFICATION,
-  RESPONSE
-} PACKET_TYPE;
+typedef enum { REQUEST, NOTIFICATION, RESPONSE } PACKET_TYPE;
 
 typedef struct {
   char name[100];
@@ -126,8 +123,10 @@ typedef struct {
   TextEdit edits[1];
 } TextDocumentEdit;
 
-TextDocumentEdit LSP_getTextDocumentEditOf(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column, char* new_text);
-cJSON* LSP_getJSONTextDocumentEdit(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column, char* new_text);
+TextDocumentEdit LSP_getTextDocumentEditOf(char* file_name, int cur1_row, int cur1_column, int cur2_row,
+                                           int cur2_column, char* new_text);
+cJSON* LSP_getJSONTextDocumentEdit(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column,
+                                   char* new_text);
 TextDocumentEdit LSP_getTextDocumentEditFromJSON(cJSON* json);
 void LSP_destroyTextDocumentEdit(TextDocumentEdit text_document_edit);
 
@@ -152,7 +151,4 @@ void LSP_notifyLspFileDidOpen(LSP_Server lsp, char* file_name, char* file_conten
 void LSP_notifyLspFileDidChange(LSP_Server lsp, char* file_name, char* file_content);
 
 
-
-
-
-#endif //CLIENT_H
+#endif // CLIENT_H

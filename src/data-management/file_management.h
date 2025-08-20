@@ -1,10 +1,10 @@
 #ifndef FILE_MANAGEMENT_H
 #define FILE_MANAGEMENT_H
 
+#include "../advanced/lsp/lsp_handler.h"
+#include "../advanced/tree-sitter/tree_manager.h"
 #include "file_structure.h"
 #include "state_control.h"
-#include "../advanced/tree-sitter/tree_manager.h"
-#include "../advanced/lsp/lsp_handler.h"
 
 
 typedef struct {
@@ -25,27 +25,28 @@ typedef struct {
 } FileContainer;
 
 
-typedef enum {
-  SELECT_OFF_RIGHT,
-  SELECT_OFF_LEFT
-} SELECT_OFF_STYLE;
+typedef enum { SELECT_OFF_RIGHT, SELECT_OFF_LEFT } SELECT_OFF_STYLE;
 
 ////// -------------- FILE CONTAINER --------------
 
-void destroyFileContainer(FileContainer *container);
+void destroyFileContainer(FileContainer* container);
 
-void openNewFile(char* file_path, FileContainer** files, int* file_count, int* current_file, bool* refresh_ofw, bool* refresh_local_vars);
+void openNewFile(char* file_path, FileContainer** files, int* file_count, int* current_file, bool* refresh_ofw,
+                 bool* refresh_local_vars);
 
-void closeFile(FileContainer** files, int* file_count, int* current_file, bool* refresh_ofw, bool* refresh_edw, bool* refresh_local_vars);
+void closeFile(FileContainer** files, int* file_count, int* current_file, bool* refresh_ofw, bool* refresh_edw,
+               bool* refresh_local_vars);
 
 Cursor createRoot(IO_FileID file);
 
-void setupFileContainer(char *args, FileContainer *container);
+void setupFileContainer(char* args, FileContainer* container);
 
-void setupLocalVars(FileContainer* files, int current_file, IO_FileID** io_file, FileNode*** root, Cursor** cursor, Cursor** select_cursor, Cursor** old_cur, int** desired_column,
-                    int** screen_x, int** screen_y, int** old_screen_x, int** old_screen_y, History*** history_root, History*** history_frame, FileHighlightDatas **highlight_data);
+void setupLocalVars(FileContainer* files, int current_file, IO_FileID** io_file, FileNode*** root, Cursor** cursor,
+                    Cursor** select_cursor, Cursor** old_cur, int** desired_column, int** screen_x, int** screen_y,
+                    int** old_screen_x, int** old_screen_y, History*** history_root, History*** history_frame,
+                    FileHighlightDatas** highlight_data);
 
-bool isFileContainerEmpty(FileContainer *container);
+bool isFileContainerEmpty(FileContainer* container);
 
 void setupOpenedFiles(int* file_count, char** file_names, FileContainer** files);
 
@@ -90,13 +91,14 @@ void setSelectCursorOn(Cursor cursor, Cursor* select_cursor);
 void setSelectCursorOff(Cursor* cursor, Cursor* select_cursor, SELECT_OFF_STYLE style);
 
 void selectWord(Cursor* cursor, Cursor* select_cursor);
-void selectLine(Cursor *cursor, Cursor *select_cursor);
+void selectLine(Cursor* cursor, Cursor* select_cursor);
 
 void deleteSelection(Cursor* cursor, Cursor* select_cursor);
 
-void deleteSelectionWithState(History **history_p, Cursor* cursor, Cursor* select_cursor, PayloadStateChange payload_state_change);
+void deleteSelectionWithState(History** history_p, Cursor* cursor, Cursor* select_cursor,
+                              PayloadStateChange payload_state_change);
 
 char* dumpSelection(Cursor cur1, Cursor cur2);
 
 
-#endif //FILE_MANAGEMENT_H
+#endif // FILE_MANAGEMENT_H

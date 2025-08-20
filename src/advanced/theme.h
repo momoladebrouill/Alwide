@@ -27,9 +27,9 @@ void initHighlightThemeList(HighlightThemeList* list);
 
 void destroyThemeList(HighlightThemeList* list);
 
-void addToHiglightThemeList(HighlightThemeList *list, HighlightTheme theme);
+void addToHiglightThemeList(HighlightThemeList* list, HighlightTheme theme);
 
 attr_t getAttrForTheme(HighlightTheme theme);
 
 
-#endif //THEME_H
+#endif // THEME_H

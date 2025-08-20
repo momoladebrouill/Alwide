@@ -9,12 +9,12 @@
 #include "../utils/constants.h"
 
 
-
-void getWorkspaceSettingsForCurrentDir(WorkspaceSettings* settings, FileContainer* files, int file_count, int current_file, bool showing_opened_file_window,
+void getWorkspaceSettingsForCurrentDir(WorkspaceSettings* settings, FileContainer* files, int file_count,
+                                       int current_file, bool showing_opened_file_window,
                                        bool showing_file_explorer_window, int file_explorer_size) {
   settings->file_count = file_count;
   settings->current_opened_file = current_file;
-  settings->files = malloc(file_count * sizeof(char *));
+  settings->files = malloc(file_count * sizeof(char*));
   for (int i = 0; i < file_count; i++) {
     int size = strlen(files[i].io_file.path_abs) + 1;
     settings->files[i] = malloc(size * sizeof(char));
@@ -128,7 +128,7 @@ void JSONToWorkspaceSettings(WorkspaceSettings* settings, cJSON* json) {
   settings->file_count = cJSON_GetNumberValue(cJSON_GetObjectItem(json, "file_count"));
   settings->current_opened_file = cJSON_GetNumberValue(cJSON_GetObjectItem(json, "current_opened_file"));
   cJSON* file_array = cJSON_GetObjectItem(json, "files");
-  settings->files = malloc(sizeof(char *) * settings->file_count);
+  settings->files = malloc(sizeof(char*) * settings->file_count);
   for (int i = 0; i < settings->file_count; i++) {
     char* value = cJSON_GetStringValue(cJSON_GetArrayItem(file_array, i));
 
@@ -143,7 +143,8 @@ void JSONToWorkspaceSettings(WorkspaceSettings* settings, cJSON* json) {
   settings->file_explorer_size = cJSON_GetNumberValue(cJSON_GetObjectItem(json, "file_explorer_size"));
 }
 
-void setupWorkspace(WorkspaceSettings *loaded_settings, int* file_count, char*** file_names, GUIContext* gui_context, int* current_file_index) {
+void setupWorkspace(WorkspaceSettings* loaded_settings, int* file_count, char*** file_names, GUIContext* gui_context,
+                    int* current_file_index) {
   loaded_settings->is_used = false;
   if (*file_count == 1 || *file_count == 0) {
     char* dir_name = *file_count == 0 ? getenv("PWD") : (*file_names)[0];

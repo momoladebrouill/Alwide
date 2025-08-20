@@ -9,7 +9,7 @@
 
 void createConfigDir() {
   char command[20 + strlen(FILE_HISTORY_PATH) + strlen(getenv("HOME"))];
-  sprintf(command, "mkdir %s%s -p", getenv("HOME"),FILE_HISTORY_PATH);
+  sprintf(command, "mkdir %s%s -p", getenv("HOME"), FILE_HISTORY_PATH);
   system(command);
 }
 
@@ -54,7 +54,6 @@ void setlastFilePosition(char* fileName, int row, int column, int screen_x, int 
 }
 
 
-
 void fetchSavedCursorPosition(IO_FileID file, Cursor* cursor, int* screen_x, int* screen_y) {
   if (file.status == EXIST) {
     int loaded_row;
@@ -66,7 +65,8 @@ void fetchSavedCursorPosition(IO_FileID file, Cursor* cursor, int* screen_x, int
     assert(loaded_column >= 0);
 
     cursor->file_id = tryToReachAbsRow(cursor->file_id, loaded_row);
-    cursor->line_id = tryToReachAbsColumn(moduloLineIdentifierR(getLineForFileIdentifier(cursor->file_id), 0), loaded_column);
+    cursor->line_id =
+      tryToReachAbsColumn(moduloLineIdentifierR(getLineForFileIdentifier(cursor->file_id), 0), loaded_column);
 
     // TODO may check for screen_x and screen_y to be not too far from code.
   }

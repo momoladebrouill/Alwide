@@ -2,7 +2,7 @@
 #define KEY_MANAGEMENT_H
 #include <ncurses.h>
 
-#endif //KEY_MANAGEMENT_H
+#endif // KEY_MANAGEMENT_H
 
 
 #define TIME_BETWEEN_EVENT 200 /*ms*/

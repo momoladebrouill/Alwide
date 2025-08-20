@@ -1,7 +1,7 @@
 #ifndef IO_EXPLORER_H
 #define IO_EXPLORER_H
-#include <stdbool.h>
 #include <linux/limits.h>
+#include <stdbool.h>
 
 
 typedef struct {
@@ -27,4 +27,4 @@ void discoverFolder(ExplorerFolder* folder);
 
 void destroyFolder(ExplorerFolder* folder);
 
-#endif //IO_EXPLORER_H
+#endif // IO_EXPLORER_H

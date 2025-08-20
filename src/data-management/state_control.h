@@ -1,9 +1,9 @@
 #ifndef STATE_CONTROL_H
 #define STATE_CONTROL_H
 
-#include "file_structure.h"
-#include "../utils/tools.h"
 #include "../io_management/io_manager.h"
+#include "../utils/tools.h"
+#include "file_structure.h"
 
 #define TIME_CONSIDER_UNIQUE_UNDO 300 /*MS*/
 
@@ -11,12 +11,7 @@
 
 void createTmpDir();
 
-typedef enum {
-  INSERT = 'i',
-  DELETE = 'd',
-  DELETE_ONE = 'D',
-  ACTION_NONE = 'n'
-} ACTION_TYPE;
+typedef enum { INSERT = 'i', DELETE = 'd', DELETE_ONE = 'D', ACTION_NONE = 'n' } ACTION_TYPE;
 
 
 typedef struct {
@@ -45,9 +40,11 @@ Cursor undo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action
 
 Cursor redo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, long* payload), long* payload);
 
-void saveAction(History** history_p, Action action, void (*onEachStateChange)(Action action, long* payload), long* payload);
+void saveAction(History** history_p, Action action, void (*onEachStateChange)(Action action, long* payload),
+                long* payload);
 
-Cursor doReverseAction(Action* action_p, Cursor cursor, void (*onEachStateChange)(Action action, long* payload), long* payload);
+Cursor doReverseAction(Action* action_p, Cursor cursor, void (*onEachStateChange)(Action action, long* payload),
+                       long* payload);
 
 Action createDeleteAction(Cursor cur1, Cursor cur2);
 
@@ -64,4 +61,4 @@ void loadCurrentStateControl(History* root, History** current_state, IO_FileID i
 void optimizeHistory(History* root, History** history_frame);
 
 
-#endif //STATE_CONTROL_H
+#endif // STATE_CONTROL_H

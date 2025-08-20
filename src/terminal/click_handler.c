@@ -5,14 +5,15 @@
 #include <string.h>
 
 #include "../data-management/file_management.h"
-#include "term_handler.h"
 #include "../utils/constants.h"
+#include "term_handler.h"
 
 
 ////// -------------- CLICK FUNCTIONS --------------
 
 
-void handleEditorClick(GUIContext* gui_context, Cursor* cursor, Cursor* select_cursor, int* desired_column, int* screen_x, int* screen_y, MEVENT* m_event, bool button1_down) {
+void handleEditorClick(GUIContext* gui_context, Cursor* cursor, Cursor* select_cursor, int* desired_column,
+                       int* screen_x, int* screen_y, MEVENT* m_event, bool button1_down) {
   int edws_offset_x = getbegx(gui_context->ftw);
   int edws_offset_y = gui_context->ofw_height;
   if (m_event->y - edws_offset_y < 0) {
@@ -24,7 +25,8 @@ void handleEditorClick(GUIContext* gui_context, Cursor* cursor, Cursor* select_c
 
   if (button1_down) {
     FileIdentifier new_file_id = tryToReachAbsRow(cursor->file_id, *screen_y + m_event->y - edws_offset_y);
-    LineIdentifier new_line_id = getLineIdForScreenX(moduloLineIdentifierR(getLineForFileIdentifier(new_file_id), 0), *screen_x, m_event->x - edws_offset_x);
+    LineIdentifier new_line_id = getLineIdForScreenX(moduloLineIdentifierR(getLineForFileIdentifier(new_file_id), 0),
+                                                     *screen_x, m_event->x - edws_offset_x);
 
     if (isCursorDisabled(*select_cursor) == false) {
       *cursor = cursorOf(new_file_id, new_line_id);
@@ -39,7 +41,8 @@ void handleEditorClick(GUIContext* gui_context, Cursor* cursor, Cursor* select_c
   if (m_event->bstate & BUTTON1_PRESSED) {
     setSelectCursorOff(cursor, select_cursor, SELECT_OFF_RIGHT);
     FileIdentifier new_file_id = tryToReachAbsRow(cursor->file_id, *screen_y + m_event->y - edws_offset_y);
-    LineIdentifier new_line_id = getLineIdForScreenX(moduloLineIdentifierR(getLineForFileIdentifier(new_file_id), 0), *screen_x, m_event->x - edws_offset_x);
+    LineIdentifier new_line_id = getLineIdForScreenX(moduloLineIdentifierR(getLineForFileIdentifier(new_file_id), 0),
+                                                     *screen_x, m_event->x - edws_offset_x);
     *cursor = cursorOf(new_file_id, new_line_id);
     setDesiredColumn(*cursor, desired_column);
   }
@@ -53,12 +56,14 @@ void handleEditorClick(GUIContext* gui_context, Cursor* cursor, Cursor* select_c
   if (m_event->bstate & BUTTON4_PRESSED && !(m_event->bstate & BUTTON_SHIFT)) {
     // Move Up
     *screen_y -= SCROLL_SPEED;
-    if (*screen_y < 1) *screen_y = 1;
+    if (*screen_y < 1)
+      *screen_y = 1;
   }
   else if (m_event->bstate & BUTTON4_PRESSED && m_event->bstate & BUTTON_SHIFT) {
     // Move Left
     *screen_x -= SCROLL_SPEED;
-    if (*screen_x < 1) *screen_x = 1;
+    if (*screen_x < 1)
+      *screen_x = 1;
   }
 
   if (m_event->bstate & BUTTON5_PRESSED && !(m_event->bstate & BUTTON_SHIFT)) {
@@ -67,7 +72,8 @@ void handleEditorClick(GUIContext* gui_context, Cursor* cursor, Cursor* select_c
     FileIdentifier last_line_cur = tryToReachAbsRow(cursor->file_id, *screen_y + 2);
     if (*screen_y + 2 != last_line_cur.absolute_row) {
       *screen_y = last_line_cur.absolute_row - 2;
-      if (*screen_y < 1) *screen_y = 1;
+      if (*screen_y < 1)
+        *screen_y = 1;
     }
   }
   else if (m_event->bstate & BUTTON5_PRESSED && m_event->bstate & BUTTON_SHIFT) {
@@ -76,7 +82,8 @@ void handleEditorClick(GUIContext* gui_context, Cursor* cursor, Cursor* select_c
   }
 }
 
-int handleOpenedFileSelectClick(GUIContext* gui_context, FileContainer* files, int* file_count, int* current_file, MEVENT m_event) {
+int handleOpenedFileSelectClick(GUIContext* gui_context, FileContainer* files, int* file_count, int* current_file,
+                                MEVENT m_event) {
   // Char offset for the window
   int current_char_offset = getbegx(gui_context->ofw);
 
@@ -115,7 +122,8 @@ int handleOpenedFileSelectClick(GUIContext* gui_context, FileContainer* files, i
 }
 
 
-void handleOpenedFileClick(GUIContext* gui_context, FileContainer* files, int* file_count, int* current_file, MEVENT m_event, bool* refresh_local_vars, bool mouse_drag) {
+void handleOpenedFileClick(GUIContext* gui_context, FileContainer* files, int* file_count, int* current_file,
+                           MEVENT m_event, bool* refresh_local_vars, bool mouse_drag) {
   if (m_event.bstate & BUTTON4_PRESSED && !(m_event.bstate & BUTTON_SHIFT)) {
     // Move Up
     (gui_context->current_file_offset)--;
@@ -169,12 +177,14 @@ void handleOpenedFileClick(GUIContext* gui_context, FileContainer* files, int* f
   }
 }
 
-void handleFileExplorerClick(GUIContext* gui_context, FileContainer** files, int* file_count, int* current_file, ExplorerFolder* pwd, MEVENT m_event, bool* refresh_local_vars) {
+void handleFileExplorerClick(GUIContext* gui_context, FileContainer** files, int* file_count, int* current_file,
+                             ExplorerFolder* pwd, MEVENT m_event, bool* refresh_local_vars) {
   // ---------- SCROLL ------------
   if (m_event.bstate & BUTTON4_PRESSED && !(m_event.bstate & BUTTON_SHIFT)) {
     // Move Up
     gui_context->few_y_offset -= SCROLL_SPEED;
-    if (gui_context->few_y_offset < 0) gui_context->few_y_offset = 0;
+    if (gui_context->few_y_offset < 0)
+      gui_context->few_y_offset = 0;
   }
   else if (m_event.bstate & BUTTON4_PRESSED && m_event.bstate & BUTTON_SHIFT) {
     // Move Left
@@ -217,7 +227,8 @@ void handleFileExplorerClick(GUIContext* gui_context, FileContainer** files, int
 
   ExplorerFolder* res_folder;
   int res_index;
-  bool found = getFileClickedFileExplorer(pwd, m_event.y, gui_context->few_x_offset, gui_context->few_y_offset, &res_folder, &res_index);
+  bool found = getFileClickedFileExplorer(pwd, m_event.y, gui_context->few_x_offset, gui_context->few_y_offset,
+                                          &res_folder, &res_index);
   gui_context->few_selected_line = gui_context->few_y_offset + m_event.y + 1;
   // If click on nothing break;
   if (found == false) {
@@ -231,14 +242,16 @@ void handleFileExplorerClick(GUIContext* gui_context, FileContainer** files, int
   }
   else {
     // Result is a file => open file in text editor.
-    openNewFile(res_folder->files[res_index].path, files, file_count, current_file, &gui_context->refresh_ofw, refresh_local_vars);
+    openNewFile(res_folder->files[res_index].path, files, file_count, current_file, &gui_context->refresh_ofw,
+                refresh_local_vars);
   }
 
   gui_context->refresh_few = true;
 }
 
 
-bool internalGetClickedExplorerFile(ExplorerFolder* current_folder, int* y_click, int few_x_offset, int few_y_offset, ExplorerFolder** res_folder, int* file_index) {
+bool internalGetClickedExplorerFile(ExplorerFolder* current_folder, int* y_click, int few_x_offset, int few_y_offset,
+                                    ExplorerFolder** res_folder, int* file_index) {
   if (*y_click == 0) {
     *res_folder = current_folder;
     *file_index = -1;
@@ -252,7 +265,8 @@ bool internalGetClickedExplorerFile(ExplorerFolder* current_folder, int* y_click
 
   // Check for child folders click.
   for (int i = 0; i < current_folder->folder_count; i++) {
-    if (internalGetClickedExplorerFile(current_folder->folders + i, y_click, few_x_offset, few_y_offset, res_folder, file_index) == true) {
+    if (internalGetClickedExplorerFile(current_folder->folders + i, y_click, few_x_offset, few_y_offset, res_folder,
+                                       file_index) == true) {
       return true;
     }
   }
@@ -270,7 +284,8 @@ bool internalGetClickedExplorerFile(ExplorerFolder* current_folder, int* y_click
   return false;
 }
 
-bool getFileClickedFileExplorer(ExplorerFolder* pwd, int y_click, int few_x_offset, int few_y_offset, ExplorerFolder** res_folder, int* file_index) {
+bool getFileClickedFileExplorer(ExplorerFolder* pwd, int y_click, int few_x_offset, int few_y_offset,
+                                ExplorerFolder** res_folder, int* file_index) {
   y_click += few_y_offset;
   return internalGetClickedExplorerFile(pwd, &y_click, few_x_offset, few_y_offset, res_folder, file_index);
 }

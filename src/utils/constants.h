@@ -31,4 +31,4 @@
 extern int color_index;
 extern int color_pair;
 
-#endif //CONTANTS_H
+#endif // CONTANTS_H

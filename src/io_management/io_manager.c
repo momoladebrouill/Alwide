@@ -139,5 +139,3 @@ void setupFile(char* path, IO_FileID* file) {
     strcpy(file->path_abs, "untitled");
   }
 }
-
-

@@ -136,6 +136,6 @@ void parseTree(FileNode** root, History** history_frame, FileHighlightDatas* hig
 
 char* getNodeContent(TSNode node, Cursor* cursor);
 
-int fillWithNodeContent(TSNode node, Cursor *cursor, char *content, int length);
+int fillWithNodeContent(TSNode node, Cursor* cursor, char* content, int length);
 
 #endif // TREE_MANAGER_H

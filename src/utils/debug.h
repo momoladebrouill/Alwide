@@ -5,4 +5,4 @@ extern FileNode* root;
 
 void debugPrintFullFile();
 
-#endif //DEBUG_H
+#endif // DEBUG_H

@@ -24,9 +24,12 @@ void printChar_U8(FILE* f, Char_U8 ch) {
  * Return on how many bytes is coded this Char_U8.
  */
 int sizeChar_U8(Char_U8 ch) {
-  if ((ch.t[0] >> 7 & 0b1) == 0) return 1;
-  if ((ch.t[0] >> 5 & 0b1) == 0) return 2;
-  if ((ch.t[0] >> 4 & 0b1) == 0) return 3;
+  if ((ch.t[0] >> 7 & 0b1) == 0)
+    return 1;
+  if ((ch.t[0] >> 5 & 0b1) == 0)
+    return 2;
+  if ((ch.t[0] >> 4 & 0b1) == 0)
+    return 3;
   return 4;
 }
 
@@ -89,7 +92,6 @@ Char_U8 readChar_U8FromFileWithFirstUsingFd(int fd, char c) {
   }
   return ch;
 }
-
 
 
 /**
@@ -195,7 +197,8 @@ int charPrintSize(Char_U8 ch) {
     return TAB_SIZE;
   }
 
-  if (sizeChar_U8(ch) == 1) // If char is ascii avoid convert and call wcwidth we can instant return size 1. Will not work with control char from ascii.
+  if (sizeChar_U8(ch) == 1) // If char is ascii avoid convert and call wcwidth we can instant return size 1. Will not
+                            // work with control char from ascii.
     return 1;
 
   wchar_t wc;
@@ -204,35 +207,27 @@ int charPrintSize(Char_U8 ch) {
 }
 
 
-bool isBetween(Char_U8 ch, char begin, char end) {
-  return ch.t[0] >= begin && ch.t[0] <= end;
-}
+bool isBetween(Char_U8 ch, char begin, char end) { return ch.t[0] >= begin && ch.t[0] <= end; }
 
 bool isAWordLetter(Char_U8 ch) {
-  return
-      isBetween(ch, 'a', 'z')
-      || isBetween(ch, 'A', 'Z')
-      || isBetween(ch, '0', '9')
-      || areChar_U8Equals(ch, readChar_U8FromCharArray("_"))
-      || areChar_U8Equals(ch, readChar_U8FromCharArray("ç"))
-      || areChar_U8Equals(ch, readChar_U8FromCharArray("é"))
-      || areChar_U8Equals(ch, readChar_U8FromCharArray("è"))
-      || areChar_U8Equals(ch, readChar_U8FromCharArray("à"))
-      || areChar_U8Equals(ch, readChar_U8FromCharArray("û"))
-      || areChar_U8Equals(ch, readChar_U8FromCharArray("ê"));
+  return isBetween(ch, 'a', 'z') || isBetween(ch, 'A', 'Z') || isBetween(ch, '0', '9') ||
+    areChar_U8Equals(ch, readChar_U8FromCharArray("_")) || areChar_U8Equals(ch, readChar_U8FromCharArray("ç")) ||
+    areChar_U8Equals(ch, readChar_U8FromCharArray("é")) || areChar_U8Equals(ch, readChar_U8FromCharArray("è")) ||
+    areChar_U8Equals(ch, readChar_U8FromCharArray("à")) || areChar_U8Equals(ch, readChar_U8FromCharArray("û")) ||
+    areChar_U8Equals(ch, readChar_U8FromCharArray("ê"));
 }
 
-bool isInvisible(Char_U8 ch) {
-  return ch.t[0] == ' ' || ch.t[0] == '\t';
-}
+bool isInvisible(Char_U8 ch) { return ch.t[0] == ' ' || ch.t[0] == '\t'; }
 
 bool areChar_U8Equals(Char_U8 ch1, Char_U8 ch2) {
   int size1 = sizeChar_U8(ch1);
   int size2 = sizeChar_U8(ch2);
-  if (size1 != size2) return false;
+  if (size1 != size2)
+    return false;
 
   for (int i = 0; i < size1; i++) {
-    if (ch1.t[i] != ch2.t[i]) return false;
+    if (ch1.t[i] != ch2.t[i])
+      return false;
   }
 
   return true;

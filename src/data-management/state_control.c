@@ -1,12 +1,12 @@
 #include <assert.h>
-#include <stdlib.h>
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "state_control.h"
 #include "file_management.h"
+#include "state_control.h"
 
 
 void initHistory(History* history) {
@@ -17,7 +17,8 @@ void initHistory(History* history) {
 }
 
 
-Cursor undo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, long* payload), long* payload) {
+Cursor undo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, long* payload),
+            long* payload) {
   History* history = *history_p;
 
   // If history is at root return and do nothing. Can't undo ;).
@@ -38,7 +39,8 @@ Cursor undo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action
   return cursor;
 }
 
-Cursor redo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, long* payload), long* payload) {
+Cursor redo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, long* payload),
+            long* payload) {
   History* history = *history_p;
 
   // If history is at the end return and do nothing. Cannot redo nothing ;).
@@ -54,7 +56,8 @@ Cursor redo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action
   cursor = doReverseAction(&history->action, cursor, onEachStateChange, payload);
   history->action.time = canceled_time_action;
 
-  if (history->next != NULL && diff2Time(history->action.time, history->next->action.time) < TIME_CONSIDER_UNIQUE_UNDO) {
+  if (history->next != NULL &&
+      diff2Time(history->action.time, history->next->action.time) < TIME_CONSIDER_UNIQUE_UNDO) {
     return redo(history_p, cursor, onEachStateChange, payload);
   }
 
@@ -62,7 +65,8 @@ Cursor redo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action
 }
 
 
-void saveAction(History** history_p, Action action, void (*onEachStateChange)(Action action, long* payload), long* payload) {
+void saveAction(History** history_p, Action action, void (*onEachStateChange)(Action action, long* payload),
+                long* payload) {
   History* history = *history_p;
   if (action.action == ACTION_NONE) {
     return;
@@ -88,7 +92,8 @@ void saveAction(History** history_p, Action action, void (*onEachStateChange)(Ac
     onEachStateChange(action, payload);
 }
 
-Cursor doReverseAction(Action* action_p, Cursor cursor, void (*onEachStateChange)(Action action, long* payload), long* payload) {
+Cursor doReverseAction(Action* action_p, Cursor cursor, void (*onEachStateChange)(Action action, long* payload),
+                       long* payload) {
   Action action = *action_p;
   Cursor tmp;
   Cursor tmp_end;
@@ -124,7 +129,8 @@ Cursor doReverseAction(Action* action_p, Cursor cursor, void (*onEachStateChange
       tmp.file_id = tryToReachAbsRow(cursor.file_id, action.cur.file_id.absolute_row);
       tmp.line_id = moduloLineIdentifierR(getLineForFileIdentifier(tmp.file_id), action.cur.line_id.absolute_column);
       tmp_end.file_id = tryToReachAbsRow(cursor.file_id, action.cur_end.file_id.absolute_row);
-      tmp_end.line_id = moduloLineIdentifierR(getLineForFileIdentifier(tmp_end.file_id), action.cur_end.line_id.absolute_column);
+      tmp_end.line_id =
+        moduloLineIdentifierR(getLineForFileIdentifier(tmp_end.file_id), action.cur_end.line_id.absolute_column);
 
       destroyAction(action);
       *action_p = createDeleteAction(tmp, tmp_end);
@@ -159,7 +165,7 @@ Action createDeleteAction(Cursor cur1, Cursor cur2) {
   // Not used.
   action.cur_end = disableCursor(cur1);
 
-  char *dump = dumpSelection(cur1, cur2);
+  char* dump = dumpSelection(cur1, cur2);
 
   if (dump[0] == '\0') { // Empty selection
     free(dump);
@@ -237,7 +243,7 @@ void destroyEndOfHistory(History* history) {
 
 void createTmpDir() {
   char command[20 + strlen(FILE_STATE_PATH)];
-  sprintf(command, "mkdir %s -p",FILE_STATE_PATH);
+  sprintf(command, "mkdir %s -p", FILE_STATE_PATH);
   system(command);
 }
 
@@ -265,17 +271,21 @@ void saveCurrentStateControl(History root, History* current_state, char* fileNam
 
     switch (current->action.action) {
       case DELETE:
-        fprintf(f, "%d %d %d\n", current->action.cur.file_id.absolute_row, current->action.cur.line_id.absolute_column, current->action.byte_start);
+        fprintf(f, "%d %d %d\n", current->action.cur.file_id.absolute_row, current->action.cur.line_id.absolute_column,
+                current->action.byte_start);
         fprintf(f, "%ld\n", strlen(current->action.ch));
         fprintf(f, "%s\n", current->action.ch);
         break;
       case DELETE_ONE:
-        fprintf(f, "%d %d %d\n", current->action.cur.file_id.absolute_row, current->action.cur.line_id.absolute_column, current->action.byte_start);
+        fprintf(f, "%d %d %d\n", current->action.cur.file_id.absolute_row, current->action.cur.line_id.absolute_column,
+                current->action.byte_start);
         fprintf(f, "%c\n", current->action.unique_ch);
         break;
       case INSERT:
-        fprintf(f, "%d %d %d\n", current->action.cur.file_id.absolute_row, current->action.cur.line_id.absolute_column, current->action.byte_start);
-        fprintf(f, "%d %d %d\n", current->action.cur_end.file_id.absolute_row, current->action.cur_end.line_id.absolute_column, current->action.byte_end);
+        fprintf(f, "%d %d %d\n", current->action.cur.file_id.absolute_row, current->action.cur.line_id.absolute_column,
+                current->action.byte_start);
+        fprintf(f, "%d %d %d\n", current->action.cur_end.file_id.absolute_row,
+                current->action.cur_end.line_id.absolute_column, current->action.byte_end);
         break;
       case ACTION_NONE:
         break;
@@ -332,7 +342,8 @@ void loadCurrentStateControl(History* root, History** current_state, IO_FileID i
 
     switch (action.action) {
       case DELETE:
-        fscanf(f, "%d%c%d%c%d%c", &action.cur.file_id.absolute_row, &scan_separtor, &action.cur.line_id.absolute_column, &scan_separtor, &action.byte_start, &scan_separtor);
+        fscanf(f, "%d%c%d%c%d%c", &action.cur.file_id.absolute_row, &scan_separtor, &action.cur.line_id.absolute_column,
+               &scan_separtor, &action.byte_start, &scan_separtor);
         long str_len;
         fscanf(f, "%ld%c", &str_len, &scan_separtor);
         action.ch = malloc(str_len + 1);
@@ -341,18 +352,21 @@ void loadCurrentStateControl(History* root, History** current_state, IO_FileID i
           fscanf(f, "%c", action.ch + i);
         }
         action.ch[str_len] = '\0';
-      // printf("%ld\r\n", strlen(action.ch));
-      // printf("%s\r\n", action.ch);
-      // exit(0);
+        // printf("%ld\r\n", strlen(action.ch));
+        // printf("%s\r\n", action.ch);
+        // exit(0);
         fscanf(f, "%c", &scan_separtor);
         break;
       case DELETE_ONE:
-        fscanf(f, "%d%c%d%c%d%c", &action.cur.file_id.absolute_row, &scan_separtor, &action.cur.line_id.absolute_column, &scan_separtor, &action.byte_start, &scan_separtor);
+        fscanf(f, "%d%c%d%c%d%c", &action.cur.file_id.absolute_row, &scan_separtor, &action.cur.line_id.absolute_column,
+               &scan_separtor, &action.byte_start, &scan_separtor);
         fscanf(f, "%c%c", &action.unique_ch, &scan_separtor);
         break;
       case INSERT:
-        fscanf(f, "%d%c%d%c%d%c", &action.cur.file_id.absolute_row, &scan_separtor, &action.cur.line_id.absolute_column, &scan_separtor, &action.byte_start, &scan_separtor);
-        fscanf(f, "%d%c%d%c%d%c", &action.cur_end.file_id.absolute_row, &scan_separtor, &action.cur_end.line_id.absolute_column, &scan_separtor, &action.byte_end, &scan_separtor);
+        fscanf(f, "%d%c%d%c%d%c", &action.cur.file_id.absolute_row, &scan_separtor, &action.cur.line_id.absolute_column,
+               &scan_separtor, &action.byte_start, &scan_separtor);
+        fscanf(f, "%d%c%d%c%d%c", &action.cur_end.file_id.absolute_row, &scan_separtor,
+               &action.cur_end.line_id.absolute_column, &scan_separtor, &action.byte_end, &scan_separtor);
         break;
       case ACTION_NONE:
         break;
@@ -389,14 +403,15 @@ void optimizeHistory(History* root, History** history_frame) {
           switch (next->action.action) {
             case DELETE_ONE:
               if (next->action.unique_ch == '\n') {
-                if (current->action.cur.line_id.absolute_column == 0 && next->action.cur.line_id.absolute_column == current->action.cur.file_id.absolute_row - 1) {
+                if (current->action.cur.line_id.absolute_column == 0 &&
+                    next->action.cur.line_id.absolute_column == current->action.cur.file_id.absolute_row - 1) {
                   // We may don't want to join when line is removed.
                   is_pos_linked = false;
                 }
               }
               else {
-                if (current->action.cur.file_id.absolute_row == next->action.cur.file_id.absolute_row
-                    && current->action.cur.line_id.absolute_column - 1 == next->action.cur.line_id.absolute_column) {
+                if (current->action.cur.file_id.absolute_row == next->action.cur.file_id.absolute_row &&
+                    current->action.cur.line_id.absolute_column - 1 == next->action.cur.line_id.absolute_column) {
                   is_pos_linked = true;
                 }
               }
@@ -415,7 +430,8 @@ void optimizeHistory(History* root, History** history_frame) {
                 }
                 else {
                   int old_size = strlen(current->action.ch);
-                  current->action.ch = realloc(current->action.ch, (old_size + 2/*new char and null char*/) * sizeof(char));
+                  current->action.ch =
+                    realloc(current->action.ch, (old_size + 2 /*new char and null char*/) * sizeof(char));
                   memmove(current->action.ch + 1, current->action.ch, old_size);
                   current->action.ch[0] = next->action.unique_ch;
                   current->action.ch[old_size + 1] = '\0';
@@ -438,15 +454,14 @@ void optimizeHistory(History* root, History** history_frame) {
             case INSERT:
               if (next->action.unique_ch == '\n') {
                 // TODO change condition
-                // if (history->action.cur.line_id.absolute_column == 0 && action.cur.line_id.absolute_column == history->action.cur.file_id.absolute_row - 1) {
-                // We may don't want to join when line is removed.
+                // if (history->action.cur.line_id.absolute_column == 0 && action.cur.line_id.absolute_column ==
+                // history->action.cur.file_id.absolute_row - 1) { We may don't want to join when line is removed.
                 // is_pos_linked = false;
                 // }
               }
               else {
-                if (current->action.cur_end.file_id.absolute_row == next->action.cur.file_id.absolute_row && current->action.cur_end.line_id.absolute_column == next->action.cur.
-                    line_id.
-                    absolute_column) {
+                if (current->action.cur_end.file_id.absolute_row == next->action.cur.file_id.absolute_row &&
+                    current->action.cur_end.line_id.absolute_column == next->action.cur.line_id.absolute_column) {
                   is_pos_linked = true;
                 }
               }

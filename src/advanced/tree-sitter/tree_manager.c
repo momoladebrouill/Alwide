@@ -132,8 +132,6 @@ void getTSLanguageFromString(const TSLanguage** lang, char* language) {
 }
 
 
-
-
 bool loadNewParser(ParserContainer* container, char* language) {
   // Set file name
   strcpy(container->lang_id, language);
