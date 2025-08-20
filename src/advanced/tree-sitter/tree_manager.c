@@ -1,16 +1,16 @@
 #include "tree_manager.h"
 
 #include <assert.h>
+#include <bits/time.h>
+#include <linux/limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <bits/time.h>
-#include <linux/limits.h>
 
+#include "../../../lib/tree-sitter/lib/include/tree_sitter/api.h"
 #include "../../terminal/highlight.h"
 #include "../../utils/constants.h"
-#include "../../../lib/tree-sitter/lib/include/tree_sitter/api.h"
 #include "../../utils/tools.h"
 #include "../tree-sitter/tree_query.h"
 
@@ -77,6 +77,9 @@ void getTSLanguageFromString(const TSLanguage** lang, char* language) {
   else if (strcmp(language, "markdown") == 0) {
     *lang = tree_sitter_markdown();
   }
+  else if (strcmp(language, "markdown_inline") == 0) {
+    *lang = tree_sitter_markdown_inline();
+  }
   else if (strcmp(language, "java") == 0) {
     *lang = tree_sitter_java();
   }
@@ -119,27 +122,20 @@ void getTSLanguageFromString(const TSLanguage** lang, char* language) {
   else if (strcmp(language, "asm") == 0) {
     *lang = tree_sitter_asm();
   }
+  else if (strcmp(language, "html") == 0) {
+    *lang = tree_sitter_html();
+  }
 }
 
 bool hasTSLanguageImplementation(char* language) {
   // ADD_NEW_LANGUAGE
-  return strcmp(language, "c") == 0 ||
-         strcmp(language, "python") == 0 ||
-         strcmp(language, "markdown") == 0 ||
-         strcmp(language, "java") == 0 ||
-         strcmp(language, "cpp") == 0 ||
-         strcmp(language, "c-sharp") == 0 ||
-         strcmp(language, "make") == 0 ||
-         strcmp(language, "css") == 0 ||
-         strcmp(language, "dart") == 0 ||
-         strcmp(language, "go") == 0 ||
-         strcmp(language, "javascript") == 0 ||
-         strcmp(language, "json") == 0 ||
-         strcmp(language, "bash") == 0 ||
-         strcmp(language, "query") == 0 ||
-         strcmp(language, "lua") == 0 ||
-         strcmp(language, "vhdl") == 0 ||
-         strcmp(language, "asm") == 0;
+  return strcmp(language, "c") == 0 || strcmp(language, "python") == 0 || strcmp(language, "markdown") == 0 ||
+    strcmp(language, "markdown_inline") == 0 || strcmp(language, "java") == 0 || strcmp(language, "cpp") == 0 ||
+    strcmp(language, "c-sharp") == 0 || strcmp(language, "make") == 0 || strcmp(language, "css") == 0 ||
+    strcmp(language, "dart") == 0 || strcmp(language, "go") == 0 || strcmp(language, "javascript") == 0 ||
+    strcmp(language, "json") == 0 || strcmp(language, "bash") == 0 || strcmp(language, "query") == 0 ||
+    strcmp(language, "lua") == 0 || strcmp(language, "vhdl") == 0 || strcmp(language, "asm") == 0 ||
+    strcmp(language, "html") == 0;
 }
 
 

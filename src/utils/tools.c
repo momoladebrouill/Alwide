@@ -155,6 +155,11 @@ bool getLanguageStringIDForFile(char* lang_id, IO_FileID io_file) {
     strcpy(lang_id, "markdown");
     return true;
   }
+  // markdown_inline
+  if (strcmp(lang_id, "markdown_inline") == 0) {
+    strcpy(lang_id, "markdown_inline");
+    return true;
+  }
   // java
   if (strcmp(lang_id, "java") == 0) {
     strcpy(lang_id, "java");
@@ -218,6 +223,11 @@ bool getLanguageStringIDForFile(char* lang_id, IO_FileID io_file) {
   // asm
   if (strcmp(lang_id, "s") == 0) {
     strcpy(lang_id, "asm");
+    return true;
+  }
+  // html
+  if (strcmp(lang_id, "html") == 0) {
+    strcpy(lang_id, "html");
     return true;
   }
 

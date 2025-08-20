@@ -1,5 +1,5 @@
 CC=clang-18
-CFLAGS=-g -O3 # -fsanitize=address # -lncurses # -Wall -Wextra -Werror -gdwarf-4
+CFLAGS=-g # -fsanitize=address # -lncurses # -Wall -Wextra -Werror -gdwarf-4
 #CFLAGS=-g -fsanitize=address # -lncurses # -Wall -Wextra -Werror -gdwarf-4
 
 executable= al # lsp_test #test_line.o test_file.o  test_line test_file  # utils/debug.o
@@ -19,6 +19,7 @@ MODULES= \
 	src/advanced/lsp/lsp_client.o \
 	src/advanced/tree-sitter/tree_manager.o \
 	src/advanced/tree-sitter/tree_query.o \
+	src/advanced/tree-sitter/tree_sitter_highlighter.o \
 	src/advanced/theme.o \
 	src/terminal/highlight.o \
 	src/terminal/click_handler.o \
@@ -46,7 +47,8 @@ LIBS_MODULES= \
 	lib/tree-sitter-query/target/debug/libtree_sitter_query.rlib \
 	lib/tree-sitter-vhdl/target/debug/libtree_sitter_vhdl.rlib \
 	lib/tree-sitter-lua/target/debug/libtree_sitter_lua.rlib \
-	lib/tree-sitter-asm/target/debug/libtree_sitter_asm.rlib
+	lib/tree-sitter-asm/target/debug/libtree_sitter_asm.rlib \
+	lib/tree-sitter-html/target/debug/libtree_sitter_html.rlib
 
 ALL_MODULES= $(MODULES) $(LIBS_MODULES)
 

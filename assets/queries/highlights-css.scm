@@ -1,8 +1,8 @@
 (comment) @comment
 
-(tag_name) @tag
-(nesting_selector) @tag
-(universal_selector) @tag
+(tag_name) @function
+(nesting_selector) @function
+(universal_selector) @function
 
 "~" @operator
 ">" @operator

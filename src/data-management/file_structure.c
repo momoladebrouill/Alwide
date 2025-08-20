@@ -2015,7 +2015,7 @@ Cursor concatNeighbordsLinesC(Cursor cursor) {
   return cursorOf(newLineId, lastNode);
 }
 
-Cursor moveRight_v2(Cursor cursor) {
+Cursor moveRight_internal(Cursor cursor) {
   if (hasElementAfterLine(cursor.line_id)) {
     cursor.line_id.relative_column++;
     cursor.line_id.absolute_column++;
@@ -2043,9 +2043,9 @@ Cursor deleteCharAtCursor_v2(Cursor cursor) {
   return cursor;
 }
 
-Cursor supprCharAtCursor_v2(Cursor cursor) {
+Cursor supprCharAtCursor_internal(Cursor cursor) {
   Cursor old_cur = cursor;
-  cursor = moveRight_v2(cursor);
+  cursor = moveRight_internal(cursor);
   if (old_cur.file_id.absolute_row != cursor.file_id.absolute_row || old_cur.line_id.absolute_column !=
       cursor.line_id.absolute_column) {
     cursor = deleteCharAtCursor_v2(cursor);
@@ -2089,7 +2089,7 @@ Cursor bulkDelete(Cursor cursor, Cursor select_cursor) {
 
     deleteFilePart(tryToReachAbsRow(cursor.file_id, cursor.file_id.absolute_row), select_cursor.file_id.absolute_row - cursor.file_id.absolute_row - 1);
     cursor = moduloCursor(cursor);
-    cursor = supprCharAtCursor_v2(cursor);
+    cursor = supprCharAtCursor_internal(cursor);
   }
 
   return cursor;
@@ -2263,7 +2263,7 @@ int readNu8CharAtCursor(Cursor* cursor_p, char* dest, int utf8_char_length) {
       }
       else {
         int old_cur_row = cursor.file_id.absolute_row;
-        cursor = moveRight_v2(cursor);
+        cursor = moveRight_internal(cursor);
         if (cursor.file_id.absolute_row + 1 == old_cur_row) {
           // EOF
           break;
@@ -2352,7 +2352,7 @@ int readNBytesCharAtCursor(Cursor* cursor_p, char* dest, int length) {
       }
       else {
         int old_cur_row = cursor.file_id.absolute_row;
-        cursor = moveRight_v2(cursor);
+        cursor = moveRight_internal(cursor);
         if (cursor.file_id.absolute_row + 1 == old_cur_row) {
           // EOF
           break;
@@ -2392,6 +2392,7 @@ int readNBytesAtPosition(Cursor* cursor_p, int row_raw, int column_raw, char* de
   LineIdentifier line_id = moduloLineIdentifierR(getLineForFileIdentifier(file_id), 0);
 
   // reach column_raw.
+  // try to convert raw column to cursor column.
   int current_column_raw = 0;
   while (current_column_raw < column_raw) {
     // if we can skip current node.
