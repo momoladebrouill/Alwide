@@ -43,3 +43,6 @@
 [submodule "lib/tree-sitter-query"]
 	path = lib/tree-sitter-query
 	url = https://github.com/tree-sitter-grammars/tree-sitter-query.git
+[submodule "lib/tree-sitter-css"]
+	path = lib/tree-sitter-css
+	url = https://github.com/tree-sitter/tree-sitter-css.git
