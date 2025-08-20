@@ -2,12 +2,13 @@
 #define LSP_HANDLER_H
 #include <stdbool.h>
 
+#include "../../utils/constants.h"
 #include "lsp_client.h"
 #include "../../io_management/io_manager.h"
 
 
 typedef struct {
-  char lang_id[100];
+  char lang_id[LANG_ID_LENGTH];
   bool is_enable;
 } LSP_Datas;
 

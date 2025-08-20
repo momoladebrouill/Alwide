@@ -16,7 +16,6 @@
 [
   (link_title)
   (indented_code_block)
-  (fenced_code_block)
   ] @string
 
 [
@@ -50,6 +49,9 @@
 [
   (backslash_escape)
 ] @number
+
+(language) @type
+
 
 (fenced_code_block
   (info_string

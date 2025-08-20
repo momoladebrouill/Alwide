@@ -390,7 +390,7 @@ TextPartHighlightDescriptor* whd_tphd_forCursorWithOffsetIndex(WindowHighlightDe
 
 
 void initColorsForTheme(HighlightThemeList theme_list, int* color_index, int* color_pair) {
-  // Setup color sheme.
+  // Setup color theme.
   for (int i = 0; i < theme_list.size; i++) {
     init_color((*color_index)++, theme_list.groups[i].color.r, theme_list.groups[i].color.g, theme_list.groups[i].color.b);
     init_pair(*color_pair, *color_index - 1, COLOR_BLACK);

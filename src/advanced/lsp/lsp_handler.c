@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../../utils/constants.h"
+#include "../../utils/global-variables.h"
 #include "../../utils/tools.h"
 
 

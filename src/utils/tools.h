@@ -37,14 +37,14 @@ char* whereis(char* prog);
 
 void getLocalURI(char* realive_abs_path, char* uri);
 
-bool isDir(char *path);
+bool isDir(char* path);
 
-bool getLanguageStringIDForFile(char *lang, IO_FileID io_file);
+bool getLanguageStringIDForFile(char* lang, IO_FileID io_file);
 
 int hashString(unsigned char* str);
 
 char* loadFullFile(const char* path, long* length);
 
-int mkdir_p(const char *path, mode_t mode);
+int mkdir_p(const char* path, mode_t mode);
 
-#endif //TOOLS_H
+#endif // TOOLS_H

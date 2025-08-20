@@ -7,24 +7,25 @@
 #include <unistd.h>
 #include <sys/ttydefaults.h>
 
+#include "advanced/lsp/lsp_client.h"
 #include "advanced/theme.h"
 #include "advanced/tree-sitter/tree_manager.h"
+#include "advanced/tree-sitter/tree_sitter_highlighter.h"
+#include "config/config.h"
 #include "data-management/file_management.h"
 #include "data-management/file_structure.h"
 #include "data-management/state_control.h"
 #include "io_management/io_explorer.h"
-#include "io_management/viewport_history.h"
 #include "io_management/io_manager.h"
+#include "io_management/viewport_history.h"
 #include "io_management/workspace_settings.h"
-#include "utils/clipboard_manager.h"
-#include "utils/key_management.h"
-#include "utils/constants.h"
-#include "terminal/term_handler.h"
-#include "terminal/highlight.h"
 #include "terminal/click_handler.h"
-#include "advanced/lsp/lsp_client.h"
-#include "advanced/tree-sitter/tree_sitter_highlighter.h"
-#include "config/config.h"
+#include "terminal/highlight.h"
+#include "terminal/term_handler.h"
+#include "utils/clipboard_manager.h"
+#include "utils/constants.h"
+#include "utils/global-variables.h"
+#include "utils/key_management.h"
 
 #define SHOW_ERROR true
 // #define SHOW_ERROR false

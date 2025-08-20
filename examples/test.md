@@ -1,10 +1,12 @@
-<toc/>
 
-<center>
+
+</toc>
+
+<center style="test">
 
 # Rapport de stage
 
-</center style="test">
+</center>
 
 ## 1. Introduction
 
@@ -12,9 +14,12 @@
 ```c
 #include "test.h"
 
+#define CONSTANT 1
+
 int main(int argc, char** args) {
-	if (CONSTANT_IS_THE_TEST_OF_THE_WORLD_I_DONT_UNDERSTAND_WHY_I_DONT_GET_ANY_ERROR == 0);
+	if (CONSTANT == 0);
 	printf("Hello World !");
+
 	return 0;
 }
 ```
