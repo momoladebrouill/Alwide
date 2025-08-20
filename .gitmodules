@@ -40,3 +40,6 @@
 [submodule "lib/tree-sitter-make"]
 	path = lib/tree-sitter-make
 	url = https://github.com/tree-sitter-grammars/tree-sitter-make.git
+[submodule "lib/tree-sitter-query"]
+	path = lib/tree-sitter-query
+	url = https://github.com/tree-sitter-grammars/tree-sitter-query.git
