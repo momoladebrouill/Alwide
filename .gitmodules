@@ -28,3 +28,6 @@
 [submodule "lib/tree-sitter-bash"]
 	path = lib/tree-sitter-bash
 	url = https://github.com/tree-sitter/tree-sitter-bash.git
+[submodule "lib/tree-sitter-c-sharp"]
+	path = lib/tree-sitter-c-sharp
+	url = https://github.com/tree-sitter/tree-sitter-c-sharp.git
