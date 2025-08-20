@@ -199,7 +199,7 @@ bool arePredicatesMatching(Cursor* tmp, TSQuery* query, TSQueryMatch qmatch, con
 }
 
 bool extractInjectionDataFromCapture(Cursor* cursor, TSQuery* query, TSQueryMatch* qmatch,
-                                      InjectionDescriptor* injection, const char* override_lang_id) {
+                                     InjectionDescriptor* injection, const char* override_lang_id) {
   injection_init(injection);
   if (override_lang_id != NULL) {
     strncpy(injection->lang_id, override_lang_id, LANG_ID_LENGTH - 1);

@@ -33,9 +33,9 @@
 
 /**   TODO list :
  *      - Implement lsp bitch !!
- *      - Implement tree-sitter injections
  *      - Patch conditional jump (valgrind) when opening untitled file from a workspace.
  *      - Upgrade mouse handle to be more portable.
+ *      - Upgrade mouse drag to avoid non handled movement.
  *
  */
 
