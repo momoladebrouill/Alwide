@@ -1,17 +1,17 @@
 #include <assert.h>
-#include <sys/wait.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <cjson/cJSON.h>
-#include <unistd.h>
 #include <linux/limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
-#include "advanced/lsp/lsp_client.h"
-#include "utils/tools.h"
 #include "../lib/tree-sitter/lib/include/tree_sitter/api.h"
+#include "advanced/lsp/lsp_client.h"
 #include "advanced/lsp/lsp_handler.h"
 #include "advanced/tree-sitter/tree_manager.h"
 #include "io_management/workspace_settings.h"
+#include "utils/tools.h"
 
 //     if (poll(&(struct pollfd){.fd = lsp.inpipefd[0], .events = POLLIN}, 1, 0) == 1) {
 

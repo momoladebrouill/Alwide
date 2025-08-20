@@ -2,12 +2,13 @@
 #define LSP_HANDLER_H
 #include <stdbool.h>
 
-#include "lsp_client.h"
 #include "../../io_management/io_manager.h"
+#include "../../utils/constants.h"
+#include "lsp_client.h"
 
 
 typedef struct {
-  char lang_id[100];
+  char lang_id[LANG_ID_LENGTH];
   bool is_enable;
 } LSP_Datas;
 
@@ -43,4 +44,4 @@ LSP_Server* getLSPServerForLanguage(LSPServerLinkedList* list, char* language);
 bool loadNewLSPServer(LSP_Server* container, char* language);
 
 
-#endif //LSP_HANDLER_H
+#endif // LSP_HANDLER_H

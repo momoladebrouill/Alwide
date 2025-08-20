@@ -3,19 +3,13 @@
 #include <regex.h>
 
 #include "../../../lib/tree-sitter/lib/include/tree_sitter/api.h"
-#include "../theme.h"
-#include "../../io_management/io_manager.h"
 #include "../../data-management/state_control.h"
+#include "../../io_management/io_manager.h"
+#include "../theme.h"
 
 #define CHAR_CHUNK_SIZE_TSINPUT 500
 
-typedef enum {
-  SYMBOL = 's',
-  FIELD = 'f',
-  REGEX = 'r',
-  GROUP = 'g',
-  MATCH = 'm'
-} PATH_TYPE;
+typedef enum { SYMBOL = 's', FIELD = 'f', REGEX = 'r', GROUP = 'g', MATCH = 'm' } PATH_TYPE;
 
 typedef struct {
   History* history_frame;
@@ -50,7 +44,6 @@ typedef struct {
   const TSLanguage* lang;
   TSParser* parser;
   TSQuery* queries;
-  TSQueryCursor* cursor;
   RegexMap regex_map;
   HighlightThemeList theme_list;
 } ParserContainer;
@@ -71,9 +64,6 @@ typedef struct {
 } PayloadStateChange;
 
 typedef struct {
-  FileNode* root;
-  char* file;
-  int size;
   Cursor cursor;
 } PayloadInternalReader;
 
@@ -123,8 +113,6 @@ void addParserToParserList(ParserList* list, ParserContainer new_parser);
 
 ParserContainer* getParserForLanguage(ParserList* list, char* language);
 
-bool hasTSLanguageImplementation(char* language);
-
 void getTSLanguageFromString(const TSLanguage** lang, char* language);
 
 bool loadNewParser(ParserContainer* container, char* language);
@@ -141,7 +129,13 @@ PayloadStateChange getPayloadStateChange(FileHighlightDatas* highlight_datas);
 
 void onStateChangeTS(Action action, long* payload_p);
 
-void parseTree(FileNode** root, History** history_frame, FileHighlightDatas* highlight_data, History** old_history_frame);
+const char* internalReaderForTree(void* payload, uint32_t byte_index, TSPoint position, uint32_t* bytes_read);
 
+void parseTree(FileNode** root, History** history_frame, FileHighlightDatas* highlight_data,
+               History** old_history_frame);
 
-#endif //TREE_MANAGER_H
+char* getNodeContent(TSNode node, Cursor* cursor);
+
+int fillWithNodeContent(TSNode node, Cursor* cursor, char* content, int length);
+
+#endif // TREE_MANAGER_H

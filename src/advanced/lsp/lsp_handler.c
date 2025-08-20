@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../../utils/constants.h"
+#include "../../utils/global-variables.h"
 #include "../../utils/tools.h"
 
 
@@ -18,9 +18,7 @@ void setLspDatas(LSP_Datas* lsp_datas, IO_FileID io_file) {
 }
 
 
-void initLSPServerList(LSPServerLinkedList* list) {
-  list->head = NULL;
-}
+void initLSPServerList(LSPServerLinkedList* list) { list->head = NULL; }
 
 void destroyLSPServerList(LSPServerLinkedList* list) {
   LSPServerLinkedList_Cell* cell = list->head;

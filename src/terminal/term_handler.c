@@ -1,13 +1,13 @@
 #include <assert.h>
-#include <string.h>
 #include <libgen.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "../data-management/file_management.h"
 #include "term_handler.h"
 
-#include "highlight.h"
 #include "../utils/constants.h"
+#include "highlight.h"
 
 
 ////// -------------- WINDOWS MANAGEMENTS --------------
@@ -15,14 +15,14 @@
 
 void initGUIContext(GUIContext* gui_context) {
   // Init GUI vars
-  gui_context->ftw = NULL; // File Text Window
-  gui_context->lnw = NULL; // Line Number Window
-  gui_context->ofw = NULL; // Opened Files Window
-  gui_context->few = NULL; // File Explorer Window
+  gui_context->ftw = NULL;         // File Text Window
+  gui_context->lnw = NULL;         // Line Number Window
+  gui_context->ofw = NULL;         // Opened Files Window
+  gui_context->few = NULL;         // File Explorer Window
   gui_context->refresh_edw = true; // Need to reprint editor window
   gui_context->refresh_ofw = true; // Need to reprint opened file window
   gui_context->refresh_few = true; // Need to reprint file explorer window
-  gui_context->focus_w = NULL; // Used to set the window where start mouse drag
+  gui_context->focus_w = NULL;     // Used to set the window where start mouse drag
 
   // EDW Datas
 
@@ -77,7 +77,8 @@ void printChar_U8ToNcurses(WINDOW* w, Char_U8 ch) {
   }
 }
 
-void printEditor_printLineNumber(GUIContext* gui_context, Cursor cursor, int screen_y, FileIdentifier file_cur, int row) {
+void printEditor_printLineNumber(GUIContext* gui_context, Cursor cursor, int screen_y, FileIdentifier file_cur,
+                                 int row) {
   char line_number[40];
   sprintf(line_number, "%d", file_cur.absolute_row);
   int lineNumberSize = strlen(line_number);
@@ -113,14 +114,13 @@ void printEditor_printFileContent(GUIContext* gui_context, Cursor cursor, Cursor
                                   WindowHighlightDescriptor* highlight_descriptor, FileIdentifier file_cur,
                                   const int column_count, int* whd_offset) {
   LineIdentifier begin_screen_line_cur =
-      tryToReachAbsColumn(moduloLineIdentifierR(getLineForFileIdentifier(file_cur), 0), screen_x);
-  LineIdentifier end_screen_line_cur =
-      tryToReachAbsColumn(begin_screen_line_cur, screen_x + column_count - 3);
+    tryToReachAbsColumn(moduloLineIdentifierR(getLineForFileIdentifier(file_cur), 0), screen_x);
+  LineIdentifier end_screen_line_cur = tryToReachAbsColumn(begin_screen_line_cur, screen_x + column_count - 3);
 
   int column = screen_x;
-  while (end_screen_line_cur.absolute_column >= screen_x
-         && begin_screen_line_cur.absolute_column <= end_screen_line_cur.absolute_column
-         && screen_x + column_count - 3 >= column) {
+  while (end_screen_line_cur.absolute_column >= screen_x &&
+         begin_screen_line_cur.absolute_column <= end_screen_line_cur.absolute_column &&
+         screen_x + column_count - 3 >= column) {
     Char_U8 ch = getCharForLineIdentifier(begin_screen_line_cur);
     Cursor ch_cursor = cursorOf(file_cur, begin_screen_line_cur);
 
@@ -138,11 +138,12 @@ void printEditor_printFileContent(GUIContext* gui_context, Cursor cursor, Cursor
     }
 
     // determine if the char is selected or not.
-    bool selected_style = isCursorDisabled(select_cursor) == false && isCursorBetweenOthers(ch_cursor, select_cursor, cursor);
+    bool selected_style =
+      isCursorDisabled(select_cursor) == false && isCursorBetweenOthers(ch_cursor, select_cursor, cursor);
 
     // get current highlight.
-    TextPartHighlightDescriptor* current_highlight = whd_tphd_forCursorWithOffsetIndex(
-      highlight_descriptor, ch_cursor, whd_offset);
+    TextPartHighlightDescriptor* current_highlight =
+      whd_tphd_forCursorWithOffsetIndex(highlight_descriptor, ch_cursor, whd_offset);
 
 
     // default style
@@ -180,10 +181,10 @@ void printEditor_printFileContent(GUIContext* gui_context, Cursor cursor, Cursor
   }
 
   // show empty line selected.
-  if (begin_screen_line_cur.absolute_column == end_screen_line_cur.absolute_column && hasElementAfterLine(end_screen_line_cur)
-      == false) {
-    if (isCursorDisabled(select_cursor) == false
-        && isCursorBetweenOthers(cursorOf(file_cur, begin_screen_line_cur), select_cursor, cursor)) {
+  if (begin_screen_line_cur.absolute_column == end_screen_line_cur.absolute_column &&
+      hasElementAfterLine(end_screen_line_cur) == false) {
+    if (isCursorDisabled(select_cursor) == false &&
+        isCursorBetweenOthers(cursorOf(file_cur, begin_screen_line_cur), select_cursor, cursor)) {
       // if line selected
       wattr_set(gui_context->ftw, A_NORMAL, DEFAULT_COLOR_HOVER_PAIR, 0);
       wprintw(gui_context->ftw, " ");
@@ -201,10 +202,11 @@ void printEditor_printFileContent(GUIContext* gui_context, Cursor cursor, Cursor
 }
 
 void printEditor_printCursor(GUIContext* gui_context, Cursor cursor, int screen_x, int screen_y,
-                             WindowHighlightDescriptor* highlight_descriptor, const int line_count, const int column_count) {
+                             WindowHighlightDescriptor* highlight_descriptor, const int line_count,
+                             const int column_count) {
   // Check if cursor is in the screen and print it if needed.
-  if (cursor.file_id.absolute_row >= screen_y && cursor.file_id.absolute_row < screen_y + line_count
-      && cursor.line_id.absolute_column >= screen_x - 1 && cursor.line_id.absolute_column <= screen_x + column_count - 3) {
+  if (cursor.file_id.absolute_row >= screen_y && cursor.file_id.absolute_row < screen_y + line_count &&
+      cursor.line_id.absolute_column >= screen_x - 1 && cursor.line_id.absolute_column <= screen_x + column_count - 3) {
     int x = getScreenXForCursor(cursor, screen_x);
     wmove(gui_context->ftw, cursor.file_id.absolute_row - screen_y, x);
 
@@ -272,8 +274,8 @@ void printEditor(GUIContext* gui_context, Cursor cursor, Cursor select_cursor, i
 
     // ===============  Print File Content  ===============
 
-    printEditor_printFileContent(gui_context, cursor, select_cursor, screen_x, highlight_descriptor, file_cur, column_count,
-                                 &whd_offset);
+    printEditor_printFileContent(gui_context, cursor, select_cursor, screen_x, highlight_descriptor, file_cur,
+                                 column_count, &whd_offset);
   }
 
   // ===============  Print Cursor  ===============
@@ -334,10 +336,11 @@ void printOpenedFile(GUIContext* gui_context, FileContainer* files, int file_cou
 }
 
 
-void internalPrintExplorerRec(ExplorerFolder* folder, WINDOW* few, int* few_x_offset, int* few_y_offset, int tree_offset_rec,
-                              int* selected_line) {
+void internalPrintExplorerRec(ExplorerFolder* folder, WINDOW* few, int* few_x_offset, int* few_y_offset,
+                              int tree_offset_rec, int* selected_line) {
   // Don't print if not in window.
-  if (getcury(few) + 1 >= getmaxy(few)) return;
+  if (getcury(few) + 1 >= getmaxy(few))
+    return;
 
   if (folder->open && folder->discovered == false) {
     discoverFolder(folder);
@@ -356,8 +359,10 @@ void internalPrintExplorerRec(ExplorerFolder* folder, WINDOW* few, int* few_x_of
     }
 
     // Print decoration of folder. The decoration describe if the folder is open or not.
-    if (folder->open) printToNcursesNCharFromString(few, "⌄", getmaxx(few) - (getcurx(few) + 1));
-    else printToNcursesNCharFromString(few, "›", getmaxx(few) - (getcurx(few) + 1));
+    if (folder->open)
+      printToNcursesNCharFromString(few, "⌄", getmaxx(few) - (getcurx(few) + 1));
+    else
+      printToNcursesNCharFromString(few, "›", getmaxx(few) - (getcurx(few) + 1));
 
     printToNcursesNCharFromString(few, "📁", getmaxx(few) - (getcurx(few) + 1));
     printToNcursesNCharFromString(few, basename(folder->path), getmaxx(few) - (getcurx(few) + 1));
@@ -378,13 +383,14 @@ void internalPrintExplorerRec(ExplorerFolder* folder, WINDOW* few, int* few_x_of
 
   // Print sub folders
   for (int i = 0; i < folder->folder_count; i++) {
-    internalPrintExplorerRec(folder->folders + i, few, few_x_offset, few_y_offset, tree_offset_rec + FILE_EXPLORER_TREE_OFFSET,
-                             selected_line);
+    internalPrintExplorerRec(folder->folders + i, few, few_x_offset, few_y_offset,
+                             tree_offset_rec + FILE_EXPLORER_TREE_OFFSET, selected_line);
   }
   // Print sub files
   for (int i = 0; i < folder->file_count; i++) {
     // Don't print if not in window.
-    if (getcury(few) + 1 >= getmaxy(few)) return;
+    if (getcury(few) + 1 >= getmaxy(few))
+      return;
 
     (*selected_line)--;
     if (*few_y_offset == 0) {
@@ -392,7 +398,8 @@ void internalPrintExplorerRec(ExplorerFolder* folder, WINDOW* few, int* few_x_of
       if (*selected_line == 0) {
         wattron(few, A_STANDOUT);
       }
-      for (int j = 0; j < tree_offset_rec + FILE_EXPLORER_TREE_OFFSET + 1/*Add one to balance with the folder decoration*/; j++) {
+      for (int j = 0;
+           j < tree_offset_rec + FILE_EXPLORER_TREE_OFFSET + 1 /*Add one to balance with the folder decoration*/; j++) {
         printToNcursesNCharFromString(few, " ", getmaxx(few) - (getcurx(few) + 1));
       }
       printToNcursesNCharFromString(few, "📄", getmaxx(few) - (getcurx(few) + 1));
@@ -474,17 +481,20 @@ void moveScreenToMatchCursor(WINDOW* w, Cursor cursor, int* screen_x, int* scree
 
   if (cursor.file_id.absolute_row - (*screen_y + current_lines) + 1 >= 0) {
     *screen_y = cursor.file_id.absolute_row - current_lines + 2;
-    if (*screen_y < 1) *screen_y = 1;
+    if (*screen_y < 1)
+      *screen_y = 1;
   }
   else if (cursor.file_id.absolute_row < *screen_y + 1) {
     *screen_y = cursor.file_id.absolute_row - 1;
-    if (*screen_y < 1) *screen_y = 1;
+    if (*screen_y < 1)
+      *screen_y = 1;
   }
 
   int screen_x_wide_char = getScreenXForCursor(cursor, *screen_x) + *screen_x;
   if (screen_x_wide_char - (*screen_x + current_columns - 8) >= 0) {
     *screen_x = screen_x_wide_char - current_columns + 8;
-    if (*screen_x < 1) *screen_x = 1;
+    if (*screen_x < 1)
+      *screen_x = 1;
   }
   else if (screen_x_wide_char - 5 < *screen_x) {
     *screen_x = screen_x_wide_char - 5;
@@ -522,8 +532,8 @@ int getScreenXForCursor(Cursor cursor, int screen_x) {
   cursor = moveLeft(cursor);
 
 
-  while (screen_x <= cursor.line_id.absolute_column && areCursorEqual(cursor, old_cursor) == false
-         && cursor.file_id.absolute_row == old_cursor.file_id.absolute_row) {
+  while (screen_x <= cursor.line_id.absolute_column && areCursorEqual(cursor, old_cursor) == false &&
+         cursor.file_id.absolute_row == old_cursor.file_id.absolute_row) {
     assert(cursor.line_id.absolute_column != 0);
     Char_U8 current_ch = getCharForLineIdentifier(cursor.line_id);
     if ((size = charPrintSize(current_ch)) >= 2) {
@@ -546,7 +556,8 @@ LineIdentifier getLineIdForScreenX(LineIdentifier line_id, int screen_x, int x_c
   while (hasElementAfterLine(line_id) == true && current_column <= x_click) {
     line_id = tryToReachAbsColumn(line_id, line_id.absolute_column + 1);
     int size = charPrintSize(getCharForLineIdentifier(line_id));
-    if (size <= 0) size = 1; // TODO handle non UTF_8 char.
+    if (size <= 0)
+      size = 1; // TODO handle non UTF_8 char.
     current_column += size;
     x_el++;
   }
@@ -558,6 +569,4 @@ LineIdentifier getLineIdForScreenX(LineIdentifier line_id, int screen_x, int x_c
 }
 
 
-void setDesiredColumn(Cursor cursor, int* desired_column) {
-  *desired_column = cursor.line_id.absolute_column;
-}
+void setDesiredColumn(Cursor cursor, int* desired_column) { *desired_column = cursor.line_id.absolute_column; }

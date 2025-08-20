@@ -6,6 +6,22 @@
 
 ## 1. Introduction
 
+```c
+int test;
+
+void main(int argc, char**args){
+
+
+	for(int i = 0 ; i < 100 ; i++){
+
+		printf("Hello World !");
+
+	}
+
+	return 0;
+}
+```
+
 Dans le cadre de ma formation à l'Ensimag, j'ai eu à réaliser un stage en entreprise pour découvrir le métier
 d'ingénieur.
 
@@ -65,7 +81,8 @@ La gamme Promixa contient **12** logiciels (ou *modules*) visant des domaines tr
 <p style="margin-bottom:0;">Un point important à noter est le rôle de l'équipe de développement :</p>
 <center style="margin:0">
 *"corrigent, maintiennent et font évoluer les logiciels"*
-</center>
+<center/>
+
 <p style="margin-top:0;">
 En effet la base des logiciels n'est pas développé directement par AGEDI, le socle du code est sous-traité
 a des entreprises spécialisées dans le développement rapide et à faible coût de logiciels. 
@@ -73,11 +90,15 @@ Une fois la base de code reçu le logiciel est intégré à l'infrastructure de 
 ajustements. Une fois en production le logiciel est susceptible de recevoir un certains nombre de correctifs et d'évolutions
 basé sur le retour d'utilisation des adhérents.\
 Le suivis des logiciels est divisé en **5** unités de 3 à 7 personnes, qui sont chargés du suivis de 3 à 4 modules.
-</p>
+
+<p/>
 
 
 <p style="margin-bottom:0;">Dans mon cas j'ai rejoins l'unité **Facturation / Cimetière** qui gère les modules suivants : </p>
-<center style="margin:0;">**CIM**, **EAU**, **FAC**, **REGIE**, et le petit dernier **CIM-FR**.</center>
+<center style="margin:0;"> 
+
+**CIM**, **EAU**, **FAC**, **REGIE**, et le petit dernier **CIM-FR**. 
+<center/>
 <p style="margin-top:0;">
 **CIM** est le dernier module mit en production début 2025, de nombreuses evolutions logicielles ont été rescencés pour répondre
 au besoin des adhérents. \
@@ -118,8 +139,6 @@ C'est dans ce contexte que j'ai rejoins AGEDI en tant que stagiaire pour un peu 
 		line-height: 25px;
 		text-align: justify;
 	}
-	
-	
 </style>
 
 

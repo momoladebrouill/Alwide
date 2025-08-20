@@ -54,8 +54,8 @@ bool tphd_isCursorAfter(TextPartHighlightDescriptor* self, Cursor cursor);
 
 void whd_init(WindowHighlightDescriptor* self);
 
-void whd_insertDescriptor(WindowHighlightDescriptor* self, Cursor begin, Cursor end, NCURSES_PAIRS_T color, attr_t attributes,
-                          uint16_t priority, bool override_attributes);
+void whd_insertDescriptor(WindowHighlightDescriptor* self, Cursor begin, Cursor end, NCURSES_PAIRS_T color,
+                          attr_t attributes, uint16_t priority, bool override_attributes);
 
 void whd_print(WindowHighlightDescriptor* self);
 
@@ -63,11 +63,11 @@ void whd_reset(WindowHighlightDescriptor* self);
 
 void whd_free(WindowHighlightDescriptor* self);
 
-TextPartHighlightDescriptor* whd_tphd_forCursorWithOffsetIndex(WindowHighlightDescriptor* highlight_descriptor, Cursor cursor,
-                                                             int* offset_index);
+TextPartHighlightDescriptor* whd_tphd_forCursorWithOffsetIndex(WindowHighlightDescriptor* highlight_descriptor,
+                                                               Cursor cursor, int* offset_index);
 
 ////// ---------------- COLOR FUNCTIONS ---------------
 
 void initColorsForTheme(HighlightThemeList theme_list, int* color_index, int* color_pair);
 
-#endif //HIGHLIGHT_H
+#endif // HIGHLIGHT_H

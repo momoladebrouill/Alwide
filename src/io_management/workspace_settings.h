@@ -27,9 +27,8 @@ typedef struct {
 } WorkspaceSettings;
 
 
-
-
-void getWorkspaceSettingsForCurrentDir(WorkspaceSettings* settings, FileContainer* files, int file_count, int current_file, bool showing_opened_file_window,
+void getWorkspaceSettingsForCurrentDir(WorkspaceSettings* settings, FileContainer* files, int file_count,
+                                       int current_file, bool showing_opened_file_window,
                                        bool showing_file_explorer_window, int file_explorer_size);
 
 void destroyWorkspaceSettings(WorkspaceSettings* settings);
@@ -42,7 +41,8 @@ cJSON* WorkspaceSettingsToJSON(WorkspaceSettings* settings);
 
 void JSONToWorkspaceSettings(WorkspaceSettings* settings, cJSON* json);
 
-void setupWorkspace(WorkspaceSettings *loaded_settings, int* file_count, char*** file_names, GUIContext* gui_context, int* current_file_index) ;
+void setupWorkspace(WorkspaceSettings* loaded_settings, int* file_count, char*** file_names, GUIContext* gui_context,
+                    int* current_file_index);
 
 
-#endif //DIR_SETTINGS_H
+#endif // DIR_SETTINGS_H

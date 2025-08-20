@@ -3,9 +3,11 @@
 #include <regex.h>
 #include <stdbool.h>
 
-#include "tree_manager.h"
+#include "../../../lib/cJSON/cJSON.h"
 #include "../../../lib/tree-sitter/lib/include/tree_sitter/api.h"
+#include "../../utils/constants.h"
 #include "../../utils/tools.h"
+#include "tree_manager.h"
 
 typedef struct PredicateStream {
   const TSQueryPredicateStep* predicates;
@@ -18,24 +20,34 @@ typedef struct {
   TSQueryMatch qmatch;
   PredicateStream* stream;
   Cursor* tmp;
-  RegexMap *regex_map;
+  RegexMap* regex_map;
+  cJSON* predicate_result;
 } ProcessPredicatePayload;
+
+typedef struct {
+  TSNode content_node;
+  char lang_id[LANG_ID_LENGTH];
+} InjectionDescriptor;
 
 ///// -------- QUERY --------
 
 
 void printQueryLoadError(uint32_t error_offset, TSQueryError error_type);
 
-bool TSQueryCursorNextMatchWithPredicates(Cursor* tmp, TSQuery* query, TSQueryCursor* qcursor, TSQueryMatch* qmatch, RegexMap *regex_map);
+bool TSQueryCursorNextMatchWithPredicates(Cursor* tmp, TSQuery* query, TSQueryCursor* qcursor, TSQueryMatch* qmatch,
+                                          RegexMap* regex_map, InjectionDescriptor* injection);
 
 ///// -------- QUERY TOOLS --------
 
 String getCaptureString(TSQuery* query, uint32_t index);
 
-bool isStringEqualToNodeContent(Cursor *tmp, String str, TSNode node);
+bool isStringEqualToNodeContent(Cursor* tmp, String str, TSNode node);
 
 bool isRegexMatchingToNodeContent(Cursor* tmp, regex_t regex, TSNode node);
 
+void injection_init(InjectionDescriptor* self);
+bool injection_isActive(InjectionDescriptor* self);
+void injection_print(InjectionDescriptor* self, Cursor* cursor);
 
 ///// -------- STREAM --------
 
@@ -55,4 +67,4 @@ TSQueryPredicateStep predicates_consumeString(PredicateStream* self, TSQuery* qu
 
 void predicates_consumeEND(PredicateStream* self);
 
-#endif //TREE_QUERY_H
+#endif // TREE_QUERY_H

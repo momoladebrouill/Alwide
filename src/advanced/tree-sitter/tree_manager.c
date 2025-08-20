@@ -11,6 +11,7 @@
 #include "../../../lib/tree-sitter/lib/include/tree_sitter/api.h"
 #include "../../terminal/highlight.h"
 #include "../../utils/constants.h"
+#include "../../utils/global-variables.h"
 #include "../../utils/tools.h"
 #include "../tree-sitter/tree_query.h"
 
@@ -31,7 +32,6 @@ void destroyParserList(ParserList* list) {
     ts_parser_delete(list->list[i].parser);
     ts_language_delete(list->list[i].lang);
     ts_query_delete(list->list[i].queries);
-    ts_query_cursor_delete(list->list[i].cursor);
     destroyRegexMap(&list->list[i].regex_map);
     destroyThemeList(&list->list[i].theme_list);
   }
@@ -58,7 +58,8 @@ ParserContainer* getParserForLanguage(ParserList* list, char* language) {
   return list->list + list->size - 1;
 }
 
-TSQuery* loadQueries(const ParserContainer* container, char path[PATH_MAX], uint32_t* error_offset, TSQueryError* error_type) {
+TSQuery* loadQueries(const ParserContainer* container, char path[PATH_MAX], uint32_t* error_offset,
+                     TSQueryError* error_type) {
   long length;
   char* source = loadFullFile(path, &length);
   TSQuery* queries = ts_query_new(container->lang, source, length, error_offset, error_type);
@@ -125,29 +126,23 @@ void getTSLanguageFromString(const TSLanguage** lang, char* language) {
   else if (strcmp(language, "html") == 0) {
     *lang = tree_sitter_html();
   }
-}
-
-bool hasTSLanguageImplementation(char* language) {
-  // ADD_NEW_LANGUAGE
-  return strcmp(language, "c") == 0 || strcmp(language, "python") == 0 || strcmp(language, "markdown") == 0 ||
-    strcmp(language, "markdown_inline") == 0 || strcmp(language, "java") == 0 || strcmp(language, "cpp") == 0 ||
-    strcmp(language, "c-sharp") == 0 || strcmp(language, "make") == 0 || strcmp(language, "css") == 0 ||
-    strcmp(language, "dart") == 0 || strcmp(language, "go") == 0 || strcmp(language, "javascript") == 0 ||
-    strcmp(language, "json") == 0 || strcmp(language, "bash") == 0 || strcmp(language, "query") == 0 ||
-    strcmp(language, "lua") == 0 || strcmp(language, "vhdl") == 0 || strcmp(language, "asm") == 0 ||
-    strcmp(language, "html") == 0;
+  else {
+    *lang = NULL;
+  }
 }
 
 
 bool loadNewParser(ParserContainer* container, char* language) {
-  if (!hasTSLanguageImplementation(language)) {
-    return false;
-  }
   // Set file name
   strcpy(container->lang_id, language);
 
   // Getting TSLanguage
   getTSLanguageFromString(&container->lang, language);
+
+  if (container->lang == NULL) {
+    fprintf(stderr, "Language : '%s' wasn't implemented !\n", container->lang_id);
+    return false;
+  }
 
   // Fetching the folder where to load theme and queries.
   char* load_path = cJSON_GetStringValue(cJSON_GetObjectItem(config, "default_path"));
@@ -180,9 +175,6 @@ bool loadNewParser(ParserContainer* container, char* language) {
   // Setup regex map for #match? predicate
   initRegexMap(&container->regex_map);
 
-  // Allocating a TSQueryCursor
-  container->cursor = ts_query_cursor_new();
-
   // Post processing
   initColorsForTheme(container->theme_list, &color_index, &color_pair);
 
@@ -212,7 +204,7 @@ PayloadStateChange getPayloadStateChange(FileHighlightDatas* highlight_datas) {
 }
 
 void onStateChangeTS(Action action, long* payload_p) {
-  PayloadStateChange payload = *(PayloadStateChange *)payload_p;
+  PayloadStateChange payload = *(PayloadStateChange*)payload_p;
 
   if (payload.highlight_datas->is_active == false) {
     return;
@@ -235,7 +227,7 @@ void onStateChangeTS(Action action, long* payload_p) {
       edit.new_end_byte = action.byte_end;
       edit.new_end_point.row = action.cur_end.file_id.absolute_row - 1;
       edit.new_end_point.column = action.cur_end.line_id.absolute_column;
-    // To force the match with previous node.
+      // To force the match with previous node.
       break;
     case DELETE:
       // system("echo \"=== DELETE ===\" >> tree_logs.txt");
@@ -246,8 +238,8 @@ void onStateChangeTS(Action action, long* payload_p) {
 
       edit.old_end_byte = action.byte_end;
 
-    // TODO may optimize
-    // CALCULATE ROW AND COLUMN POINT
+      // TODO may optimize
+      // CALCULATE ROW AND COLUMN POINT
       char* ch = action.ch;
       int current_row = edit.start_point.row;
       int current_column = edit.start_point.column;
@@ -276,7 +268,7 @@ void onStateChangeTS(Action action, long* payload_p) {
       edit.new_end_byte = action.byte_start;
       edit.new_end_point.row = edit.start_point.row;
       edit.new_end_point.column = edit.start_point.column;
-    // To force the match with previous node.
+      // To force the match with previous node.
       break;
     case DELETE_ONE:
       // system("echo \"=== DELETE_ONE ===\" >> tree_logs.txt");
@@ -299,7 +291,7 @@ void onStateChangeTS(Action action, long* payload_p) {
       edit.new_end_byte = action.byte_start;
       edit.new_end_point.row = edit.start_point.row;
       edit.new_end_point.column = edit.start_point.column;
-    // To force the match with previous node.
+      // To force the match with previous node.
 
       break;
     default:
@@ -341,12 +333,14 @@ char read_buffer[CHAR_CHUNK_SIZE_TSINPUT * 4];
 const char* internalReaderForTree(void* payload, uint32_t byte_index, TSPoint position, uint32_t* bytes_read) {
   PayloadInternalReader* values = payload;
   // fprintf(stderr, "READ FROM READER\n");
-  *bytes_read = readNu8CharAtPosition(&values->cursor, position.row, position.column, read_buffer, CHAR_CHUNK_SIZE_TSINPUT);
+  *bytes_read =
+    readNu8CharAtPosition(&values->cursor, position.row, position.column, read_buffer, CHAR_CHUNK_SIZE_TSINPUT);
   return read_buffer;
 }
 
 
-void parseTree(FileNode** root, History** history_frame, FileHighlightDatas* highlight_data, History** old_history_frame) {
+void parseTree(FileNode** root, History** history_frame, FileHighlightDatas* highlight_data,
+               History** old_history_frame) {
   if (highlight_data->is_active == false)
     return;
 
@@ -354,11 +348,7 @@ void parseTree(FileNode** root, History** history_frame, FileHighlightDatas* hig
 
   Cursor cursor_root = moduloCursorR(*root, 1, 0);
 
-
   PayloadInternalReader reader_payload;
-  reader_payload.file = NULL;
-  reader_payload.size = 0;
-  reader_payload.root = *root;
   reader_payload.cursor = cursor_root;
 
   TSInput input;
@@ -370,11 +360,7 @@ void parseTree(FileNode** root, History** history_frame, FileHighlightDatas* hig
   t = clock();
 
   TSTree* old_tree = highlight_data->tree;
-  highlight_data->tree = ts_parser_parse(
-    parser->parser,
-    highlight_data->tree,
-    input
-  );
+  highlight_data->tree = ts_parser_parse(parser->parser, highlight_data->tree, input);
   ts_tree_delete(old_tree);
 
 
@@ -415,4 +401,28 @@ bool getRegexForRegexId(const RegexMap* regex_map, uint32_t regex_id, regex_t* r
   }
 
   return false;
+}
+
+
+char* getNodeContent(TSNode node, Cursor* cursor) {
+  uint32_t content_length = ts_node_end_byte(node) - ts_node_start_byte(node);
+  if (content_length == 0) {
+    return NULL;
+  }
+
+  char* content = malloc(content_length + 1);
+  if (!content) {
+    return NULL;
+  }
+  fillWithNodeContent(node, cursor, content, content_length + 1);
+  return content;
+}
+
+int fillWithNodeContent(TSNode node, Cursor* cursor, char* content, int length) {
+  uint32_t content_length = ts_node_end_byte(node) - ts_node_start_byte(node);
+  length = min(length, content_length + 1);
+  TSPoint start_point = ts_node_start_point(node);
+  readNBytesAtPosition(cursor, start_point.row, start_point.column, content, length);
+  content[content_length] = '\0';
+  return length;
 }

@@ -1,5 +1,5 @@
 CC=clang-18
-CFLAGS=-g # -fsanitize=address # -lncurses # -Wall -Wextra -Werror -gdwarf-4
+CFLAGS=-g -O3 # -fsanitize=address # -lncurses # -Wall -Wextra -Werror -gdwarf-4
 #CFLAGS=-g -fsanitize=address # -lncurses # -Wall -Wextra -Werror -gdwarf-4
 
 executable= al # lsp_test #test_line.o test_file.o  test_line test_file  # utils/debug.o

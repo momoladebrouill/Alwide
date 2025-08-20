@@ -1,101 +1,99 @@
-(string_literal) @string
-(system_lib_string) @string
-
-((identifier) @constant
- (#match? @constant "^[A-Z][A-Z\\d_]*$"))
-
+; Functions
 
 (call_expression
-  function: (identifier) @function)
-(call_expression:
-  function: (field_expression
-    field: (field_identifier) @function))
+	function: (qualified_identifier
+							name: (identifier) @function))
+
+(template_function
+	name: (identifier) @function)
+
+(template_method
+	name: (field_identifier) @function)
+
+(template_function
+	name: (identifier) @function)
+
 (function_declarator
-  declarator: (identifier) @function)
-(preproc_function_def
-  name: (identifier) @function.special)
+	declarator: (qualified_identifier
+								name: (identifier) @function))
 
-(identifier) @variable
+(function_declarator
+	declarator: (field_identifier) @function)
 
+; Types
 
-"double" @keyword
-"break" @keyword
-"case" @keyword
-"const" @keyword
-"continue" @keyword
-"default" @keyword
-"do" @keyword
-"else" @keyword
-"enum" @keyword
-"extern" @keyword
-"for" @keyword
-"if" @keyword
-"inline" @keyword
-"return" @keyword
-"sizeof" @keyword
-"static" @keyword
-"struct" @keyword
-"switch" @keyword
-"typedef" @keyword
-"union" @keyword
-"volatile" @keyword
-"while" @keyword
+((namespace_identifier) @type
+	(#match? @type "^[A-Z]"))
 
-"true" @keyword
-"false" @keyword
+(auto) @type
+
+; Constants
+
+(this) @variable.builtin
+(null "nullptr" @constant)
+
+; Modules
+(module_name
+	(identifier) @module)
+
+; Keywords
 
 [
-	"char"
-	"int"
-	"long"
-	"byte"
-	"unsigned"
-	"void"
-	"goto"
-	"bool"
-] @keyword
+	"catch"
+	"class"
+	"co_await"
+	"co_return"
+	"co_yield"
+	"constexpr"
+	"constinit"
+	"consteval"
+	"delete"
+	"explicit"
+	"final"
+	"friend"
+	"mutable"
+	"namespace"
+	"noexcept"
+	"new"
+	"override"
+	"private"
+	"protected"
+	"public"
+	"template"
+	"throw"
+	"try"
+	"typename"
+	"using"
+	"concept"
+	"requires"
+	"virtual"
+	"import"
+	"export"
+	"module"
+	] @keyword
 
-"#define" @keyword
-"#elif" @keyword
-"#else" @keyword
-"#endif" @keyword
-"#if" @keyword
-"#ifdef" @keyword
-"#ifndef" @keyword
-"#include" @keyword
-(preproc_directive) @keyword
+; Strings
 
-"--" @operator
-"-" @operator
-"-=" @operator
-"->" @operator
-"=" @operator
-"!=" @operator
-"*" @operator
-"&" @operator
-"&&" @operator
-"+" @operator
-"++" @operator
-"+=" @operator
-"<" @operator
-"==" @operator
-">" @operator
-"||" @operator
-
-"." @delimiter
-";" @delimiter
+(raw_string_literal) @string
 
 
-
-(null) @constant
-(number_literal) @number
-(char_literal) @number
-
-(field_identifier) @property
-(statement_identifier) @label
-(type_identifier) @type
-(primitive_type) @type
-(sized_type_specifier) @type
+(raw_string_literal
+	delimiter: (raw_string_delimiter) @injection.language
+	(raw_string_content) @injection.content)
 
 
-(comment) @comment
+(struct_specifier name: (type_identifier) @name body:(_)) @type
+
+(declaration type: (union_specifier name: (type_identifier) @name)) @type
+
+(function_declarator declarator: (identifier) @name) @function
+
+(function_declarator declarator: (field_identifier) @name) @function
+
+(function_declarator declarator: (qualified_identifier scope: (namespace_identifier) @local.scope name: (identifier) @name)) @method
+
+(type_definition declarator: (type_identifier) @name) @type
+
+(enum_specifier name: (type_identifier) @name) @type
+
+(class_specifier name: (type_identifier) @name) @type

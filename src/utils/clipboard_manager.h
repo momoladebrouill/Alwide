@@ -11,4 +11,4 @@ bool saveToClipBoard(Cursor begin, Cursor end);
 
 Cursor loadFromClipBoard(Cursor cursor);
 
-#endif //CLIPBOARD_MANAGER_H
+#endif // CLIPBOARD_MANAGER_H

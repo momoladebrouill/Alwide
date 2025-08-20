@@ -2,7 +2,6 @@
 
 #include "key_management.h"
 
-#include "constants.h"
 #include "tools.h"
 
 time_val lastPress = 0;
@@ -64,8 +63,10 @@ void detectComplexMouseEvents(MEVENT* event) {
     event->bstate |= BUTTON1_CLICKED;
   }
   else if (event->bstate & BUTTON1_RELEASED || event->bstate & BUTTON1_PRESSED) {
-    if (diff2Time(current_time, lastPress) < TIME_BETWEEN_EVENT && event->x == last_press_x && event->y == last_press_y) {
-      if (event->bstate & BUTTON1_RELEASED && diff2Time(current_time, lastClick) < 2 * TIME_BETWEEN_EVENT && event->x == last_clicked_x && event->y == last_clicked_y) {
+    if (diff2Time(current_time, lastPress) < TIME_BETWEEN_EVENT && event->x == last_press_x &&
+        event->y == last_press_y) {
+      if (event->bstate & BUTTON1_RELEASED && diff2Time(current_time, lastClick) < 2 * TIME_BETWEEN_EVENT &&
+          event->x == last_clicked_x && event->y == last_clicked_y) {
         event->bstate |= BUTTON1_DOUBLE_CLICKED;
         event->bstate = event->bstate & ~BUTTON1_CLICKED;
       }
@@ -78,9 +79,8 @@ void detectComplexMouseEvents(MEVENT* event) {
   }
 
   // if (event->bstate & BUTTON1_CLICKED) {
-  // if (diff2Time(current_time, lastClick) < 2 * TIME_BETWEEN_EVENT && event->x == last_clicked_x && event->y == last_clicked_y) {
-  // event->bstate |= BUTTON1_DOUBLE_CLICKED;
-  // event->bstate = event->bstate & ~BUTTON1_CLICKED;
+  // if (diff2Time(current_time, lastClick) < 2 * TIME_BETWEEN_EVENT && event->x == last_clicked_x && event->y ==
+  // last_clicked_y) { event->bstate |= BUTTON1_DOUBLE_CLICKED; event->bstate = event->bstate & ~BUTTON1_CLICKED;
   // }
   // }
   // write(STDOUT_FILENO, "\x1b[2J", 4);
@@ -116,10 +116,11 @@ void detectComplexMouseEvents(MEVENT* event) {
   // printf("--------------\r\n");
 
 
-  // fprintf(stderr, "Mouse_event : %d, (%d, %d, %d), id: %d\n", event->bstate, event->x, event->y, event->z, event->id);
+  // fprintf(stderr, "Mouse_event : %d, (%d, %d, %d), id: %d\n", event->bstate, event->x, event->y, event->z,
+  // event->id);
 
-  // TODO upgrade detectComplex event to release the scroll. On some machines mouse_mouvement keep sending the 'state' of a button
-  // like if a button wasn't release the mouse mouve will keep emitting the button down.
+  // TODO upgrade detectComplex event to release the scroll. On some machines mouse_mouvement keep sending the 'state'
+  // of a button like if a button wasn't release the mouse mouve will keep emitting the button down.
   if (event->bstate & BUTTON4_PRESSED) {
     MEVENT tmp_event;
     tmp_event.bstate = BUTTON4_RELEASED;

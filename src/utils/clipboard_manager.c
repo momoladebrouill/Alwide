@@ -1,14 +1,14 @@
 #include "clipboard_manager.h"
 
 #include <ctype.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <linux/prctl.h>
+#include <stdlib.h>
 #include <sys/poll.h>
 #include <sys/prctl.h>
 #include <sys/wait.h>
-#include "constants.h"
+#include <unistd.h>
 #include "../data-management/file_management.h"
+#include "constants.h"
 
 int xclip = -1;
 int wl_copy = -1;
@@ -18,9 +18,7 @@ char* wl_copy_path;
 char* wl_paste_path;
 
 
-void createClipBoardTmpDir() {
-  mkdir_p(CLIPBOARD_PATH, 0777);
-}
+void createClipBoardTmpDir() { mkdir_p(CLIPBOARD_PATH, 0777); }
 
 void updateXClipVars() {
   if (xclip == -1) {
@@ -164,7 +162,7 @@ Cursor loadFromClipBoard(Cursor cursor) {
 
         prctl(PR_SET_PDEATHSIG, SIGTERM);
 
-        execl(xclip_path, xclip_path,"-selection", "clipboard", "-out", NULL);
+        execl(xclip_path, xclip_path, "-selection", "clipboard", "-out", NULL);
 
         close(pipe_read[0]);
         close(pipe_read[1]);

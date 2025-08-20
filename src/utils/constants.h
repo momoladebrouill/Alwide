@@ -1,14 +1,9 @@
 #ifndef CONTANTS_H
 #define CONTANTS_H
 
-#include "../advanced/tree-sitter/tree_manager.h"
-#include "../advanced/lsp/lsp_handler.h"
-#include "../io_management/workspace_settings.h"
-#include "../terminal/highlight.h"
-
+#define LANG_ID_LENGTH 100
 
 // #define PARSE_PRINT
-
 
 #define SCROLL_SPEED 3
 #define NO_EVENT_MOUSE 268435456
@@ -36,10 +31,4 @@
 extern int color_index;
 extern int color_pair;
 
-extern cJSON *config;
-extern ParserList parsers;
-extern LSPServerLinkedList lsp_servers;
-extern WorkspaceSettings loaded_settings;
-
-
-#endif //CONTANTS_H
+#endif // CONTANTS_H

@@ -15,6 +15,6 @@ bool configExist();
 
 void touchConfig();
 
-cJSON *loadConfig();
+cJSON* loadConfig();
 
-#endif //CONFIG_H
+#endif // CONFIG_H

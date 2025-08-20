@@ -5,10 +5,10 @@
 #include <string.h>
 #include <time.h>
 
-#include "term_handler.h"
 #include "../advanced/tree-sitter/tree_query.h"
 #include "../data-management/file_structure.h"
 #include "../utils/constants.h"
+#include "term_handler.h"
 
 
 void tphd_init(TextPartHighlightDescriptor* self, FilePosition begin, FilePosition end) {
@@ -20,14 +20,8 @@ void tphd_init(TextPartHighlightDescriptor* self, FilePosition begin, FilePositi
   self->color_priority = 0;
 
   self->attributes = A_NORMAL;
-  self->a_blink_priority =
-      self->a_bold_priority =
-      self->a_dim_priority =
-      self->a_invis_priority =
-      self->a_italic_priority =
-      self->a_protect_priority =
-      self->a_reverse_priority =
-      self->a_standout_priority =
+  self->a_blink_priority = self->a_bold_priority = self->a_dim_priority = self->a_invis_priority =
+    self->a_italic_priority = self->a_protect_priority = self->a_reverse_priority = self->a_standout_priority =
       self->a_underline_priority = 0;
 }
 
@@ -41,8 +35,8 @@ bool tphd_isCursorIn(TextPartHighlightDescriptor* self, Cursor cursor) {
   int row_end = self->end.abs_row;
   int column_end = self->end.abs_column;
 
-  return (row_start < row || (row_start == row && column_start <= column))
-         && (row < row_end || (row == row_end && column <= column_end));
+  return (row_start < row || (row_start == row && column_start <= column)) &&
+    (row < row_end || (row == row_end && column <= column_end));
 }
 
 bool tphd_isCursorAfter(TextPartHighlightDescriptor* self, Cursor cursor) {
@@ -67,13 +61,13 @@ void whd_init(WindowHighlightDescriptor* self) {
 
 
 bool isPositionBeforePosition(FilePosition cursor, FilePosition position) {
-  return position.abs_row > cursor.abs_row || (
-           position.abs_row == cursor.abs_row && position.abs_column > cursor.abs_column);
+  return position.abs_row > cursor.abs_row ||
+    (position.abs_row == cursor.abs_row && position.abs_column > cursor.abs_column);
 }
 
 bool isPositionAfterPosition(FilePosition cursor, FilePosition position) {
-  return cursor.abs_row > position.abs_row || (
-           position.abs_row == cursor.abs_row && cursor.abs_column > position.abs_column);
+  return cursor.abs_row > position.abs_row ||
+    (position.abs_row == cursor.abs_row && cursor.abs_column > position.abs_column);
 }
 
 bool isPositionAfterOrEqualPosition(FilePosition cursor, FilePosition position) {
@@ -96,8 +90,8 @@ FilePosition minPosition(FilePosition pos1, FilePosition pos2) {
   return pos2;
 }
 
-void tphd_mergeAttributes(TextPartHighlightDescriptor* self, NCURSES_PAIRS_T color, attr_t attributes, uint16_t priority,
-                          bool override_attributes) {
+void tphd_mergeAttributes(TextPartHighlightDescriptor* self, NCURSES_PAIRS_T color, attr_t attributes,
+                          uint16_t priority, bool override_attributes) {
   if (self->color_priority <= priority) {
     self->color = color;
     self->color_priority = priority;
@@ -187,11 +181,12 @@ void tphd_mergeAttributes(TextPartHighlightDescriptor* self, NCURSES_PAIRS_T col
 }
 
 
-void whd_insertDescriptor(WindowHighlightDescriptor* self, Cursor begin, Cursor end, NCURSES_PAIRS_T color, attr_t attributes,
-                          uint16_t priority, bool override_attributes) {
+void whd_insertDescriptor(WindowHighlightDescriptor* self, Cursor begin, Cursor end, NCURSES_PAIRS_T color,
+                          attr_t attributes, uint16_t priority, bool override_attributes) {
   FilePosition current_pos = {begin.file_id.absolute_row, begin.line_id.absolute_column};
   FilePosition end_pos = {end.file_id.absolute_row, end.line_id.absolute_column};
-  // fprintf(stderr, "insert (%d, %d) -> (%d, %d)\n", current_pos.abs_row, current_pos.abs_column, end_pos.abs_row, end_pos.abs_column);
+  // fprintf(stderr, "insert (%d, %d) -> (%d, %d)\n", current_pos.abs_row, current_pos.abs_column, end_pos.abs_row,
+  // end_pos.abs_column);
 
   // reach the WindowHighlightDescriptor position
   int i = 0;
@@ -237,7 +232,8 @@ void whd_insertDescriptor(WindowHighlightDescriptor* self, Cursor begin, Cursor 
       }
 
       if (self->size - i - 1 > 0) {
-        memmove(self->descriptors + i + 1, self->descriptors + i, sizeof(TextPartHighlightDescriptor) * (self->size - i - 1));
+        memmove(self->descriptors + i + 1, self->descriptors + i,
+                sizeof(TextPartHighlightDescriptor) * (self->size - i - 1));
       }
 
       tphd_init(self->descriptors + i, current_pos, new_field_end);
@@ -290,16 +286,15 @@ void whd_insertDescriptor(WindowHighlightDescriptor* self, Cursor begin, Cursor 
       if (after_offset) {
         // should happen max once !
         Cursor begin_after = moveRight(tryToReachAbsPosition(begin, new_field_end.abs_row, new_field_end.abs_column));
-        self->descriptors[i + middle_offset + 1].begin = (FilePosition){
-          begin_after.file_id.absolute_row, begin_after.line_id.absolute_column
-        };
+        self->descriptors[i + middle_offset + 1].begin =
+          (FilePosition){begin_after.file_id.absolute_row, begin_after.line_id.absolute_column};
       }
       i += 1 + increase_size;
     }
 
     // if positions are equals we assume that this is the end
-    // why do we need this ?, if we reach the end of the file, moveRight can not work and the condition positions equals could lead
-    // to and infinite loop.
+    // why do we need this ?, if we reach the end of the file, moveRight can not work and the condition positions equals
+    // could lead to and infinite loop.
     if (arePositionEquals(current_pos, end_pos)) {
       break;
     }
@@ -349,24 +344,23 @@ void whd_print(WindowHighlightDescriptor* self) {
     TextPartHighlightDescriptor descriptor = self->descriptors[i];
     char attribute_str[100];
     stringForAttribute(descriptor.attributes, attribute_str);
-    fprintf(stderr, "(%d, %d) -> (%d, %d) : color(%d), attribute('%s')\n", descriptor.begin.abs_row, descriptor.begin.abs_column,
-            descriptor.end.abs_row,
-            descriptor.end.abs_column, descriptor.color, attribute_str);
+    fprintf(stderr, "(%d, %d) -> (%d, %d) : color(%d), attribute('%s')\n", descriptor.begin.abs_row,
+            descriptor.begin.abs_column, descriptor.end.abs_row, descriptor.end.abs_column, descriptor.color,
+            attribute_str);
   }
 }
 
 void whd_reset(WindowHighlightDescriptor* self) {
-  memmove(self->maximum_size_history, self->maximum_size_history + 1, (DESCRIPTOR_SIZE_HISTORY_LENGTH - 1) * sizeof(uint32_t));
+  memmove(self->maximum_size_history, self->maximum_size_history + 1,
+          (DESCRIPTOR_SIZE_HISTORY_LENGTH - 1) * sizeof(uint32_t));
   self->maximum_size_history[DESCRIPTOR_SIZE_HISTORY_LENGTH - 1] = self->size;
   self->size = 0;
 }
 
-void whd_free(WindowHighlightDescriptor* self) {
-  free(self->descriptors);
-}
+void whd_free(WindowHighlightDescriptor* self) { free(self->descriptors); }
 
-TextPartHighlightDescriptor* whd_tphd_forCursorWithOffsetIndex(WindowHighlightDescriptor* highlight_descriptor, Cursor cursor,
-                                                               int* offset_index) {
+TextPartHighlightDescriptor* whd_tphd_forCursorWithOffsetIndex(WindowHighlightDescriptor* highlight_descriptor,
+                                                               Cursor cursor, int* offset_index) {
   // check to increment to the next
   TextPartHighlightDescriptor* current_highlight = NULL;
   if (*offset_index < highlight_descriptor->size) {
@@ -390,9 +384,10 @@ TextPartHighlightDescriptor* whd_tphd_forCursorWithOffsetIndex(WindowHighlightDe
 
 
 void initColorsForTheme(HighlightThemeList theme_list, int* color_index, int* color_pair) {
-  // Setup color sheme.
+  // Setup color theme.
   for (int i = 0; i < theme_list.size; i++) {
-    init_color((*color_index)++, theme_list.groups[i].color.r, theme_list.groups[i].color.g, theme_list.groups[i].color.b);
+    init_color((*color_index)++, theme_list.groups[i].color.r, theme_list.groups[i].color.g,
+               theme_list.groups[i].color.b);
     init_pair(*color_pair, *color_index - 1, COLOR_BLACK);
     theme_list.groups[i].color_n = *color_pair;
 

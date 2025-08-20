@@ -1,25 +1,23 @@
 #include "tools.h"
 
+#include <asm-generic/errno-base.h>
 #include <errno.h>
 #include <libgen.h>
+#include <linux/limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <asm-generic/errno-base.h>
-#include <linux/limits.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <unistd.h>
 
-bool areStringEquals(String str1, String str2) {
-  return strcmp(str1.content, str2.content) == 0;
-}
+bool areStringEquals(String str1, String str2) { return strcmp(str1.content, str2.content) == 0; }
 
 
 time_val timeInMilliseconds(void) {
   struct timeval tv;
 
-  gettimeofday(&tv,NULL);
+  gettimeofday(&tv, NULL);
   return (((time_val)tv.tv_sec) * 1000) + (tv.tv_usec / 1000);
 }
 
@@ -32,12 +30,14 @@ time_val diff2Time(time_val start, time_val end) {
 
 
 int min(int a, int b) {
-  if (a < b) return a;
+  if (a < b)
+    return a;
   return b;
 }
 
 int max(int a, int b) {
-  if (a > b) return a;
+  if (a > b)
+    return a;
   return b;
 }
 
@@ -264,9 +264,9 @@ char* loadFullFile(const char* path, long* length) {
 
 
 // Fonction qui crée récursivement les répertoires comme `mkdir -p`
-int mkdir_p(const char *path, mode_t mode) {
+int mkdir_p(const char* path, mode_t mode) {
   char tmp[1024];
-  char *p = NULL;
+  char* p = NULL;
   size_t len;
 
   snprintf(tmp, sizeof(tmp), "%s", path);

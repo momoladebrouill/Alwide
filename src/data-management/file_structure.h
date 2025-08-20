@@ -1,8 +1,8 @@
 #ifndef FILE_STRUCTURE_H
 #define FILE_STRUCTURE_H
 
-#include "utf_8_extractor.h"
 #include <stdbool.h>
+#include "utf_8_extractor.h"
 
 
 /*
