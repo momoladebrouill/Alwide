@@ -47,7 +47,8 @@ LIBS_MODULES= \
 	lib/tree-sitter-query/target/debug/libtree_sitter_query.rlib \
 	lib/tree-sitter-vhdl/target/debug/libtree_sitter_vhdl.rlib \
 	lib/tree-sitter-lua/target/debug/libtree_sitter_lua.rlib \
-	lib/tree-sitter-asm/target/debug/libtree_sitter_asm.rlib
+	lib/tree-sitter-asm/target/debug/libtree_sitter_asm.rlib \
+	lib/tree-sitter-html/target/debug/libtree_sitter_html.rlib
 
 ALL_MODULES= $(MODULES) $(LIBS_MODULES)
 

@@ -2392,6 +2392,7 @@ int readNBytesAtPosition(Cursor* cursor_p, int row_raw, int column_raw, char* de
   LineIdentifier line_id = moduloLineIdentifierR(getLineForFileIdentifier(file_id), 0);
 
   // reach column_raw.
+  // try to convert raw column to cursor column.
   int current_column_raw = 0;
   while (current_column_raw < column_raw) {
     // if we can skip current node.

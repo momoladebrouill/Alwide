@@ -113,6 +113,8 @@ const TSLanguage* tree_sitter_lua(void);
 
 const TSLanguage* tree_sitter_asm(void);
 
+const TSLanguage* tree_sitter_html(void);
+
 void initParserList(ParserList* list);
 
 void destroyParserList(ParserList* list);

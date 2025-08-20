@@ -1,55 +1,66 @@
 ;From nvim-treesitter/nvim-treesitter
-;(atx_heading (inline) @function)
-(setext_heading (paragraph) @text.title)
-(code_span @comment)
-
-"-" @number
+(atx_heading (inline) @function)
+(setext_heading (paragraph) @function)
 
 [
-	(atx_h1_marker)
-	(atx_h2_marker)
-	(atx_h3_marker)
-	(atx_h4_marker)
-	(atx_h5_marker)
-	(atx_h6_marker)
-	(setext_h1_underline)
-	(setext_h2_underline)
-	] @function
+  (atx_h1_marker)
+  (atx_h2_marker)
+  (atx_h3_marker)
+  (atx_h4_marker)
+  (atx_h5_marker)
+  (atx_h6_marker)
+  (setext_h1_underline)
+  (setext_h2_underline)
+  ] @keyword
 
 [
-	(link_title)
-	(indented_code_block)
-	(fenced_code_block)
-	] @comment
+  (link_title)
+  (indented_code_block)
+  (fenced_code_block)
+  ] @string
 
 [
-	(fenced_code_block_delimiter)
-	] @string
+  (fenced_code_block_delimiter)
+  ] @number
 
-(code_fence_content) @string
-
-[
-	(link_destination)
-	] @string
+(code_fence_content) @none
 
 [
-	(link_label)
-	] @string
+  (link_destination)
+  ] @string
 
 [
-	(list_marker_plus)
-	(list_marker_minus)
-	(list_marker_star)
-	(list_marker_dot)
-	(list_marker_parenthesis)
-	(thematic_break)
-	] @variable
+  (link_label)
+  ] @type
 
 [
-	(block_continuation)
-	(block_quote_marker)
-	] @comment
+  (list_marker_plus)
+  (list_marker_minus)
+  (list_marker_star)
+  (list_marker_dot)
+  (list_marker_parenthesis)
+  (thematic_break)
+  ] @keyword
 
 [
-	(backslash_escape)
-	] @string
+  (block_continuation)
+  (block_quote_marker)
+  ] @keyword
+
+[
+  (backslash_escape)
+] @number
+
+(fenced_code_block
+  (info_string
+    (language) @injection.language)
+  (code_fence_content) @injection.content)
+
+((html_block) @injection.content (#set! injection.language "html"))
+
+(document . (section . (thematic_break) (_) @injection.content (thematic_break)) (#set! injection.language "yaml"))
+
+([(minus_metadata) (plus_metadata)] @injection.content (#set! injection.language "yml"))
+
+((inline) @injection.content (#set! injection.language "markdown_inline"))
+
