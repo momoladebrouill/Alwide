@@ -17,8 +17,8 @@ void initHistory(History* history) {
 }
 
 
-Cursor undo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, long* payload),
-            long* payload) {
+Cursor undo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, void* payload),
+            void* payload) {
   History* history = *history_p;
 
   // If history is at root return and do nothing. Can't undo ;).
@@ -39,8 +39,8 @@ Cursor undo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action
   return cursor;
 }
 
-Cursor redo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, long* payload),
-            long* payload) {
+Cursor redo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, void* payload),
+            void *payload) {
   History* history = *history_p;
 
   // If history is at the end return and do nothing. Cannot redo nothing ;).
@@ -65,8 +65,8 @@ Cursor redo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action
 }
 
 
-void saveAction(History** history_p, Action action, void (*onEachStateChange)(Action action, long* payload),
-                long* payload) {
+void saveAction(History** history_p, Action action, void (*onEachStateChange)(Action action, void* payload),
+                void* payload) {
   History* history = *history_p;
   if (action.action == ACTION_NONE) {
     return;
@@ -92,8 +92,8 @@ void saveAction(History** history_p, Action action, void (*onEachStateChange)(Ac
     onEachStateChange(action, payload);
 }
 
-Cursor doReverseAction(Action* action_p, Cursor cursor, void (*onEachStateChange)(Action action, long* payload),
-                       long* payload) {
+Cursor doReverseAction(Action* action_p, Cursor cursor, void (*onEachStateChange)(Action action, void* payload),
+                       void* payload) {
   Action action = *action_p;
   Cursor tmp;
   Cursor tmp_end;

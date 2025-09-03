@@ -36,15 +36,15 @@ typedef struct History_ History;
 
 void initHistory(History* history);
 
-Cursor undo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, long* payload), long* payload);
+Cursor undo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, void* payload), void* payload);
 
-Cursor redo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, long* payload), long* payload);
+Cursor redo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, void* payload), void* payload);
 
-void saveAction(History** history_p, Action action, void (*onEachStateChange)(Action action, long* payload),
-                long* payload);
+void saveAction(History** history_p, Action action, void (*onEachStateChange)(Action action, void* payload),
+                void* payload);
 
-Cursor doReverseAction(Action* action_p, Cursor cursor, void (*onEachStateChange)(Action action, long* payload),
-                       long* payload);
+Cursor doReverseAction(Action* action_p, Cursor cursor, void (*onEachStateChange)(Action action, void* payload),
+                       void* payload);
 
 Action createDeleteAction(Cursor cur1, Cursor cur2);
 

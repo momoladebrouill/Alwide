@@ -120,7 +120,7 @@ void setupFileContainer(char* path, FileContainer* container) {
 void setupLocalVars(FileContainer* files, int current_file, IO_FileID** io_file, FileNode*** root, Cursor** cursor,
                     Cursor** select_cursor, Cursor** old_cur, int** desired_column, int** screen_x, int** screen_y,
                     int** old_screen_x, int** old_screen_y, History*** history_root, History*** history_frame,
-                    FileHighlightDatas** highlight_data, LSP_Datas **lsp_datas) {
+                    TS_Data** highlight_data, LSP_Data **lsp_datas) {
   *io_file = &files[current_file].io_file;               // Describe the IO file on OS
   *root = &files[current_file].root;                     // The root of the File object
   *cursor = &files[current_file].cursor;                 // The current cursor for the root File
@@ -538,7 +538,7 @@ void deleteSelection(Cursor* cursor, Cursor* select_cursor) {
 
 void deleteSelectionWithState(History** history_p, Cursor* cursor, Cursor* select_cursor,
                               PayloadStateChange payload_state_change) {
-  saveAction(history_p, createDeleteAction(*cursor, *select_cursor), onStateChangeTS, (long*)&payload_state_change);
+  saveAction(history_p, createDeleteAction(*cursor, *select_cursor), globalOnStageChange, (void*)&payload_state_change);
   deleteSelection(cursor, select_cursor);
 }
 

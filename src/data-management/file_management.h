@@ -5,6 +5,7 @@
 #include "../advanced/tree-sitter/tree_manager.h"
 #include "file_structure.h"
 #include "state_control.h"
+#include "../advanced/shared.h"
 
 
 typedef struct {
@@ -20,8 +21,8 @@ typedef struct {
   int old_screen_y;                  // old screen_y used to flag screen_y changes
   History* history_root;             // Root of History object for the current File
   History* history_frame;            // Current node of the History. Before -> Undo, After -> Redo.
-  FileHighlightDatas highlight_data; // Object which represent the highlight_data of the current file.
-  LSP_Datas lsp_datas;               // Object which contain all the datas of lsp.
+  TS_Data highlight_data; // Object which represent the highlight_data of the current file.
+  LSP_Data lsp_datas;               // Object which contain all the datas of lsp.
 } FileContainer;
 
 
@@ -44,7 +45,7 @@ void setupFileContainer(char* args, FileContainer* container);
 void setupLocalVars(FileContainer* files, int current_file, IO_FileID** io_file, FileNode*** root, Cursor** cursor,
                     Cursor** select_cursor, Cursor** old_cur, int** desired_column, int** screen_x, int** screen_y,
                     int** old_screen_x, int** old_screen_y, History*** history_root, History*** history_frame,
-                    FileHighlightDatas** highlight_data, LSP_Datas **lsp_datas);
+                    TS_Data** highlight_data, LSP_Data **lsp_datas);
 
 bool isFileContainerEmpty(FileContainer* container);
 

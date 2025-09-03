@@ -1,11 +1,12 @@
 CC=clang-18
-CFLAGS=-g -O3 # -fsanitize=address # -lncurses # -Wall -Wextra -Werror -gdwarf-4
+CFLAGS=-g -fsanitize=address # -lncurses # -Wall -Wextra -Werror -gdwarf-4
 #CFLAGS=-g -fsanitize=address # -lncurses # -Wall -Wextra -Werror -gdwarf-4
 
 executable= al # lsp_test #test_line.o test_file.o  test_line test_file  # utils/debug.o
 
 MODULES= \
 	src/data-management/utf_8_extractor.o \
+	src/advanced/shared.o \
 	src/data-management/file_structure.o \
 	src/data-management/file_management.o \
 	src/utils/tools.o \
@@ -28,7 +29,10 @@ MODULES= \
 	src/advanced/lsp/lsp_handler.o \
 	src/advanced/lsp/lsp_diagnostic_handler.o \
 	src/advanced/lsp/lsp_highlighter.o \
-	src/advanced/lsp/lsp_dispatcher.o
+	src/advanced/lsp/lsp_dispatcher.o \
+	src/advanced/lsp/lsp_emitter.o \
+
+
 
 
 

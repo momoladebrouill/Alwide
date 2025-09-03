@@ -184,7 +184,7 @@ bool loadNewParser(ParserContainer* container, char* language) {
 }
 
 
-void setFileHighlightDatas(FileHighlightDatas* data, IO_FileID io_file) {
+void setFileHighlightDatas(TS_Data* data, IO_FileID io_file) {
   bool did_lang_was_found = getLanguageStringIDForFile(data->lang_id, io_file);
 
   ParserContainer* parser = NULL;
@@ -197,16 +197,10 @@ void setFileHighlightDatas(FileHighlightDatas* data, IO_FileID io_file) {
 }
 
 
-PayloadStateChange getPayloadStateChange(FileHighlightDatas* highlight_datas) {
-  PayloadStateChange payload;
-  payload.highlight_datas = highlight_datas;
-  return payload;
-}
 
-void onStateChangeTS(Action action, long* payload_p) {
-  PayloadStateChange payload = *(PayloadStateChange*)payload_p;
+void onStateChangeTS(Action action, TS_Data* data) {
 
-  if (payload.highlight_datas->is_active == false) {
+  if (data->is_active == false) {
     return;
   }
 
@@ -325,7 +319,7 @@ void onStateChangeTS(Action action, long* payload_p) {
   free(obj_text);
   cJSON_Delete(obj);*/
 
-  ts_tree_edit(payload.highlight_datas->tree, &edit);
+  ts_tree_edit(data->tree, &edit);
 }
 
 char read_buffer[CHAR_CHUNK_SIZE_TSINPUT * 4];
@@ -339,7 +333,7 @@ const char* internalReaderForTree(void* payload, uint32_t byte_index, TSPoint po
 }
 
 
-void parseTree(FileNode** root, History** history_frame, FileHighlightDatas* highlight_data,
+void parseTree(FileNode** root, History** history_frame, TS_Data* highlight_data,
                History** old_history_frame) {
   if (highlight_data->is_active == false)
     return;

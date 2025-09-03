@@ -3,6 +3,7 @@
 #include <limits.h>
 #include <locale.h>
 #include <ncurses.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ttydefaults.h>
@@ -124,8 +125,8 @@ int main(int file_count, char** args) {
   int* old_screen_y;                  // old screen_y used to flag screen_y changes
   History** history_root;             // Root of History object for the current File
   History** history_frame;            // Current node of the History. Before -> Undo, After -> Redo.
-  FileHighlightDatas* highlight_data; // Contain the configuration for file higlight.
-  LSP_Datas* lsp_datas;               // Object which contain all the datas of lsp.
+  TS_Data* ts_data; // Contain the configuration for file higlight.
+  LSP_Data* lsp_data;               // Object which contain all the datas of lsp.
 
 
   bool refresh_local_vars = true; // Need to re-set local vars
@@ -147,11 +148,11 @@ int main(int file_count, char** args) {
 
     if (refresh_local_vars == true) {
       setupLocalVars(files, current_file_index, &io_file, &root, &cursor, &select_cursor, &old_cur, &desired_column,
-                     &screen_x, &screen_y, &old_screen_x, &old_screen_y, &history_root, &history_frame, &highlight_data,
-                     &lsp_datas);
+                     &screen_x, &screen_y, &old_screen_x, &old_screen_y, &history_root, &history_frame, &ts_data,
+                     &lsp_data);
       refresh_local_vars = false;
       old_history_frame = *history_frame;
-      payload_state_change = getPayloadStateChange(highlight_data);
+      payload_state_change = getPayloadStateChange(ts_data, lsp_data);
     }
 
     // flag cursor change
@@ -177,9 +178,8 @@ int main(int file_count, char** args) {
     }
 
     // If it needed to reparse the current file for tree. Looking for state changes.
-    if (highlight_data->is_active == true && (old_history_frame != *history_frame || highlight_data->tree == NULL)) {
-      // edit_and_parse_tree(root, history_frame, highlight_data, &old_history_frame);
-      parseTree(root, history_frame, highlight_data, &old_history_frame);
+    if (ts_data->is_active == true && (old_history_frame != *history_frame || ts_data->tree == NULL)) {
+      parseTree(root, history_frame, ts_data, &old_history_frame);
       optimizeHistory(*history_root, history_frame);
       old_history_frame = *history_frame;
     }
@@ -208,10 +208,10 @@ int main(int file_count, char** args) {
       whd_reset(&highlight_descriptor);
 
       // calculate tree_sitter Highlight
-      TS_highlightCurrentFile(highlight_data, gui_context.ftw, *screen_x, *screen_y, *cursor, &highlight_descriptor);
+      TS_highlightCurrentFile(ts_data, gui_context.ftw, *screen_x, *screen_y, *cursor, &highlight_descriptor);
 
       // add lsp highlights
-      LSP_highlightCurrentFile(lsp_datas, *cursor, &highlight_descriptor);
+      LSP_highlightCurrentFile(lsp_data, *cursor, &highlight_descriptor);
 
       printEditor(&gui_context, *cursor, *select_cursor, *screen_x, *screen_y, &highlight_descriptor);
 
@@ -227,63 +227,8 @@ int main(int file_count, char** args) {
     double time_taken = (double)t_clock / CLOCKS_PER_SEC * 1000;
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     fprintf(stderr, "Complete loop took about reel %5ld ms, took cpu %5.3lf ms.\n",
             diff2Time(timeInMilliseconds(), t_date), time_taken);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
   read_input:;
@@ -323,12 +268,20 @@ int main(int file_count, char** args) {
 
     LSPServerLinkedList_Cell* cell = lsp_servers.head;
     while (cell != NULL) {
-      LSP_dispatchOnReceive(&cell->lsp_server, dispatcher, &payload);
+      while (LSP_dispatchOnReceive(&cell->lsp_server, dispatcher, &payload)) {
+        if (c == ERR) {
+          c = ONLY_REPAINT_INPUT;
+          hash = ONLY_REPAINT_INPUT;
+        }
+      }
       cell = cell->next;
     }
 
     switch (hash) {
         // ---------------------- NCURSES THINGS ----------------------
+      case ONLY_REPAINT_INPUT:
+        gui_context.refresh_edw = true;
+        break;
 
       case ERR:
         goto read_input;
@@ -537,13 +490,13 @@ int main(int file_count, char** args) {
 
       case CTRL('z'):
         setSelectCursorOff(cursor, select_cursor, SELECT_OFF_LEFT);
-        *cursor = undo(history_frame, *cursor, onStateChangeTS, (long*)&payload_state_change);
+        *cursor = undo(history_frame, *cursor, globalOnStageChange, (long*)&payload_state_change);
         old_history_frame = NULL;
         setDesiredColumn(*cursor, desired_column);
         break;
       case CTRL('y'):
         setSelectCursorOff(cursor, select_cursor, SELECT_OFF_LEFT);
-        *cursor = redo(history_frame, *cursor, onStateChangeTS, (long*)&payload_state_change);
+        *cursor = redo(history_frame, *cursor, globalOnStageChange, (long*)&payload_state_change);
         old_history_frame = NULL;
         setDesiredColumn(*cursor, desired_column);
         break;
@@ -563,7 +516,7 @@ int main(int file_count, char** args) {
         deleteSelectionWithState(history_frame, cursor, select_cursor, payload_state_change);
         tmp = *cursor;
         *cursor = loadFromClipBoard(*cursor);
-        saveAction(history_frame, createInsertAction(*cursor, tmp), onStateChangeTS, (long*)&payload_state_change);
+        saveAction(history_frame, createInsertAction(*cursor, tmp), globalOnStageChange, (long*)&payload_state_change);
         setDesiredColumn(*cursor, desired_column);
         break;
       case CTRL('q'):
@@ -612,7 +565,7 @@ int main(int file_count, char** args) {
         deleteSelectionWithState(history_frame, cursor, select_cursor, payload_state_change);
         tmp = *cursor;
         *cursor = insertNewLineInLineC(*cursor);
-        saveAction(history_frame, createInsertAction(tmp, *cursor), onStateChangeTS, (long*)&payload_state_change);
+        saveAction(history_frame, createInsertAction(tmp, *cursor), globalOnStageChange, (long*)&payload_state_change);
         setDesiredColumn(*cursor, desired_column);
         break;
       case H_KEY_DELETE:
@@ -646,7 +599,7 @@ int main(int file_count, char** args) {
             *cursor = insertCharInLineC(*cursor, readChar_U8FromInput(' '));
           }
         }
-        saveAction(history_frame, createInsertAction(tmp, *cursor), onStateChangeTS, (long*)&payload_state_change);
+        saveAction(history_frame, createInsertAction(tmp, *cursor), globalOnStageChange, (long*)&payload_state_change);
         setDesiredColumn(*cursor, desired_column);
         break;
       case CTRL('d'):
@@ -690,7 +643,7 @@ int main(int file_count, char** args) {
           tmp = *cursor;
           *cursor = insertCharInLineC(*cursor, readChar_U8FromInput(c));
           setDesiredColumn(*cursor, desired_column);
-          saveAction(history_frame, createInsertAction(tmp, *cursor), onStateChangeTS, (long*)&payload_state_change);
+          saveAction(history_frame, createInsertAction(tmp, *cursor), globalOnStageChange, (long*)&payload_state_change);
         }
         break;
     }

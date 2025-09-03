@@ -8,7 +8,7 @@
 #include "../../utils/tools.h"
 
 
-void setLspDatas(LSP_Datas* lsp_datas, IO_FileID io_file) {
+void setLspDatas(LSP_Data* lsp_datas, IO_FileID io_file) {
   bool did_lang_was_found = getLanguageStringIDForFile(lsp_datas->lang_id, io_file);
 
   LSP_Server* lsp_server = NULL;
@@ -25,7 +25,7 @@ void setLspDatas(LSP_Datas* lsp_datas, IO_FileID io_file) {
   }
 }
 
-void destroyLspDatas(LSP_Datas* lsp_datas) {
+void destroyLspDatas(LSP_Data* lsp_datas) {
   LSP_destroyPayload(lsp_datas->computed);
   free(lsp_datas->computed);
 }
