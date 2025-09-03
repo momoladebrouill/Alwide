@@ -113,7 +113,7 @@ void executeHighlightQuery(TSQuery* query, TSQueryCursor* qcursor, RegexMap* reg
 
 
 void TS_highlightCurrentFile(TS_Data* highlight_data, WINDOW* ftw, int screen_x, int screen_y, Cursor cursor,
-                          WindowHighlightDescriptor* highlight_descriptor) {
+                             WindowHighlightDescriptor* highlight_descriptor) {
   if (highlight_data->is_active == false) {
     return;
   }

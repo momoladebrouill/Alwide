@@ -226,8 +226,10 @@ void whd_insertDescriptor(WindowHighlightDescriptor* self, Cursor begin, Cursor 
     }
     else if (isPositionBeforePosition(current_pos, self->descriptors[i].begin)) {
       // start in the middle of an empty space
-      Cursor prev = moveLeft(tryToReachAbsPosition(begin, self->descriptors[i].begin.abs_row, self->descriptors[i].begin.abs_column));
-      new_field_end = maxPosition(minPosition((FilePosition){prev.file_id.absolute_row, prev.line_id.absolute_column}, end_pos), current_pos);
+      Cursor prev = moveLeft(
+        tryToReachAbsPosition(begin, self->descriptors[i].begin.abs_row, self->descriptors[i].begin.abs_column));
+      new_field_end = maxPosition(
+        minPosition((FilePosition){prev.file_id.absolute_row, prev.line_id.absolute_column}, end_pos), current_pos);
     }
     else {
       // so the current_pos is in a field.

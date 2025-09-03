@@ -40,7 +40,7 @@ Cursor undo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action
 }
 
 Cursor redo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, void* payload),
-            void *payload) {
+            void* payload) {
   History* history = *history_p;
 
   // If history is at the end return and do nothing. Cannot redo nothing ;).

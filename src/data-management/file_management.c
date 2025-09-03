@@ -120,7 +120,7 @@ void setupFileContainer(char* path, FileContainer* container) {
 void setupLocalVars(FileContainer* files, int current_file, IO_FileID** io_file, FileNode*** root, Cursor** cursor,
                     Cursor** select_cursor, Cursor** old_cur, int** desired_column, int** screen_x, int** screen_y,
                     int** old_screen_x, int** old_screen_y, History*** history_root, History*** history_frame,
-                    TS_Data** highlight_data, LSP_Data **lsp_datas) {
+                    TS_Data** highlight_data, LSP_Data** lsp_datas) {
   *io_file = &files[current_file].io_file;               // Describe the IO file on OS
   *root = &files[current_file].root;                     // The root of the File object
   *cursor = &files[current_file].cursor;                 // The current cursor for the root File

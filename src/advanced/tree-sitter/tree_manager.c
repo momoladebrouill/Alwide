@@ -197,7 +197,6 @@ void setFileHighlightDatas(TS_Data* data, IO_FileID io_file) {
 }
 
 
-
 void onStateChangeTS(Action action, TS_Data* data) {
 
   if (data->is_active == false) {
@@ -333,8 +332,7 @@ const char* internalReaderForTree(void* payload, uint32_t byte_index, TSPoint po
 }
 
 
-void parseTree(FileNode** root, History** history_frame, TS_Data* highlight_data,
-               History** old_history_frame) {
+void parseTree(FileNode** root, History** history_frame, TS_Data* highlight_data, History** old_history_frame) {
   if (highlight_data->is_active == false)
     return;
 

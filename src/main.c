@@ -113,20 +113,20 @@ int main(int file_count, char** args) {
 
 
   // Setup redirection of vars to use without pass though file_container obj.
-  IO_FileID* io_file;                 // Describe the IO file on OS
-  FileNode** root;                    // The root of the File object
-  Cursor* cursor;                     // The current cursor for the root File
-  Cursor* select_cursor;              // The cursor used to make selection
-  Cursor* old_cur;                    // Old cursor used to flag cursor change
-  int* desired_column;                // Used on line change to try to reach column
-  int* screen_x;                      // The x coord of the top left corner of the current viewport of the file
-  int* screen_y;                      // The y coord of the top left corner of the current viewport of the file
-  int* old_screen_x;                  // old screen_x used to flag screen_x changes
-  int* old_screen_y;                  // old screen_y used to flag screen_y changes
-  History** history_root;             // Root of History object for the current File
-  History** history_frame;            // Current node of the History. Before -> Undo, After -> Redo.
-  TS_Data* ts_data; // Contain the configuration for file higlight.
-  LSP_Data* lsp_data;               // Object which contain all the datas of lsp.
+  IO_FileID* io_file;      // Describe the IO file on OS
+  FileNode** root;         // The root of the File object
+  Cursor* cursor;          // The current cursor for the root File
+  Cursor* select_cursor;   // The cursor used to make selection
+  Cursor* old_cur;         // Old cursor used to flag cursor change
+  int* desired_column;     // Used on line change to try to reach column
+  int* screen_x;           // The x coord of the top left corner of the current viewport of the file
+  int* screen_y;           // The y coord of the top left corner of the current viewport of the file
+  int* old_screen_x;       // old screen_x used to flag screen_x changes
+  int* old_screen_y;       // old screen_y used to flag screen_y changes
+  History** history_root;  // Root of History object for the current File
+  History** history_frame; // Current node of the History. Before -> Undo, After -> Redo.
+  TS_Data* ts_data;        // Contain the configuration for file higlight.
+  LSP_Data* lsp_data;      // Object which contain all the datas of lsp.
 
 
   bool refresh_local_vars = true; // Need to re-set local vars
@@ -643,7 +643,8 @@ int main(int file_count, char** args) {
           tmp = *cursor;
           *cursor = insertCharInLineC(*cursor, readChar_U8FromInput(c));
           setDesiredColumn(*cursor, desired_column);
-          saveAction(history_frame, createInsertAction(tmp, *cursor), globalOnStageChange, (long*)&payload_state_change);
+          saveAction(history_frame, createInsertAction(tmp, *cursor), globalOnStageChange,
+                     (long*)&payload_state_change);
         }
         break;
     }

@@ -18,7 +18,7 @@ void LSP_initPayload(LSP_ComputedData* payload);
 typedef struct {
   char lang_id[LANG_ID_LENGTH];
   bool is_enable;
-  LSP_ComputedData *computed;
+  LSP_ComputedData* computed;
 } LSP_Data;
 
 struct _LSPServerLinkedList_Cell {
@@ -36,9 +36,9 @@ typedef struct {
 
 void setLspDatas(LSP_Data* lsp_datas, IO_FileID io_file);
 
-void destroyLspDatas(LSP_Data*lsp_datas);
+void destroyLspDatas(LSP_Data* lsp_datas);
 
-void LSP_destroyPayload(LSP_ComputedData*lsp_payload);
+void LSP_destroyPayload(LSP_ComputedData* lsp_payload);
 
 
 //// ------------ UTILS ------------

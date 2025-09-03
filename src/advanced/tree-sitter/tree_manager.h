@@ -5,8 +5,8 @@
 #include "../../../lib/tree-sitter/lib/include/tree_sitter/api.h"
 #include "../../data-management/state_control.h"
 #include "../../io_management/io_manager.h"
-#include "../theme.h"
 #include "../../utils/constants.h"
+#include "../theme.h"
 
 #define CHAR_CHUNK_SIZE_TSINPUT 500
 
@@ -127,8 +127,7 @@ void onStateChangeTS(Action action, TS_Data* data);
 
 const char* internalReaderForTree(void* payload, uint32_t byte_index, TSPoint position, uint32_t* bytes_read);
 
-void parseTree(FileNode** root, History** history_frame, TS_Data* highlight_data,
-               History** old_history_frame);
+void parseTree(FileNode** root, History** history_frame, TS_Data* highlight_data, History** old_history_frame);
 
 char* getNodeContent(TSNode node, Cursor* cursor);
 

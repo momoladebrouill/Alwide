@@ -148,8 +148,10 @@ typedef struct {
 } DiagnosticRelatedInformation;
 
 // TODO implement if needed
-DiagnosticRelatedInformation LSP_getDiagnosticRelatedInformationOf(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column);
-cJSON* LSP_getJSONDiagnosticRelatedInformation(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column);
+DiagnosticRelatedInformation LSP_getDiagnosticRelatedInformationOf(char* file_name, int cur1_row, int cur1_column,
+                                                                   int cur2_row, int cur2_column);
+cJSON* LSP_getJSONDiagnosticRelatedInformation(char* file_name, int cur1_row, int cur1_column, int cur2_row,
+                                               int cur2_column);
 DiagnosticRelatedInformation LSP_getDiagnosticRelatedInformationFromJSON(cJSON* json);
 void LSP_destroyDiagnosticRelatedInformation(DiagnosticRelatedInformation location);
 

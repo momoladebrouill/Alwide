@@ -2,27 +2,27 @@
 #define FILE_MANAGEMENT_H
 
 #include "../advanced/lsp/lsp_handler.h"
+#include "../advanced/shared.h"
 #include "../advanced/tree-sitter/tree_manager.h"
 #include "file_structure.h"
 #include "state_control.h"
-#include "../advanced/shared.h"
 
 
 typedef struct {
-  IO_FileID io_file;                 // Describe the IO file on OS
-  FileNode* root;                    // The root of the File object
-  Cursor cursor;                     // The current cursor for the root File
-  Cursor select_cursor;              // The cursor used to make selection
-  Cursor old_cur;                    // Old cursor used to flag cursor change
-  int desired_column;                // Used on line change to try to reach column
-  int screen_x;                      // The x coord of the top left corner of the current viewport of the file
-  int screen_y;                      // The y coord of the top left corner of the current viewport of the file
-  int old_screen_x;                  // old screen_x used to flag screen_x changes
-  int old_screen_y;                  // old screen_y used to flag screen_y changes
-  History* history_root;             // Root of History object for the current File
-  History* history_frame;            // Current node of the History. Before -> Undo, After -> Redo.
+  IO_FileID io_file;      // Describe the IO file on OS
+  FileNode* root;         // The root of the File object
+  Cursor cursor;          // The current cursor for the root File
+  Cursor select_cursor;   // The cursor used to make selection
+  Cursor old_cur;         // Old cursor used to flag cursor change
+  int desired_column;     // Used on line change to try to reach column
+  int screen_x;           // The x coord of the top left corner of the current viewport of the file
+  int screen_y;           // The y coord of the top left corner of the current viewport of the file
+  int old_screen_x;       // old screen_x used to flag screen_x changes
+  int old_screen_y;       // old screen_y used to flag screen_y changes
+  History* history_root;  // Root of History object for the current File
+  History* history_frame; // Current node of the History. Before -> Undo, After -> Redo.
   TS_Data highlight_data; // Object which represent the highlight_data of the current file.
-  LSP_Data lsp_datas;               // Object which contain all the datas of lsp.
+  LSP_Data lsp_datas;     // Object which contain all the datas of lsp.
 } FileContainer;
 
 
@@ -45,7 +45,7 @@ void setupFileContainer(char* args, FileContainer* container);
 void setupLocalVars(FileContainer* files, int current_file, IO_FileID** io_file, FileNode*** root, Cursor** cursor,
                     Cursor** select_cursor, Cursor** old_cur, int** desired_column, int** screen_x, int** screen_y,
                     int** old_screen_x, int** old_screen_y, History*** history_root, History*** history_frame,
-                    TS_Data** highlight_data, LSP_Data **lsp_datas);
+                    TS_Data** highlight_data, LSP_Data** lsp_datas);
 
 bool isFileContainerEmpty(FileContainer* container);
 
