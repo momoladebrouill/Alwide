@@ -43,4 +43,6 @@ char* loadFullFile(const char* path, long* length);
 
 int mkdir_p(const char* path, mode_t mode);
 
+void countStringFrame(char *ch, int length, int *current_row, int *current_column, int *screen_max_width);
+
 #endif // TOOLS_H

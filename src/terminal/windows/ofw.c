@@ -6,7 +6,7 @@
 #include "../../data-management/file_management.h"
 #include "edw.h"
 
-void initOFWContext(OFW_GUIContext* context) {
+void gui_initOFWContext(OFW_GUIContext* context) {
   context->ofw = NULL;         // Opened Files Window
   context->refresh_ofw = true; // Need to reprint opened file window
 
@@ -17,14 +17,14 @@ void initOFWContext(OFW_GUIContext* context) {
 }
 
 
-void resizeOFW(GUIContext* gui_context) {
+void gui_resizeOFW(GUIContext* gui_context) {
   delwin(gui_context->ofw_context.ofw);
   gui_context->ofw_context.ofw = newwin(gui_context->ofw_context.ofw_height, 0, 0, gui_context->few_context.few_width);
   gui_context->ofw_context.refresh_ofw = true;
 }
 
 
-void repaintOFW(OFW_GUIContext* context, FileContainer* files, int file_count, int current_file) {
+void gui_repaintOFW(OFW_GUIContext* context, FileContainer* files, int file_count, int current_file) {
   if (!((context->refresh_ofw == true || files[current_file].io_file.status == NONE) && context->ofw_height != 0)) {
     return;
   }
@@ -83,13 +83,13 @@ void repaintOFW(OFW_GUIContext* context, FileContainer* files, int file_count, i
 }
 
 
-void switchOFW(GUIContext* gui_context) {
+void gui_switchOFW(GUIContext* gui_context) {
   if (gui_context->ofw_context.ofw_height == OPENED_FILE_WINDOW_HEIGHT) {
     gui_context->ofw_context.ofw_height = 0;
   }
   else {
     gui_context->ofw_context.ofw_height = OPENED_FILE_WINDOW_HEIGHT;
   }
-  resizeOFW(gui_context);
-  resizeEDW(gui_context, -1);
+  gui_resizeOFW(gui_context);
+  gui_resizeEDW(gui_context, -1);
 }

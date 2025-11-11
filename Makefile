@@ -27,6 +27,7 @@ MODULES= \
 	src/terminal/windows/few.o \
 	src/terminal/windows/edw.o \
 	src/terminal/windows/ofw.o \
+	src/terminal/windows/pow.o \
 	src/config/config.o \
 	src/io_management/workspace_settings.o \
 	src/advanced/lsp/lsp_handler.o \

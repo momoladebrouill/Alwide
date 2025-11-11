@@ -527,22 +527,7 @@ ChangeDescriptor actionToChangeDescriptor(Action action) {
       int current_row = edit->start_point.row;
       int current_column = edit->start_point.column;
 
-      int current_ch_index = 0;
-      while (current_ch_index < action.byte_end - action.byte_start) {
-        if (TAB_CHAR_USE == false) {
-          assert(ch[current_ch_index] != '\t');
-        }
-        if (ch[current_ch_index] == '\n') {
-          current_row++;
-          current_column = 0;
-        }
-        else {
-          Char_U8 tmp_ch = readChar_U8FromCharArray(ch + current_ch_index);
-          current_ch_index += sizeChar_U8(tmp_ch) - 1;
-          current_column++;
-        }
-        current_ch_index++;
-      }
+      countStringFrame(ch, action.byte_end - action.byte_start, &current_row, &current_column, NULL);
 
       edit->old_end_point.row = current_row;
       edit->old_end_point.column = current_column;

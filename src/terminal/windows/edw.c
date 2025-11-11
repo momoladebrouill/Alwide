@@ -8,7 +8,7 @@
 #include "../term_handler.h"
 #include "gui_entities.h"
 
-void initEDWContext(EDW_GUIContext* context) {
+void gui_initEDWContext(EDW_GUIContext* context) {
   context->ftw = NULL; // File Text Window
   context->lnw = NULL; // Line Number Window
   context->pow = NULL; // Popup Window
@@ -19,7 +19,7 @@ void initEDWContext(EDW_GUIContext* context) {
 }
 
 
-void resizeEDW(GUIContext* gui_context, int length_line_number) {
+void gui_resizeEDW(GUIContext* gui_context, int length_line_number) {
 
   if (length_line_number != -1) {
     gui_context->edw_context.length_line_number = length_line_number;
@@ -212,7 +212,7 @@ void printEditor_printCursor(EDW_GUIContext* context, Cursor cursor, int screen_
 }
 
 
-void repaintEDW(EDW_GUIContext* context, Cursor cursor, Cursor select_cursor, int screen_x, int screen_y,
+void gui_repaintEDW(EDW_GUIContext* context, Cursor cursor, Cursor select_cursor, int screen_x, int screen_y,
                 WindowHighlightDescriptor* highlight_descriptor) {
   if (!context->refresh_edw) {
     return;
@@ -270,7 +270,7 @@ void repaintEDW(EDW_GUIContext* context, Cursor cursor, Cursor select_cursor, in
 
 int getEDW_LengthLineNumber(GUIContext* gui_context) { return gui_context->edw_context.length_line_number; }
 
-bool showPopup(GUIContext* gui_context, int y, int x, int height, int width) {
+bool gui_showPopup(GUIContext* gui_context, int y, int x, int height, int width) {
   delwin(gui_context->edw_context.pow);
   gui_context->edw_context.pow =
     newwin(height, width, y - height + 1 + getbegy(gui_context->edw_context.ftw),
@@ -283,7 +283,7 @@ bool showPopup(GUIContext* gui_context, int y, int x, int height, int width) {
   return gui_context->edw_context.show_pow;
 }
 
-void closePopup(GUIContext* gui_context) {
+void gui_closePopup(GUIContext* gui_context) {
   gui_context->edw_context.show_pow = false;
   gui_context->edw_context.refresh_edw = true;
 }

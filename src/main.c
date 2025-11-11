@@ -180,7 +180,7 @@ int main(int file_count, char** args) {
       // resize lnw_w to match with line_number_length
       int new_lnw_width = numberOfDigitOfNumber(*screen_y + getmaxy(gui_context.edw_context.ftw));
       if (new_lnw_width != getEDW_LengthLineNumber(&gui_context)) {
-        resizeEDW(&gui_context, new_lnw_width);
+        gui_resizeEDW(&gui_context, new_lnw_width);
       }
     }
 
@@ -235,7 +235,7 @@ int main(int file_count, char** args) {
 
     // When available use keyname instead of key_code which is not portable.
     if (c != KEY_MOUSE && c != -1) {
-      // fprintf(stderr, "Code %d, Key : '%s' hash into %d.\n", c, keyname(c), hashString(keyname(c)));
+      fprintf(stderr, "Code %d, Key : '%s' hash into %d.\n", c, keyname(c), hashString(keyname(c)));
       const char* key_str = keyname(c);
       if (key_str != NULL && key_str[0] != '\0') {
         if (key_str[0] != '^') {
@@ -280,8 +280,8 @@ int main(int file_count, char** args) {
         // Was there but idk why... => Avoid biggest size only used on time before automated resize.
         // assert((getmaxx(gui_context.lnw) + gui_context.few_width >= COLS) == false);
         // Resize Opened File Window
-        resizeOFW(&gui_context);
-        resizeEDW(&gui_context, -1);
+        gui_resizeOFW(&gui_context);
+        gui_resizeEDW(&gui_context, -1);
 
         updateGUI(&gui_context);
         break;
@@ -545,7 +545,7 @@ int main(int file_count, char** args) {
         switchFEW(&gui_context);
         break;
       case CTRL('l'): // Opened File Window Switch
-        switchOFW(&gui_context);
+        gui_switchOFW(&gui_context);
         break;
       case CTRL(' '): // LSP_completion
 

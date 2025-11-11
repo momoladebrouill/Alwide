@@ -3,11 +3,11 @@
 #include "../../io_management/io_explorer.h"
 #include "gui_entities.h"
 
-void initFEWContext(FEW_GUIContext* context);
+void gui_initFEWContext(FEW_GUIContext* context);
 
-void resizeFEW(GUIContext* gui_context, int few_new_width);
+void gui_resizeFEW(GUIContext* gui_context, int few_new_width);
 
-void repaintFEW(FEW_GUIContext* context, ExplorerFolder* pwd);
+void gui_repaintFEW(FEW_GUIContext* context, ExplorerFolder* pwd);
 
 void switchFEW(GUIContext* gui_context);
 

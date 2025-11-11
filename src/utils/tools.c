@@ -1,8 +1,10 @@
 #include "tools.h"
 
 #include <asm-generic/errno-base.h>
+#include <assert.h>
 #include <errno.h>
 #include <libgen.h>
+#include <limits.h>
 #include <linux/limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,6 +12,8 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
+
+#include "constants.h"
 
 bool areStringEquals(String str1, String str2) { return strcmp(str1.content, str2.content) == 0; }
 
@@ -289,4 +293,49 @@ int mkdir_p(const char* path, mode_t mode) {
     return -1;
   }
   return 0;
+}
+
+void countStringFrame(char* ch, int length, int* current_row, int* current_column, int* screen_max_width) {
+  assert(current_row != NULL);
+  assert(current_column != NULL);
+
+  const int line_length = screen_max_width == NULL || *screen_max_width == 0 ? INT_MAX : *screen_max_width;
+
+  int current_ch_index = 0;
+  int current_line_length = 0;
+  int max_line = 0;
+  while (current_ch_index < length) {
+    if (TAB_CHAR_USE == false) {
+      assert(ch[current_ch_index] != '\t');
+    }
+    if (ch[current_ch_index] == '\n') {
+      (*current_row)++;
+      *current_column = 0;
+      if (current_line_length > max_line) {
+        max_line = current_line_length;
+      }
+      current_line_length = 0;
+    }
+    else {
+      Char_U8 tmp_ch = readChar_U8FromCharArray(ch + current_ch_index);
+      current_ch_index += sizeChar_U8(tmp_ch) - 1;
+      (*current_column)++;
+      if (current_line_length + charPrintSize(tmp_ch) > line_length) {
+        if (current_line_length > max_line) {
+          max_line = current_line_length;
+        }
+        current_line_length = 0;
+        (*current_row)++;
+      }
+      current_line_length += charPrintSize(tmp_ch);
+    }
+    current_ch_index++;
+  }
+  if (current_line_length > max_line) {
+    max_line = current_line_length;
+  }
+
+  if (screen_max_width != NULL) {
+    *screen_max_width = max_line;
+  }
 }

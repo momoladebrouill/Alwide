@@ -11,6 +11,7 @@
 #include "term_handler.h"
 #include "windows/edw.h"
 #include "windows/few.h"
+#include "windows/pow.h"
 
 
 bool handleClick(GUIContext* gui_context, FileContainer** files, int* file_count, int* current_file_index,
@@ -76,8 +77,8 @@ mouse_read:;
     if (m_event->bstate & BUTTON1_PRESSED) {
       gui_context->focus_w = gui_context->edw_context.ftw;
     }
-   force_repaint =  handleEditorClick(gui_context, cursor, select_cursor, desired_column, screen_x, screen_y, m_event, *mouse_drag,
-                      highlight_descriptor);
+    force_repaint = handleEditorClick(gui_context, cursor, select_cursor, desired_column, screen_x, screen_y, m_event,
+                                      *mouse_drag, highlight_descriptor);
   }
 
   if (m_event->bstate & BUTTON1_RELEASED || m_event->bstate & BUTTON1_CLICKED) {
@@ -166,46 +167,25 @@ bool handleEditorClick(GUIContext* gui_context, Cursor* cursor, Cursor* select_c
     *screen_x += SCROLL_SPEED;
   }
 
-  if (getbegx(gui_context->edw_context.lnw) <= m_event->x && m_event->x <= getmaxx(gui_context->edw_context.lnw)) {
+  if (getbegx(gui_context->edw_context.lnw) <= m_event->x &&
+      m_event->x < getbegx(gui_context->edw_context.lnw) + getmaxx(gui_context->edw_context.lnw)) {
+
     Diagnostic* diagnostic;
     getMarkerForCurrentLine(*screen_y + m_event->y - getbegy(gui_context->edw_context.lnw), highlight_descriptor, 0,
                             &diagnostic);
+
+    gui_showDiagnostic(gui_context, m_event->y - getbegy(gui_context->edw_context.lnw),
+                       getbegy(gui_context->edw_context.ftw), diagnostic);
+
     if (diagnostic != NULL) {
-      bool isOpened = showPopup(gui_context, m_event->y + 3, getmaxx(gui_context->edw_context.lnw) - 6, 3, 100);
-      if (isOpened) {
-        int color = 0;
-        switch (diagnostic->severity) {
-          case LSP_ERROR:
-            color = ERROR_COLOR_PAIR;
-            break;
-          case LSP_WARNING:
-            color = WARNING_COLOR_PAIR;
-            break;
-          case LSP_INFORMATION:
-            color = INFO_COLOR_PAIR;
-            break;
-          default:
-            color = 0;
-            break;
-        }
-
-        wattr_set(gui_context->edw_context.pow, A_NORMAL, color, NULL);
-
-        box(gui_context->edw_context.pow, 0, 0);
-
-        wmove(gui_context->edw_context.pow, 1, 1);
-        wprintw(gui_context->edw_context.pow, diagnostic->message);
-
-        return true;
-      }
-    }
-  }
-  else {
-    if (gui_context->edw_context.show_pow == true) {
       return true;
     }
-    closePopup(gui_context);
   }
+  else if (gui_context->edw_context.show_pow == true) {
+    gui_closePopup(gui_context);
+    return true;
+  }
+
   return false;
 }
 
@@ -320,7 +300,7 @@ void handleFileExplorerClick(GUIContext* gui_context, FileContainer** files, int
   }
   else if (m_event.bstate & BUTTON4_PRESSED && m_event.bstate & BUTTON_SHIFT) {
     // Move Left
-    resizeFEW(gui_context, few_context->few_width - 1);
+    gui_resizeFEW(gui_context, few_context->few_width - 1);
   }
 
   if (m_event.bstate & BUTTON5_PRESSED && !(m_event.bstate & BUTTON_SHIFT)) {
@@ -330,7 +310,7 @@ void handleFileExplorerClick(GUIContext* gui_context, FileContainer** files, int
   else if (m_event.bstate & BUTTON5_PRESSED && m_event.bstate & BUTTON_SHIFT) {
     // Move Right
     if (few_context->few_width < COLS - 8) {
-      resizeFEW(gui_context, few_context->few_width + 1);
+      gui_resizeFEW(gui_context, few_context->few_width + 1);
     }
   }
 

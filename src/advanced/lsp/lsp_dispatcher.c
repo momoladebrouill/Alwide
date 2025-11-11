@@ -70,5 +70,6 @@ void dispatcher(cJSON* packet, void* payload) {
   }
   else {
     fprintf(stderr, "Method NOT SUPPORTED !\n      => %s\n", method);
+    exit(-1); // TODO remove
   }
 }

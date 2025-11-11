@@ -21,17 +21,17 @@
 void initGUIContext(GUIContext* gui_context) {
   gui_context->focus_w = NULL; // Used to set the window where start mouse drag
 
-  initEDWContext(&gui_context->edw_context);
-  initFEWContext(&gui_context->few_context);
-  initOFWContext(&gui_context->ofw_context);
+  gui_initEDWContext(&gui_context->edw_context);
+  gui_initFEWContext(&gui_context->few_context);
+  gui_initOFWContext(&gui_context->ofw_context);
 }
 
 void initNCurses(GUIContext* gui_context) {
   // Init ncurses
   initscr();
-  resizeFEW(gui_context, -1);
-  resizeEDW(gui_context, -1);
-  resizeOFW(gui_context);
+  gui_resizeFEW(gui_context, -1);
+  gui_resizeEDW(gui_context, -1);
+  gui_resizeOFW(gui_context);
   // Keyboard setup
   raw();
   keypad(stdscr, TRUE);
@@ -69,10 +69,10 @@ void resetFocus(GUIContext* gui_context) { gui_context->focus_w = NULL; }
 
 void repaintGUI(GUIContext* gui_context, WindowHighlightDescriptor* highlight_descriptor, ExplorerFolder* explorer,
                 FileContainer* files, int file_count, int current_file) {
-  repaintEDW(&gui_context->edw_context, files[current_file].cursor, files[current_file].select_cursor,
-             files[current_file].screen_x, files[current_file].screen_y, highlight_descriptor);
-  repaintFEW(&gui_context->few_context, explorer);
-  repaintOFW(&gui_context->ofw_context, files, file_count, current_file);
+  gui_repaintEDW(&gui_context->edw_context, files[current_file].cursor, files[current_file].select_cursor,
+                 files[current_file].screen_x, files[current_file].screen_y, highlight_descriptor);
+  gui_repaintFEW(&gui_context->few_context, explorer);
+  gui_repaintOFW(&gui_context->ofw_context, files, file_count, current_file);
 }
 
 
@@ -220,3 +220,45 @@ LineIdentifier getLineIdForScreenX(LineIdentifier line_id, int screen_x, int x_c
 
 
 void setDesiredColumn(Cursor cursor, int* desired_column) { *desired_column = cursor.line_id.absolute_column; }
+
+
+void printToWindow(WINDOW* w, char* ch, int length, int offset_x, int offset_y, int line_length) {
+  const Char_U8 space = readChar_U8FromCharArray(" ");
+
+  wmove(w, offset_y, offset_x);
+
+  int current_row = 0;
+  int current_ch_index = 0;
+  int current_line_length = 0;
+  while (current_ch_index < length) {
+
+    if (ch[current_ch_index] == '\n') {
+      current_line_length = 0;
+      current_row++;
+      wmove(w, offset_y + current_row, offset_x);
+    }
+    else {
+      Char_U8 tmp_ch = readChar_U8FromCharArray(ch + current_ch_index);
+      current_ch_index += sizeChar_U8(tmp_ch) - 1;
+
+      if (current_line_length + charPrintSize(tmp_ch) > line_length) {
+        current_line_length = 0;
+        current_row++;
+        wmove(w, offset_y + current_row, offset_x);
+      }
+
+      current_line_length += charPrintSize(tmp_ch);
+
+      if (tmp_ch.t[0] != '\t') {
+        printChar_U8ToNcurses(w, tmp_ch);
+      }
+      else {
+        for (int i = 0; i < TAB_SIZE; i++) {
+          printChar_U8ToNcurses(w, space);
+        }
+      }
+    }
+
+    current_ch_index++;
+  }
+}
