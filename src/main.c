@@ -159,7 +159,7 @@ int main(int file_count, char** args) {
                      &lsp_data);
       refresh_local_vars = false;
       old_history_frame = *history_frame;
-      payload_state_change = getPayloadStateChange(ts_data, lsp_data, cursor);
+      payload_state_change = getPayloadStateChange(ts_data, lsp_data);
     }
 
     // flag cursor change
@@ -439,7 +439,8 @@ int main(int file_count, char** args) {
         deleteSelectionWithState(history_frame, cursor, select_cursor, payload_state_change);
         tmp = cursorToDescriptor(cursor);
         *cursor = loadFromClipBoard(*cursor);
-        saveAction(history_frame, createInsertAction(*cursor, tmp), globalOnStageChange, (long*)&payload_state_change);
+        saveAction(history_frame, createInsertAction(*cursor, tmp), globalOnStageChange, cursor,
+                   (long*)&payload_state_change);
         setDesiredColumn(*cursor, desired_column);
         break;
       case CTRL('q'):
@@ -489,7 +490,8 @@ int main(int file_count, char** args) {
         deleteSelectionWithState(history_frame, cursor, select_cursor, payload_state_change);
         tmp = cursorToDescriptor(cursor);
         *cursor = insertNewLineInLineC(*cursor);
-        saveAction(history_frame, createInsertAction(*cursor, tmp), globalOnStageChange, (long*)&payload_state_change);
+        saveAction(history_frame, createInsertAction(*cursor, tmp), globalOnStageChange, cursor,
+                   (long*)&payload_state_change);
         setDesiredColumn(*cursor, desired_column);
         break;
       case H_KEY_DELETE:
@@ -523,7 +525,8 @@ int main(int file_count, char** args) {
             *cursor = insertCharInLineC(*cursor, readChar_U8FromInput(' '));
           }
         }
-        saveAction(history_frame, createInsertAction(*cursor, tmp), globalOnStageChange, (long*)&payload_state_change);
+        saveAction(history_frame, createInsertAction(*cursor, tmp), globalOnStageChange, cursor,
+                   (long*)&payload_state_change);
         setDesiredColumn(*cursor, desired_column);
         break;
       case CTRL('d'):
@@ -558,7 +561,7 @@ int main(int file_count, char** args) {
           tmp = cursorToDescriptor(cursor);
           *cursor = insertCharInLineC(*cursor, readChar_U8FromInput(c));
           setDesiredColumn(*cursor, desired_column);
-          saveAction(history_frame, createInsertAction(*cursor, tmp), globalOnStageChange,
+          saveAction(history_frame, createInsertAction(*cursor, tmp), globalOnStageChange, cursor,
                      (long*)&payload_state_change);
         }
         break;

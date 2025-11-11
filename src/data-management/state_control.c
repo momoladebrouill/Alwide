@@ -17,7 +17,7 @@ void initHistory(History* history) {
 }
 
 
-Cursor undo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, void* payload),
+Cursor undo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, Cursor* cursor, void* payload),
             void* payload) {
   History* history = *history_p;
 
@@ -39,7 +39,7 @@ Cursor undo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action
   return cursor;
 }
 
-Cursor redo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, void* payload),
+Cursor redo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, Cursor* cursor, void* payload),
             void* payload) {
   History* history = *history_p;
 
@@ -65,7 +65,8 @@ Cursor redo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action
 }
 
 
-void saveAction(History** history_p, Action action, void (*onEachStateChange)(Action action, void* payload),
+void saveAction(History** history_p, Action action,
+                void (*onEachStateChange)(Action action, Cursor* cursor, void* payload), Cursor* cursor,
                 void* payload) {
   History* history = *history_p;
   if (action.action == ACTION_NONE) {
@@ -89,11 +90,11 @@ void saveAction(History** history_p, Action action, void (*onEachStateChange)(Ac
 
 
   if (onEachStateChange != NULL)
-    onEachStateChange(action, payload);
+    onEachStateChange(action, cursor, payload);
 }
 
-Cursor doReverseAction(Action* action_p, Cursor cursor, void (*onEachStateChange)(Action action, void* payload),
-                       void* payload) {
+Cursor doReverseAction(Action* action_p, Cursor cursor,
+                       void (*onEachStateChange)(Action action, Cursor* cursor, void* payload), void* payload) {
   Action action = *action_p;
   Cursor tmp;
   Cursor tmp_end;
@@ -107,14 +108,14 @@ Cursor doReverseAction(Action* action_p, Cursor cursor, void (*onEachStateChange
         destroyAction(action);
         *action_p = createInsertAction(tmp, cursorToDescriptor(&cursor));
         if (onEachStateChange != NULL)
-          onEachStateChange(*action_p, payload);
+          onEachStateChange(*action_p, &cursor, payload);
         return cursor;
       }
       cursor = insertCharInLineC(tmp, readChar_U8FromInput(action.unique_ch));
       destroyAction(action);
       *action_p = createInsertAction(tmp, cursorToDescriptor(&cursor));
       if (onEachStateChange != NULL)
-        onEachStateChange(*action_p, payload);
+        onEachStateChange(*action_p, &cursor, payload);
       return cursor;
     case DELETE:
       tmp.file_id = tryToReachAbsRow(cursor.file_id, action.cur.row);
@@ -123,7 +124,7 @@ Cursor doReverseAction(Action* action_p, Cursor cursor, void (*onEachStateChange
       destroyAction(action);
       *action_p = createInsertAction(tmp, cursorToDescriptor(&cursor));
       if (onEachStateChange != NULL)
-        onEachStateChange(*action_p, payload);
+        onEachStateChange(*action_p, &cursor, payload);
       return cursor;
     case INSERT:
       tmp.file_id = tryToReachAbsRow(cursor.file_id, action.cur.row);
@@ -135,7 +136,7 @@ Cursor doReverseAction(Action* action_p, Cursor cursor, void (*onEachStateChange
       *action_p = createDeleteAction(tmp, cursorToDescriptor(&tmp_end));
       deleteSelection(&tmp, &tmp_end);
       if (onEachStateChange != NULL)
-        onEachStateChange(*action_p, payload);
+        onEachStateChange(*action_p, &tmp, payload);
       return tmp;
     case ACTION_NONE:
       return cursor;
@@ -375,7 +376,7 @@ void loadCurrentStateControl(History* root, History** current_state, IO_FileID i
     }
 
     // Do not add a onEachStateChange function, here change must not be flagged ! Loading history.
-    saveAction(current_state, action, NULL, NULL);
+    saveAction(current_state, action, NULL, NULL, NULL);
     if (isCurrentState == 'y') {
       state_to_return = *current_state;
     }
