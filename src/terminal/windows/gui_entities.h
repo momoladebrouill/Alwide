@@ -29,6 +29,8 @@ typedef struct {
 } FEW_GUIContext;
 
 
+typedef enum { DIAGNOSTICS, AUTOCOMPLETE, NO_OWNER } PopupOwner;
+
 typedef struct {
   // NCurses items
   WINDOW* ftw; // File Text Window
@@ -43,6 +45,7 @@ typedef struct {
 
   // Popup vars
   bool show_pow;
+  PopupOwner pow_owner;
 } EDW_GUIContext;
 
 

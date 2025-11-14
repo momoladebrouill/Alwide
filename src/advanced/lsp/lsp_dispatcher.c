@@ -19,7 +19,7 @@ void printPacket(cJSON* packet, cJSON* params) {
   free(text);
 }
 
-int getIndexFileContainerForName(DispatcherPayload *payload, char *file_name) {
+int getIndexFileContainerForName(DispatcherPayload* payload, char* file_name) {
   for (int i = 0; i < payload->size; i++) {
     // fprintf(stderr, "Comparing :\n%s\n%s\n", payload->files[i].io_file.path_abs, uri + 7);
     if (strcmp(payload->files[i].io_file.path_abs, file_name) == 0) {
@@ -103,7 +103,6 @@ void responseDispatcher(cJSON* packet, LSP_Server* lsp, DispatcherPayload* data)
     fprintf(stderr, "Reponse method NOT SUPPORTED !\n      => %s\n", context.method);
     exit(-1); // TODO remove
   }
-
 }
 
 

@@ -101,7 +101,7 @@ FilePosition maxPosition(FilePosition pos1, FilePosition pos2) {
 }
 
 void tphd_mergeAttributes(TextPartHighlightDescriptor* self, NCURSES_PAIRS_T color, attr_t attributes,
-                          uint16_t priority, bool override_attributes, LineMarker marker, void *diagnostic) {
+                          uint16_t priority, bool override_attributes, LineMarker marker, void* diagnostic) {
   if (self->color_priority <= priority) {
     self->color = color;
     self->color_priority = priority;
@@ -208,7 +208,8 @@ void tphd_mergeAttributes(TextPartHighlightDescriptor* self, NCURSES_PAIRS_T col
 
 
 void whd_insertDescriptor(WindowHighlightDescriptor* self, Cursor begin, Cursor end, NCURSES_PAIRS_T color,
-                          attr_t attributes, uint16_t priority, bool override_attributes, LineMarker marker, void* diagnostic) {
+                          attr_t attributes, uint16_t priority, bool override_attributes, LineMarker marker,
+                          void* diagnostic) {
   FilePosition current_pos = {begin.file_id.absolute_row, begin.line_id.absolute_column};
   FilePosition end_pos = {end.file_id.absolute_row, end.line_id.absolute_column};
   // fprintf(stderr, "insert (%d, %d) -> (%d, %d)\n", current_pos.abs_row, current_pos.abs_column, end_pos.abs_row,

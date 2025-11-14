@@ -218,7 +218,7 @@ int main(int file_count, char** args) {
     double time_taken = (double)t_clock / CLOCKS_PER_SEC * 1000;
 
     // fprintf(stderr, "Complete loop took about reel %5lld ms, took cpu %5.3lf ms.\n",
-            // diff2Time(timeInMilliseconds(), t_date), time_taken);
+    // diff2Time(timeInMilliseconds(), t_date), time_taken);
 
   read_input:;
     int c;
@@ -554,11 +554,15 @@ int main(int file_count, char** args) {
                                 cursor->file_id.absolute_row - 1, cursor->line_id.absolute_column);
         }
         break;
+      case H_KEY_ESCAPE:
+      case CTRL('['):
+        gui_closePopup(&gui_context);
+        break;
 
 
       default:
         if (iscntrl(c)) {
-          printf("Unsupported touch %d\r\n", c);
+          printf("Unsupported touch %d", c);
         }
         else {
           deleteSelectionWithState(history_frame, cursor, select_cursor, payload_state_change);
@@ -567,6 +571,9 @@ int main(int file_count, char** args) {
           setDesiredColumn(*cursor, desired_column);
           saveAction(history_frame, createInsertAction(*cursor, tmp), globalOnStageChange, cursor,
                      (long*)&payload_state_change);
+          if (gui_context.edw_context.pow_owner == DIAGNOSTICS) {
+            gui_closePopup(&gui_context);
+          }
         }
         break;
     }

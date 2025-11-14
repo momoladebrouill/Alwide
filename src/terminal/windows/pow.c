@@ -18,10 +18,8 @@ void gui_showDiagnostic(GUIContext* gui_context, int y, int x, Diagnostic* diagn
   int ch_length = strlen(diagnostic->message);
   countStringFrame(diagnostic->message, ch_length, &height, &unused, &max_width);
 
-  fprintf(stderr, "Popup settings:  height = %d, max_width = %d\n", height, max_width);
-
-  bool isOpened =
-    gui_showPopup(gui_context, y + height, x - 2, height, min(getmaxx(gui_context->edw_context.ftw), max_width + 2));
+  bool isOpened = gui_showPopup(gui_context, y + height, x - 2, height,
+                                min(getmaxx(gui_context->edw_context.ftw), max_width + 2), DIAGNOSTICS);
   // couldn't show popup
   if (!isOpened) {
     return;
@@ -42,7 +40,7 @@ void gui_showDiagnostic(GUIContext* gui_context, int y, int x, Diagnostic* diagn
       color = 0;
       break;
   }
-
+  wbkgd(gui_context->edw_context.pow, COLOR_PAIR(color));
   wattr_set(gui_context->edw_context.pow, A_NORMAL, color, NULL);
 
   box(gui_context->edw_context.pow, 0, 0);

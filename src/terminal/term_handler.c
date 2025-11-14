@@ -27,6 +27,7 @@ void initGUIContext(GUIContext* gui_context) {
 }
 
 void initNCurses(GUIContext* gui_context) {
+  ESCDELAY = 25;
   // Init ncurses
   initscr();
   gui_resizeFEW(gui_context, -1);
@@ -47,17 +48,18 @@ void initNCurses(GUIContext* gui_context) {
   start_color();
   // Default color.
   init_color(COLOR_HOVER, 390, 390, 390);
+  init_color(COLOR_DARK, 150, 150, 150);
   init_pair(DEFAULT_COLOR_PAIR, COLOR_WHITE, COLOR_BLACK);
   init_pair(DEFAULT_COLOR_HOVER_PAIR, COLOR_WHITE, COLOR_HOVER);
 
-  init_pair(ERROR_COLOR_PAIR, COLOR_RED, COLOR_BLACK);
-  init_pair(ERROR_COLOR_HOVER_PAIR, COLOR_RED, COLOR_HOVER);
+  init_pair(ERROR_COLOR_PAIR, COLOR_RED, COLOR_DARK);
+  init_pair(ERROR_COLOR_HOVER_PAIR, COLOR_RED, COLOR_DARK);
 
-  init_pair(WARNING_COLOR_PAIR, COLOR_YELLOW, COLOR_BLACK);
-  init_pair(WARNING_COLOR_HOVER_PAIR, COLOR_YELLOW, COLOR_HOVER);
+  init_pair(WARNING_COLOR_PAIR, COLOR_YELLOW, COLOR_DARK);
+  init_pair(WARNING_COLOR_HOVER_PAIR, COLOR_YELLOW, COLOR_DARK);
 
-  init_pair(INFO_COLOR_PAIR, COLOR_CYAN, COLOR_BLACK);
-  init_pair(INFO_COLOR_HOVER_PAIR, COLOR_CYAN, COLOR_HOVER);
+  init_pair(INFO_COLOR_PAIR, COLOR_CYAN, COLOR_DARK);
+  init_pair(INFO_COLOR_HOVER_PAIR, COLOR_CYAN, COLOR_DARK);
 }
 
 void setFocus(GUIContext* gui_context, WINDOW* w) { gui_context->focus_w = w; }

@@ -10,7 +10,8 @@
 bool handleClick(GUIContext* gui_context, FileContainer** files, int* file_count, int* current_file_index,
                  ExplorerFolder* pwd, Cursor* cursor, Cursor* select_cursor, int* desired_column, int* screen_x,
                  int* screen_y, bool* refresh_local_vars, MEVENT* m_event, int* peek_c, bool* mouse_drag,
-                 time_val* last_time_mouse_drag, time_val* t_date, clock_t* t_clock, int* c, WindowHighlightDescriptor *highlight_descriptor);
+                 time_val* last_time_mouse_drag, time_val* t_date, clock_t* t_clock, int* c,
+                 WindowHighlightDescriptor* highlight_descriptor);
 
 ////// -------------- CLICK FUNCTIONS --------------
 

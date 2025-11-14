@@ -53,9 +53,7 @@ LineIdentifier getLineIdForScreenX(LineIdentifier line_id, int screen_x, int x_c
 
 void setDesiredColumn(Cursor cursor, int* desired_column);
 
-void printToWindow(WINDOW*w, char *ch, int length, int offset_x, int offset_y, int line_length);
-
-
+void printToWindow(WINDOW* w, char* ch, int length, int offset_x, int offset_y, int line_length);
 
 
 #endif // NCURSES_HANDLER_H

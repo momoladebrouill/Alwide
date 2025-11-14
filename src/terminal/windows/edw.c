@@ -16,6 +16,7 @@ void gui_initEDWContext(EDW_GUIContext* context) {
   context->refresh_edw = true; // Need to reprint editor window
   context->length_line_number = 0;
   context->show_pow = false;
+  context->pow_owner = NO_OWNER;
 }
 
 
@@ -213,7 +214,7 @@ void printEditor_printCursor(EDW_GUIContext* context, Cursor cursor, int screen_
 
 
 void gui_repaintEDW(EDW_GUIContext* context, Cursor cursor, Cursor select_cursor, int screen_x, int screen_y,
-                WindowHighlightDescriptor* highlight_descriptor) {
+                    WindowHighlightDescriptor* highlight_descriptor) {
   if (!context->refresh_edw) {
     return;
   }
@@ -265,19 +266,21 @@ void gui_repaintEDW(EDW_GUIContext* context, Cursor cursor, Cursor select_cursor
   if (context->show_pow) {
     assert(context->pow != NULL);
     wrefresh(context->pow);
+    redrawwin(context->pow);
   }
 }
 
 int getEDW_LengthLineNumber(GUIContext* gui_context) { return gui_context->edw_context.length_line_number; }
 
-bool gui_showPopup(GUIContext* gui_context, int y, int x, int height, int width) {
+bool gui_showPopup(GUIContext* gui_context, int y, int x, int height, int width, PopupOwner owner) {
   delwin(gui_context->edw_context.pow);
-  gui_context->edw_context.pow =
-    newwin(height, width, y - height + 1 + getbegy(gui_context->edw_context.ftw),
-           x + getbegx(gui_context->edw_context.ftw) + 2);
+  gui_context->edw_context.pow = newwin(height, width, y - height + 1 + getbegy(gui_context->edw_context.ftw),
+                                        x + getbegx(gui_context->edw_context.ftw) + 2);
 
   gui_context->edw_context.show_pow = gui_context->edw_context.pow != NULL;
-
+  if (gui_context->edw_context.show_pow) {
+    gui_context->edw_context.pow_owner = owner;
+  }
   gui_context->edw_context.refresh_edw = true;
 
   return gui_context->edw_context.show_pow;
@@ -285,5 +288,6 @@ bool gui_showPopup(GUIContext* gui_context, int y, int x, int height, int width)
 
 void gui_closePopup(GUIContext* gui_context) {
   gui_context->edw_context.show_pow = false;
-  gui_context->edw_context.refresh_edw = true;
+  gui_context->edw_context.pow_owner = NO_OWNER;
+  updateEDW(gui_context);
 }

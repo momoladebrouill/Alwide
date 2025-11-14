@@ -181,7 +181,7 @@ bool handleEditorClick(GUIContext* gui_context, Cursor* cursor, Cursor* select_c
       return true;
     }
   }
-  else if (gui_context->edw_context.show_pow == true) {
+  else if (gui_context->edw_context.show_pow == true && gui_context->edw_context.pow_owner == DIAGNOSTICS) {
     gui_closePopup(gui_context);
     return true;
   }

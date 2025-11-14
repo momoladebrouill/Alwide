@@ -652,7 +652,8 @@ void LSP_destroyDiagnostic(Diagnostic diagnostic) {}
 
 //// -------- Receive Functions --------
 
-bool LSP_dispatchOnReceive(LSP_Server* lsp, void (*dispatcher)(cJSON* packet,LSP_Server* lsp, void* payload), void* payload) {
+bool LSP_dispatchOnReceive(LSP_Server* lsp, void (*dispatcher)(cJSON* packet, LSP_Server* lsp, void* payload),
+                           void* payload) {
   if (lsp == NULL) {
     return false;
   }
