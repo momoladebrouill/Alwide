@@ -267,14 +267,13 @@ void gui_repaintEDW(EDW_GUIContext* context, Cursor cursor, Cursor select_cursor
   printEditor_printCursor(context, cursor, screen_x, screen_y, highlight_descriptor, line_count, column_count);
   // box(ofw, 0, 0);
 
-  wrefresh(context->lnw);
-  wrefresh(context->ftw);
+  wnoutrefresh(context->lnw);
+  wnoutrefresh(context->ftw);
 
   if (context->show_pow) {
     assert(context->pow != NULL);
     gui_printPopup(context, &cursor, lsp_data);
-    wrefresh(context->pow);
-    // redrawwin(context->pow);
+    wnoutrefresh(context->pow);
   }
 }
 

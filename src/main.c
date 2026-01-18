@@ -199,8 +199,6 @@ int main(int file_count, char** args) {
 
     //// --------------- Paint GUI -----------------
 
-    refresh();
-
     // Refresh Editor Windows vars
     if (gui_context.edw_context.refresh_edw == true) {
       whd_reset(&highlight_descriptor);
@@ -286,7 +284,7 @@ int main(int file_count, char** args) {
     switch (hash) {
         // ---------------------- NCURSES THINGS ----------------------
       case ONLY_REPAINT_INPUT:
-        updateEDW(&gui_context);
+        updateGUI(&gui_context);
         break;
 
       case BEGIN_MOUSE_LISTEN:

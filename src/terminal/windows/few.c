@@ -169,6 +169,6 @@ void gui_repaintFEW(FEW_GUIContext* context, ExplorerFolder* pwd) {
     mvwprintw(context->few, i, getmaxx(context->few) - 1, "│");
   }
 
-  wrefresh(context->few);
+  wnoutrefresh(context->few);
   context->refresh_few = false;
 }

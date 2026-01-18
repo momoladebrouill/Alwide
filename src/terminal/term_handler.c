@@ -75,10 +75,13 @@ void resetFocus(GUIContext* gui_context) { gui_context->focus_w = NULL; }
 
 void repaintGUI(GUIContext* gui_context, WindowHighlightDescriptor* highlight_descriptor, ExplorerFolder* explorer,
                 FileContainer* files, int file_count, int current_file) {
+  wnoutrefresh(stdscr);
   gui_repaintEDW(&gui_context->edw_context, files[current_file].cursor, files[current_file].select_cursor,
-                 files[current_file].screen_x, files[current_file].screen_y, highlight_descriptor, files[current_file].lsp_datas.computed);
+                 files[current_file].screen_x, files[current_file].screen_y, highlight_descriptor,
+                 files[current_file].lsp_datas.computed);
   gui_repaintFEW(&gui_context->few_context, explorer);
   gui_repaintOFW(&gui_context->ofw_context, files, file_count, current_file);
+  doupdate();
 }
 
 

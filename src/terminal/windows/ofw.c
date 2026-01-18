@@ -79,7 +79,7 @@ void gui_repaintOFW(OFW_GUIContext* context, FileContainer* files, int file_coun
     wprintw(context->ofw, "🭸");
   }
 
-  wrefresh(context->ofw);
+  wnoutrefresh(context->ofw);
   context->refresh_ofw = false;
 }
 
