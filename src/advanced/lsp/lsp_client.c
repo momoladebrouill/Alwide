@@ -111,8 +111,7 @@ char* LSP_readPacket(LSP_Server* server) {
   // read the first head field title.
   int header_size = strlen(HEADER_FIRST_FIELD);
   int n = read(server->inpipefd[0], buf, header_size);
-  buf[n] = '\0';
-
+  buf[header_size] = '\0';
 
   // If the first header is not the expected one.
   if (n != header_size || strcmp(HEADER_FIRST_FIELD, buf) != 0) {
@@ -297,6 +296,7 @@ bool LSP_popResponseContext(LSP_Server* server, LSP_PacketID id, LSP_ResponseCon
       free(tmp);
       return true;
     }
+    current = current->next;
   }
 
   return false;
