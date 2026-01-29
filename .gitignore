@@ -6,3 +6,4 @@ lib/tree-sitter-markdown_useless/
 al
 .cache
 lsp_test
+build/
