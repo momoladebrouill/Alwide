@@ -1,5 +1,8 @@
 #include "lsp_completion.h"
 
+#include <assert.h>
+#include <string.h>
+
 #include "../../../io_management/viewport_history.h"
 #include "../../../terminal/windows/edw.h"
 #include "../../../terminal/windows/pow.h"
@@ -27,13 +30,51 @@ int compareTextEdit(const void* e1_p, const void* e2_p) {
   return e1->range.pos1.column <= e2->range.pos1.column ? 1 : -1;
 }
 
+Range getReplaceRange(Cursor* cursor, char insertText[METHOD_MAX_LENGTH]) {
+  Cursor select = disableCursor(*cursor);
+  if (cursor->line_id.absolute_column != 0) {
+    Cursor tmp = *cursor;
+    selectWord(&tmp, &select);
+  }
+
+  Cursor begin = select;
+  int index = 0;
+
+  bool begin_matching = true;
+  while (!isCursorDisabled(select) && isCursorStrictPreviousThanOther(select, *cursor)) {
+    select = moveRight(select);
+    Char_U8 ch = getCharAtCursor(select);
+    for (int i = 0; i < sizeChar_U8(ch); i++) {
+      assert(index <= METHOD_MAX_LENGTH);
+      if (insertText[index] != ch.t[i] && towupper(insertText[index]) != towupper(ch.t[i])) {
+        begin_matching = false;
+        break;
+      }
+      index++;
+    }
+  }
+
+  if (isCursorDisabled(select) || begin_matching == false) {
+    begin = *cursor;
+  }
+
+  return (Range){.pos1 = {.row = begin.file_id.absolute_row - 1, .column = begin.line_id.absolute_column},
+                 .pos2 = {.row = cursor->file_id.absolute_row - 1, .column = cursor->line_id.absolute_column}};
+}
+
 void LSP_executeCompletion(Cursor* cursor, CompletionItem* item, History** history_p,
                            PayloadStateChange payload_state_change) {
-  // TODO handle the case of an lsp_server not using text-edit.
-  // Create a text edit from the insertText.
-  // if (item->insertText)
+  if (!item->is_text_edit) {
+    // copy the text to the edit.
+    item->text_edit.new_text = malloc(sizeof(char) * METHOD_MAX_LENGTH);
+    memcpy(item->text_edit.new_text, item->insertText, sizeof(char) * METHOD_MAX_LENGTH);
 
-  bool main_text_edit_done = !item->is_text_edit;
+    // we have to detect what to replace.
+    item->text_edit.range = getReplaceRange(cursor, item->insertText);
+    item->is_text_edit = true;
+  }
+
+  bool main_text_edit_done = false;
   CursorDescriptor position_after_insert;
   position_after_insert.row = -1;
   position_after_insert.column = -1;
