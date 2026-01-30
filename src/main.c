@@ -239,11 +239,11 @@ int main(int file_count, char** args) {
 
     // When available use keyname instead of key_code which is not portable.
     if (c != KEY_MOUSE && c != -1) {
-      fprintf(stderr, "Code %d, Key : '%s' hash into %d.\n", c, keyname(c), hashString(keyname(c)));
+      fprintf(stderr, "Code %d, Key : '%s' hash into %d.\n", c, keyname(c), hashString((unsigned char *)keyname(c)));
       const char* key_str = keyname(c);
       if (key_str != NULL && key_str[0] != '\0') {
         if (key_str[0] != '^') {
-          hash = hashString(key_str);
+          hash = hashString((unsigned char *)key_str);
         }
       }
       else {
