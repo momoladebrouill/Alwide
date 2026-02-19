@@ -223,6 +223,22 @@ void printEditor_printCursor(EDW_GUIContext* context, Cursor cursor, int screen_
 }
 
 
+void move_physical_cursor(EDW_GUIContext* context, Cursor cursor, int screen_x, int screen_y, const int line_count,
+                          const int column_count) {
+  int ftw_x = getScreenXForCursor(cursor, screen_x);
+  if (cursor.file_id.absolute_row >= screen_y && cursor.file_id.absolute_row < screen_y + line_count && ftw_x >= 0 &&
+      ftw_x <= getmaxx(context->ftw) - 3) {
+    curs_set(1);
+    int abs_y = cursor.file_id.absolute_row - screen_y + getbegy(context->ftw);
+    int abs_x = ftw_x + getbegx(context->ftw);
+    move(abs_y, abs_x);
+  }
+  else {
+    curs_set(0);
+  }
+}
+
+
 void gui_repaintEDW(EDW_GUIContext* context, Cursor cursor, Cursor select_cursor, int screen_x, int screen_y,
                     WindowHighlightDescriptor* highlight_descriptor, LSP_ComputedData* lsp_data) {
   if (!context->refresh_edw) {
@@ -267,8 +283,11 @@ void gui_repaintEDW(EDW_GUIContext* context, Cursor cursor, Cursor select_cursor
   }
 
   // ===============  Print Cursor  ===============
-  // printEditor_printCursor(context, cursor, screen_x, screen_y, highlight_descriptor, line_count, column_count);
-  // box(ofw, 0, 0);
+#ifdef SIMULATED_CURSOR
+  printEditor_printCursor(context, cursor, screen_x, screen_y, highlight_descriptor, line_count, column_count);
+#else
+  move_physical_cursor(context, cursor, screen_x, screen_y, line_count, column_count);
+#endif
 
   wnoutrefresh(context->lnw);
   wnoutrefresh(context->ftw);
@@ -277,18 +296,6 @@ void gui_repaintEDW(EDW_GUIContext* context, Cursor cursor, Cursor select_cursor
     assert(context->pow != NULL);
     gui_printPopup(context, &cursor, lsp_data);
     wnoutrefresh(context->pow);
-  }
-
-  // TODO improve for utf8 char and more of that... not a clean version.
-  if (cursor.file_id.absolute_row >= screen_y && cursor.file_id.absolute_row < screen_y + line_count &&
-      cursor.line_id.absolute_column >= screen_x - 1 && cursor.line_id.absolute_column <= screen_x + column_count - 3) {
-    curs_set(1);
-    int y = cursor.file_id.absolute_row - screen_y + getbegy(context->ftw);
-    int x = cursor.line_id.absolute_column - screen_x + getbegx(context->ftw) + 1;
-    move(y, x);
-  }
-  else {
-    curs_set(0);
   }
 
   context->refresh_edw = false;

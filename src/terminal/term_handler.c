@@ -82,7 +82,6 @@ void repaintGUI(GUIContext* gui_context, WindowHighlightDescriptor* highlight_de
   gui_repaintFEW(&gui_context->few_context, explorer);
   gui_repaintOFW(&gui_context->ofw_context, files, file_count, current_file);
   doupdate();
-  refresh();
 }
 
 
