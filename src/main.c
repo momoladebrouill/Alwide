@@ -63,7 +63,7 @@ int main(int file_count, char** args) {
     fclose(f);
   }
   else {
-    FILE* f = fopen("./logs.txt", "w");
+    FILE* f = fopen("./.logs.txt", "w");
     if (f != NULL) {
       dup2(fileno(f), STDERR_FILENO);
       fclose(f);
@@ -73,7 +73,7 @@ int main(int file_count, char** args) {
   setlocale(LC_ALL, "");
   setlocale(LC_NUMERIC, "C");
   // TODO Remove when lsp_logs.txt will be unused.
-  system("echo > lsp_logs.txt");
+  system("echo > .lsp_logs.txt");
   // system("echo "" > tree_logs.txt");
 
   // remove first args which is the executable file name.

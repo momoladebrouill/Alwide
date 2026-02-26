@@ -68,8 +68,8 @@ bool LSP_openLSPServer(char* name, char* command_args, char* language, LSP_Serve
     close(server->inpipefd[0]);
 
 
-    char command[strlen(name) + strlen(command_args) + strlen(" 2>> lsp_logs.txt ") + 1 /*null char*/];
-    sprintf(command, "%s %s 2>> lsp_logs.txt", name, command_args);
+    char command[strlen(name) + strlen(command_args) + strlen(" 2>> .lsp_logs.txt ") + 1 /*null char*/];
+    sprintf(command, "%s %s 2>> .lsp_logs.txt", name, command_args);
 
     // system(command);
     // execl(pathMemSafe, "", (char *)NULL);
