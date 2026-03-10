@@ -332,7 +332,7 @@ void LSP_initializeServer(LSP_Server* lsp, char* client_name, char* client_versi
   cJSON* workspace_array = cJSON_AddArrayToObject(init_params, "workspaceFolders");
 
   cJSON* workspace = cJSON_CreateObject();
-  char workspaceURI[PATH_MAX];
+  char workspaceURI[URI_MAX];
   getLocalURI(current_workspace_path, workspaceURI);
   cJSON_AddStringToObject(workspace, "uri", workspaceURI);
   cJSON_AddStringToObject(workspace, "name", basename(current_workspace_path));
@@ -453,7 +453,7 @@ TextDocumentItem LSP_getTextDocumentItemOf(char* file_name, char* languageId, in
 cJSON* LSP_getJSONTextDocumentItem(char* file_name, char* languageId, int version, char* text) {
   cJSON* text_document = cJSON_CreateObject();
 
-  char uri[PATH_MAX];
+  char uri[URI_MAX];
   getLocalURI(file_name, uri);
   cJSON_AddStringToObject(text_document, "uri", uri);
   cJSON_AddStringToObject(text_document, "languageId", languageId);
@@ -481,7 +481,7 @@ TextDocumentIdentifier LSP_getTextDocumentIdentifierOf(char* file_name) {
 
 cJSON* LSP_getJSONTextDocumentIdentifier(char* file_name) {
   cJSON* text_document_id = cJSON_CreateObject();
-  char uri[PATH_MAX];
+  char uri[URI_MAX];
   getLocalURI(file_name, uri);
   cJSON_AddStringToObject(text_document_id, "uri", uri);
 
@@ -490,7 +490,7 @@ cJSON* LSP_getJSONTextDocumentIdentifier(char* file_name) {
 
 cJSON* LSP_getJSONTextDocumentIdentifierVersionned(char* file_name, int version) {
   cJSON* text_document_id = cJSON_CreateObject();
-  char uri[PATH_MAX];
+  char uri[URI_MAX];
   getLocalURI(file_name, uri);
   cJSON_AddStringToObject(text_document_id, "uri", uri);
   cJSON_AddNumberToObject(text_document_id, "version", version);
@@ -594,7 +594,7 @@ Location LSP_getLocationOf(char* file_name, int cur1_row, int cur1_column, int c
 cJSON* LSP_getJSONLocation(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column) {
   cJSON* location = cJSON_CreateObject();
 
-  char uri[PATH_MAX];
+  char uri[URI_MAX];
   getLocalURI(file_name, uri);
   cJSON_AddStringToObject(location, "uri", uri);
 

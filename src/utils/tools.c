@@ -105,10 +105,34 @@ char* whereis(char* prog) {
 }
 
 
+void encodeURI(const char* src, char* dest, size_t dest_size) {
+  const char* p = src;
+  size_t written = 0;
+  while (*p && (written + 1 < dest_size)) {
+    if (isalnum(*p) || *p == '-' || *p == '_' || *p == '.' || *p == '~' || *p == '/') {
+      *dest++ = *p++;
+      written++;
+    }
+    else {
+      if (written + 4 > dest_size)
+        break;
+      sprintf(dest, "%%%02X", (unsigned char)*p);
+      dest += 3;
+      written += 3;
+      p++;
+    }
+  }
+  *dest = '\0';
+}
+
 void getLocalURI(char* realive_abs_path, char* uri) {
   char abs_path[PATH_MAX];
-  realpath(realive_abs_path, abs_path);
-  sprintf(uri, "file://%s", abs_path);
+  if (realpath(realive_abs_path, abs_path) == NULL) {
+    strncpy(abs_path, realive_abs_path, PATH_MAX - 1);
+    abs_path[PATH_MAX - 1] = '\0';
+  }
+  strcpy(uri, "file://");
+  encodeURI(abs_path, uri + 7, URI_MAX - 7);
 }
 
 bool isDir(char* path) {
@@ -341,9 +365,50 @@ void countStringFrame(char* ch, int length, int* current_row, int* current_colum
   }
 }
 
-char *trim(char *ch) {
+char* trim(char* ch) {
   while (*ch != '\0' && isblank(*ch)) {
     ch++;
   }
   return ch;
+}
+
+static int hex_to_int(char c) {
+  if (c >= '0' && c <= '9')
+    return c - '0';
+  if (c >= 'A' && c <= 'F')
+    return c - 'A' + 10;
+  if (c >= 'a' && c <= 'f')
+    return c - 'a' + 10;
+  return -1;
+}
+
+void decodeURI(const char* src, char* dest, size_t dest_size) {
+  const char* p = src;
+  size_t written = 0;
+
+  if (strncmp(p, "file://", 7) == 0) {
+    p += 7;
+    // Handle 'file:///path' (empty authority) vs 'file://localhost/path' (with authority)
+    if (*p != '/') {
+      const char* first_slash = strchr(p, '/');
+      if (first_slash)
+        p = first_slash;
+    }
+  }
+
+  while (*p && (written + 1 < dest_size)) {
+    if (*p == '%' && isxdigit(p[1]) && isxdigit(p[2])) {
+      int high = hex_to_int(p[1]);
+      int low = hex_to_int(p[2]);
+      if (high != -1 && low != -1) {
+        *dest++ = (char)((high << 4) | low);
+        p += 3;
+        written++;
+        continue;
+      }
+    }
+    *dest++ = *p++;
+    written++;
+  }
+  *dest = '\0';
 }

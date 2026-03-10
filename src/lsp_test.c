@@ -83,7 +83,7 @@ int main(int argc, char** args) {
 
         cJSON* tokens_req = cJSON_CreateObject();
         cJSON* text_document = cJSON_AddObjectToObject(tokens_req, "textDocument");
-        char uri[PATH_MAX];
+        char uri[URI_MAX];
         getLocalURI(file_name, uri);
         cJSON_AddStringToObject(text_document, "uri", uri);
 
@@ -96,7 +96,7 @@ int main(int argc, char** args) {
         cJSON* tokens_req_delta = cJSON_CreateObject();
         cJSON_AddStringToObject(tokens_req_delta, "previousResultId", "1");
         cJSON* text_document_delta = cJSON_AddObjectToObject(tokens_req_delta, "textDocument");
-        char uri_delta[PATH_MAX];
+        char uri_delta[URI_MAX];
         getLocalURI(file_name, uri_delta);
         cJSON_AddStringToObject(text_document_delta, "uri", uri_delta);
 

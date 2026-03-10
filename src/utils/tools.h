@@ -1,9 +1,14 @@
 #ifndef TOOLS_H
 #define TOOLS_H
+#include <limits.h>
+#include <linux/limits.h>
 #include <ncurses.h>
+#include <stdint.h>
 #include <sys/types.h>
 
 #include "../io_management/io_manager.h"
+
+#define URI_MAX (PATH_MAX * 3 + 8)
 
 typedef struct {
   const char* content;
@@ -45,6 +50,10 @@ int mkdir_p(const char* path, mode_t mode);
 
 void countStringFrame(char* ch, int length, int* current_row, int* current_column, int* screen_max_width);
 
-char *trim(char *ch);
+char* trim(char* ch);
+
+void decodeURI(const char* src, char* dest, size_t dest_size);
+
+void encodeURI(const char* src, char* dest, size_t dest_size);
 
 #endif // TOOLS_H

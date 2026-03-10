@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "../../utils/tools.h"
 #include "lsp_notification_dispatcher.h"
 #include "lsp_response_dispatcher.h"
 
@@ -50,7 +51,10 @@ int getIndexFileContainerForUri(DispatcherPayload* payload, cJSON* params) {
     return -1;
   }
 
-  return getIndexFileContainerForName(payload, uri + 7);
+  char decoded_path[PATH_MAX];
+  decodeURI(uri, decoded_path, PATH_MAX);
+
+  return getIndexFileContainerForName(payload, decoded_path);
 }
 
 
