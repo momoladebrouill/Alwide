@@ -324,7 +324,7 @@ void countStringFrame(char* ch, int length, int* current_row, int* current_colum
   assert(current_row != NULL);
   assert(current_column != NULL);
 
-  const int line_length = screen_max_width == NULL || *screen_max_width == 0 ? INT_MAX : *screen_max_width;
+  const int line_length = (screen_max_width == NULL || *screen_max_width == 0) ? INT_MAX : *screen_max_width;
 
   int current_ch_index = 0;
   int current_line_length = 0;

@@ -307,7 +307,7 @@ int getEDW_LengthLineNumber(GUIContext* gui_context) { return gui_context->edw_c
 
 bool gui_showPopup(GUIContext* gui_context, int y, int x, int height, int width, PopupOwner owner) {
   delwin(gui_context->edw_context.pow);
-  gui_context->edw_context.pow = newwin(height, width, y - height + 1 + getbegy(gui_context->edw_context.ftw),
+  gui_context->edw_context.pow = newwin(height, width, y - height + getbegy(gui_context->edw_context.ftw),
                                         x + getbegx(gui_context->edw_context.ftw) + 2);
 
   gui_context->edw_context.show_pow = gui_context->edw_context.pow != NULL;

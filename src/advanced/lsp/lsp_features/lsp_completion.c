@@ -131,7 +131,7 @@ void askCompletion(GUIContext* gui_context, Cursor* cursor, int* screen_x, int* 
     }
     else {
       ViewPort view_port = getViewPort(gui_context, screen_x, screen_y);
-      gui_showGenericPopupWithTextAnchor(&view_port, cursor, COMPLETION);
+      gui_showGenericPopupWithTextAnchor(&view_port, cursor, 7, 50, COMPLETION);
     }
   }
 }

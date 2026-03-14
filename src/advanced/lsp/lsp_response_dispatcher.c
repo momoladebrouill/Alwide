@@ -23,26 +23,24 @@ void receiveCompletionData(cJSON* packet, FileContainer* file, ViewPort* view_po
 }
 
 void receiveHoverData(cJSON* packet, FileContainer* file, ViewPort* view_port, Cursor* cursor, void* payload) {
-  LSP_destroyHover(&file->lsp_datas.computed->hover);
-  LSP_getHoverFromJSON(LSP_getPacketResult(packet), &file->lsp_datas.computed->hover);
+  Hover hover;
+  LSP_getHoverFromJSON(LSP_getPacketResult(packet), &hover);
   assert(payload != NULL);
 
-  // if there is no hover data we close the popup
-  if (file->lsp_datas.computed->hover.size == 0) {
-    if (view_port->gui->edw_context.pow_owner == HOVER_DIAGNOSTICS) {
-      gui_closePopup(view_port->gui);
-    }
+  // if there is no hover data we don't override the possible current displayed data.
+  if (hover.size == 0) {
     return;
   }
+  LSP_destroyHover(&file->lsp_datas.computed->hover);
+  file->lsp_datas.computed->hover = hover;
 
   // create range using cursor position when request if not present
   if (file->lsp_datas.computed->hover.size > 0 && file->lsp_datas.computed->hover.is_range == false) {
     Position* pos = (Position*)payload;
 
-    tryToReachAbsPosition(*cursor, pos->row, pos->column);
-    Cursor begin = *cursor;
-    Cursor end = *cursor;
-    selectWord(&begin, &end);
+    Cursor end = tryToReachAbsPosition(*cursor, pos->row, pos->column);
+    Cursor begin = disableCursor(*cursor);
+    selectWord(&end, &begin);
 
     // set up the new range
     file->lsp_datas.computed->hover.range.pos1 =
@@ -54,8 +52,7 @@ void receiveHoverData(cJSON* packet, FileContainer* file, ViewPort* view_port, C
 
   // We assert that every data going outfrom there has a range.
   assert(file->lsp_datas.computed->hover.is_range);
-  Range range = file->lsp_datas.computed->hover.range;
-  gui_resumeHoverInformation(cursor, view_port, &range);
+  gui_resumeHoverInformation(cursor, view_port, &file->lsp_datas.computed->hover);
 
   free(payload);
 }

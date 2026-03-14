@@ -191,7 +191,7 @@ bool handleEditorClick(GUIContext* gui_context, Cursor* cursor, Cursor* select_c
 
     if ((marker == LSP_ERROR || marker == LSP_HINT || marker == LSP_INFORMATION || marker == LSP_WARNING) &&
         diagnostic != NULL) {
-      gui_showDiagnostic(gui_context, m_event->y - getbegy(gui_context->edw_context.lnw),
+      gui_showDiagnostic(gui_context, m_event->y - getbegy(gui_context->edw_context.lnw) + 1,
                          getbegy(gui_context->edw_context.ftw), diagnostic);
       return true;
     }

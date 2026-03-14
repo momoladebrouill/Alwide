@@ -4,13 +4,13 @@
 
 #include "../../io_management/viewport_history.h"
 
-bool gui_resumeHoverInformation(Cursor* cursor, ViewPort* view_port, Range* range);
+bool gui_resumeHoverInformation(Cursor* cursor, ViewPort* view_port, Hover *hover);
 
 bool gui_resumeCompletionTextAnchor(ViewPort* view_port, Cursor* cursor);
 
-void gui_showGenericPopupWithTextAnchor(ViewPort* view_port, Cursor* cursor, PopupOwner popup_owner);
+void gui_showGenericPopupWithTextAnchor(ViewPort* view_port, Cursor* cursor, int height, int width, PopupOwner popup_owner);
 
-void gui_showGenericPopup(GUIContext* gui_context, int y, int x, PopupOwner popup_owner);
+void gui_showGenericPopup(GUIContext* gui_context, int y, int x, int prefered_height, int prefered_width, PopupOwner popup_owner);
 
 void gui_setLastTextAnchor(GUIContext* gui_context, CursorDescriptor descriptor);
 
