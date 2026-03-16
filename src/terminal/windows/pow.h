@@ -16,8 +16,6 @@ void gui_setLastTextAnchor(GUIContext* gui_context, CursorDescriptor descriptor)
 
 void gui_showDiagnostic(GUIContext* gui_context, int y, int x, Diagnostic* diagnostic);
 
-void gui_showHover(GUIContext* gui_context, int y, int x, Hover* hover_list);
-
 void gui_printPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* lsp_data);
 
 bool gui_handlePopupInput(GUIContext* context, Cursor* cursor, int c_hash, int c_raw, LSP_ComputedData* lsp_data,

@@ -61,7 +61,7 @@ void LSP_initComputedData(LSP_ComputedData* payload) {
   payload->completions.completions.size = 0;
   payload->completions.isIncomplete = false;
 
-  // init hoverlist
+  // init hover
   payload->hover.size = 0;
   payload->hover.contents = NULL;
   payload->hover.is_range = false;

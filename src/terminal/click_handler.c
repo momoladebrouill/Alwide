@@ -197,13 +197,28 @@ bool handleEditorClick(GUIContext* gui_context, Cursor* cursor, Cursor* select_c
     }
   }
   else if (isClickInsideWindow(gui_context->edw_context.ftw, m_event)) {
-    if (file->lsp_datas.is_enable) {
-      // TODO improve hover, don't snap to close line. if cursor hover nothing detect it and don't ask for the closest
-      // word.
-      Cursor hover_cursor = getCursorForEDWClick(cursor, m_event, *screen_x, *screen_y, edws_offset_x, edws_offset_y);
-      gui_context->edw_context.lastMousePosition = cursorToDescriptor(&hover_cursor);
-      LSP_requestHover(getLSPServerForLanguage(&lsp_servers, file->lsp_datas.lang_id), file->io_file.path_abs,
-                       hover_cursor.file_id.absolute_row, hover_cursor.line_id.absolute_column);
+    // track mouse position
+    // TODO may safe raw m_event position to avoid calling @getCursorForEDWCLick() everytime which is heavy.
+    Cursor hover_cursor = getCursorForEDWClick(cursor, m_event, *screen_x, *screen_y, edws_offset_x, edws_offset_y);
+    gui_context->edw_context.lastMousePosition = cursorToDescriptor(&hover_cursor);
+    if (file->lsp_datas.is_enable && m_event->bstate & BUTTON_SHIFT) {
+
+      // Regulate the hover requests, to avoid spamming for nothing. Don't reask for the same word.
+      if (file->lsp_datas.computed->hover.is_range == false ||
+          !isCursorDescriptorBetweenOthers(cursorToDescriptor(&hover_cursor),
+                                           positionToCursorDescriptor(file->lsp_datas.computed->hover.range.pos1),
+                                           positionToCursorDescriptor(file->lsp_datas.computed->hover.range.pos2))) {
+
+
+        LSP_requestHover(getLSPServerForLanguage(&lsp_servers, file->lsp_datas.lang_id), file->io_file.path_abs,
+                         hover_cursor.file_id.absolute_row, hover_cursor.line_id.absolute_column);
+      }
+      else if (file->lsp_datas.computed->hover.size != 0) {
+        // We resume the hover data previously fetched.
+        ViewPort view_port = (ViewPort){.gui = gui_context, .screen_x = screen_x, .screen_y = screen_y};
+        gui_resumeHoverInformation(cursor, &view_port, &file->lsp_datas.computed->hover);
+      }
+
     }
   }
   else if (gui_context->edw_context.show_pow == true &&
