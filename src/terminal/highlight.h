@@ -75,7 +75,7 @@ void whd_init(WindowHighlightDescriptor* self);
 
 void whd_insertDescriptor(WindowHighlightDescriptor* self, Cursor begin, Cursor end, NCURSES_PAIRS_T color,
                           attr_t attributes, uint16_t priority, bool override_attributes, LineMarker marker,
-                          void* diagnostic);
+                          void* payload);
 
 void whd_print(WindowHighlightDescriptor* self);
 

@@ -223,7 +223,7 @@ int main(int file_count, char** args) {
                               &highlight_descriptor);
 
       // add lsp highlights
-      LSP_highlightCurrentFile(lsp_data, *cursor, &highlight_descriptor);
+      LSP_highlightCurrentFile(lsp_data, *cursor, &highlight_descriptor, &gui_context);
     }
 
     repaintGUI(&gui_context, &highlight_descriptor, &pwd, files, file_count, current_file_index);

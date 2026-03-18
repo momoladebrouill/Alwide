@@ -201,7 +201,7 @@ bool handleEditorClick(GUIContext* gui_context, Cursor* cursor, Cursor* select_c
     // TODO may safe raw m_event position to avoid calling @getCursorForEDWCLick() everytime which is heavy.
     Cursor hover_cursor = getCursorForEDWClick(cursor, m_event, *screen_x, *screen_y, edws_offset_x, edws_offset_y);
     gui_context->edw_context.lastMousePosition = cursorToDescriptor(&hover_cursor);
-    if (file->lsp_datas.is_enable && m_event->bstate & BUTTON_SHIFT) {
+    if (file->lsp_datas.is_enable && m_event->bstate & BUTTON_CTRL) {
 
       // Regulate the hover requests, to avoid spamming for nothing. Don't reask for the same word.
       if (file->lsp_datas.computed->hover.is_range == false ||

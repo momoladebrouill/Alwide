@@ -209,7 +209,7 @@ void tphd_mergeAttributes(TextPartHighlightDescriptor* self, NCURSES_PAIRS_T col
 
 void whd_insertDescriptor(WindowHighlightDescriptor* self, Cursor begin, Cursor end, NCURSES_PAIRS_T color,
                           attr_t attributes, uint16_t priority, bool override_attributes, LineMarker marker,
-                          void* diagnostic) {
+                          void* payload) {
   FilePosition current_pos = {begin.file_id.absolute_row, begin.line_id.absolute_column};
   FilePosition end_pos = {end.file_id.absolute_row, end.line_id.absolute_column};
   // fprintf(stderr, "insert (%d, %d) -> (%d, %d)\n", current_pos.abs_row, current_pos.abs_column, end_pos.abs_row,
@@ -266,7 +266,7 @@ void whd_insertDescriptor(WindowHighlightDescriptor* self, Cursor begin, Cursor 
       }
 
       tphd_init(self->descriptors + i, current_pos, new_field_end);
-      tphd_mergeAttributes(self->descriptors + i, color, attributes, priority, override_attributes, marker, diagnostic);
+      tphd_mergeAttributes(self->descriptors + i, color, attributes, priority, override_attributes, marker, payload);
 
       i++;
     }
@@ -311,7 +311,7 @@ void whd_insertDescriptor(WindowHighlightDescriptor* self, Cursor begin, Cursor 
       self->descriptors[i + middle_offset].end = new_field_end;
 
       tphd_mergeAttributes(self->descriptors + i + middle_offset, color, attributes, priority, override_attributes,
-                           marker, diagnostic);
+                           marker, payload);
 
       if (after_offset) {
         // should happen max once !
