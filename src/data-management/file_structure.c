@@ -2086,13 +2086,6 @@ Cursor tryToReachAbsPosition(Cursor cursor, int row, int column) {
 
 Char_U8 getCharAtCursor(Cursor cursor) { return getCharForLineIdentifier(cursor.line_id); }
 
-// --- Internal Utilities ---
-
-static bool is_inside_others(int row, int column, int row_start, int column_start, int row_end, int column_end) {
-  return (row_start < row || (row_start == row && column_start < column)) &&
-    (row < row_end || (row == row_end && column <= column_end));
-}
-
 // --- Cursor Operations ---
 
 int cursor_cmp(Cursor c1, Cursor c2) {
@@ -2120,15 +2113,10 @@ bool cursor_is_between(Cursor c, Cursor cur1, Cursor cur2) {
   return cursor_ge(c, start) && cursor_le(c, end);
 }
 
-bool cursor_is_inside(Cursor c, Cursor start, Cursor end) {
-  // Logic from isCursorBetweenOthers (start < c <= end after sort)
-  if (cursor_le(start, end) == false) {
-    Cursor tmp = start;
-    start = end;
-    end = tmp;
-  }
-  return is_inside_others(c.file_id.absolute_row, c.line_id.absolute_column, start.file_id.absolute_row,
-                          start.line_id.absolute_column, end.file_id.absolute_row, end.line_id.absolute_column);
+bool cursor_is_inside(Cursor c, Cursor cur1, Cursor cur2) {
+  Cursor start = cursor_min(cur1, cur2);
+  Cursor end = cursor_max(cur1, cur2);
+  return cursor_lt(start, c) && cursor_le(c, end);
 }
 
 // --- CursorDescriptor Operations ---
