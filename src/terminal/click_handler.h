@@ -19,10 +19,10 @@ bool handleEditorClick(GUIContext* gui_context, Cursor* cursor, Cursor* select_c
                        int* screen_x, int* screen_y, MEVENT* m_event, bool mouse_drag, FileContainer* file,
                        WindowHighlightDescriptor* highlight_descriptor);
 
-void handleOpenedFileClick(GUIContext* gui_context, FileContainer* files, int* file_count, int* current_file,
+bool handleOpenedFileClick(GUIContext* gui_context, FileContainer* files, int* file_count, int* current_file,
                            MEVENT m_event, bool* refresh_local_vars, bool mouse_drag);
 
-void handleFileExplorerClick(GUIContext* gui_context, FileContainer** files, int* file_count, int* current_file,
+bool handleFileExplorerClick(GUIContext* gui_context, FileContainer** files, int* file_count, int* current_file,
                              ExplorerFolder* pwd, MEVENT m_event, bool* refresh_local_vars);
 
 // true if found, false if not. if file_index == -1 => Res_folder was clicked. If file_index != -1 => file clicked is
