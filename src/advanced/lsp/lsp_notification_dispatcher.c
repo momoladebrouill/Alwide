@@ -26,7 +26,7 @@ void notificationDispatcher(cJSON* packet, DispatcherPayload* data) {
     exit(-1); // TODO remove
     return;
   }
-  LSP_ComputedData* computed_data = data->files[index].lsp_datas.computed;
+  LSP_ComputedData* computed_data = (*data->files_state.files)[index].lsp_datas.computed;
 
   if (strcmp(method, "textDocument/publishDiagnostics") == 0) {
     readPublishDiagnostic(params, computed_data);

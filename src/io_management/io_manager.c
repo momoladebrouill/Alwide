@@ -116,10 +116,9 @@ void saveFile(FileNode* root, IO_FileID* file) {
 
 
 void setupFile(char* path, IO_FileID* file) {
-  file->path_args = NULL;
   // 3 file status: no file given, file doesn't exist, file exists.
   if (strcmp(path, "") != 0) {
-    file->path_args = path;
+    strncpy(file->path_args, path, PATH_MAX);
     if (access(path, F_OK) == 0) {
       file->status = EXIST;
       // File exist
@@ -135,7 +134,7 @@ void setupFile(char* path, IO_FileID* file) {
   else {
     // No file given
     file->status = NONE;
-    file->path_args = "untitled";
+    strcpy(file->path_args, "untitled");
     strcpy(file->path_abs, "untitled");
   }
 }

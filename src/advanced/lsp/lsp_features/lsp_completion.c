@@ -130,8 +130,23 @@ void askCompletion(GUIContext* gui_context, Cursor* cursor, int* screen_x, int* 
       gui_setLastTextAnchor(gui_context, cursor_to_desc(*cursor));
     }
     else {
-      ViewPort view_port = getViewPort(gui_context, screen_x, screen_y);
+      ViewPort view_port = viewPortOf(gui_context, screen_x, screen_y);
       gui_showGenericPopupWithTextAnchor(&view_port, cursor, 7, 50, COMPLETION);
     }
   }
+}
+
+void receiveCompletionData(cJSON* packet, FileContainer* file, ViewPort* view_port, Cursor* cursor) {
+  LSP_destroyCompletionList(&file->lsp_datas.computed->completions);
+  LSP_getCompletionListFromJSON(LSP_getPacketResult(packet), &file->lsp_datas.computed->completions);
+
+  // if there is no hover data we close the popup
+  if (file->lsp_datas.computed->completions.completions.size == 0) {
+    if (view_port->gui->edw_context.pow_owner == COMPLETION) {
+      gui_closePopup(view_port->gui);
+    }
+    return;
+  }
+
+  gui_resumeCompletionTextAnchor(view_port, cursor);
 }

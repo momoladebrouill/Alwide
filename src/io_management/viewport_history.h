@@ -21,6 +21,6 @@ void setlastFilePosition(char* fileName, int row, int column, int screen_x, int 
 
 void fetchSavedCursorPosition(IO_FileID file, Cursor* cursor, int* screen_x, int* screen_y);
 
-ViewPort getViewPort(GUIContext* context, int* screen_x, int* screen_y);
+ViewPort viewPortOf(GUIContext* context, int* screen_x, int* screen_y);
 
 #endif // FILE_HISTORY_H

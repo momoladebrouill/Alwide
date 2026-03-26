@@ -35,8 +35,10 @@ SRC_MODULES= \
 	src/advanced/lsp/lsp_handler.c \
 	src/advanced/lsp/lsp_notification_dispatcher.c \
 	src/advanced/lsp/lsp_response_dispatcher.c \
-	src/advanced/lsp/lsp_features/lsp_highlighter.c \
+	src/advanced/lsp/lsp_highlighter.c \
 	src/advanced/lsp/lsp_features/lsp_completion.c \
+	src/advanced/lsp/lsp_features/lsp_goto.c \
+	src/advanced/lsp/lsp_features/lsp_hover.c \
 	src/advanced/lsp/lsp_dispatcher.c \
 	src/advanced/lsp/lsp_emitter.c
 

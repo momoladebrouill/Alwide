@@ -12,6 +12,8 @@ typedef struct {
   int diagnostics_size;
   CompletionList completions;
   Hover hover;
+  // used by the TUI when multiple choice happens to let choose the user.
+  LocationArray gotos;
 } LSP_ComputedData;
 
 void LSP_initComputedData(LSP_ComputedData* payload);

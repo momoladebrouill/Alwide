@@ -442,10 +442,10 @@ Range LSP_getRangeFromJSON(cJSON* json) {
 
 TextDocumentItem LSP_getTextDocumentItemOf(char* file_name, char* languageId, int version, char* text) {
   TextDocumentItem text_document_item;
-  text_document_item.file_name = file_name;
-  text_document_item.languageId = languageId;
+  strncpy(text_document_item.file_name, file_name, PATH_MAX);
+  strncpy(text_document_item.languageId, languageId, LANGUAGE_ID_LENGTH);
   text_document_item.version = version;
-  text_document_item.text = text;
+  text_document_item.text = strdup(text);
 
   return text_document_item;
 }
@@ -471,10 +471,11 @@ TextDocumentItem LSP_getTextDocumentItemFromJSON(cJSON* json) {
                                    cJSON_GetStringValue(cJSON_GetObjectItem(json, "text")));
 }
 
+void LSP_destroyTextDocumentItem(TextDocumentItem text_document_item) { free(text_document_item.text); }
 
 TextDocumentIdentifier LSP_getTextDocumentIdentifierOf(char* file_name) {
   TextDocumentIdentifier text_id;
-  text_id.file_name = file_name;
+  strncpy(text_id.file_name, file_name, PATH_MAX);
 
   return text_id;
 }
@@ -502,6 +503,8 @@ TextDocumentIdentifier LSP_getTextDocumentIdentifierFromJSON(cJSON* json) {
   return LSP_getTextDocumentIdentifierOf(cJSON_GetStringValue(cJSON_GetObjectItem(json, "uri")));
 }
 
+void LSP_destroyTextDocumentIdentifier(TextDocumentIdentifier* text_document_identifier) {}
+
 TextDocumentPositionParams LSP_getTextDocumentPositionParamsOf(char* file_name, int cur_row, int cur_column) {
   TextDocumentPositionParams text_document_position_params;
   text_document_position_params.text_id = LSP_getTextDocumentIdentifierOf(file_name);
@@ -528,11 +531,15 @@ TextDocumentPositionParams LSP_getTextDocumentPositionParamsFromJSON(cJSON* json
   return LSP_getTextDocumentPositionParamsOf(text_id.file_name, position.row, position.column);
 }
 
+void LSP_destroyTextDocumentPositionParams(TextDocumentPositionParams text_document_position_params) {
+  LSP_destroyTextDocumentIdentifier(&text_document_position_params.text_id);
+}
+
 
 TextEdit LSP_getTextEditOf(int cur1_row, int cur1_column, int cur2_row, int cur2_column, char* new_text) {
   TextEdit text_edit;
   text_edit.range = LSP_getRangeOf(cur1_row, cur1_column, cur2_row, cur2_column);
-  text_edit.new_text = new_text;
+  text_edit.new_text = strdup(new_text);
   return text_edit;
 }
 
@@ -553,6 +560,8 @@ TextEdit LSP_getTextEditFromJSON(cJSON* json) {
   return LSP_getTextEditOf(range.pos1.row, range.pos1.column, range.pos2.row, range.pos2.column,
                            cJSON_GetStringValue(cJSON_GetObjectItem(json, "newText")));
 }
+
+void LSP_destroyTextEdit(TextEdit text_edit) { free(text_edit.new_text); }
 
 TextDocumentEdit LSP_getTextDocumentEditOf(char* file_name, int cur1_row, int cur1_column, int cur2_row,
                                            int cur2_column, char* new_text) {
@@ -611,6 +620,84 @@ Location LSP_getLocationFromJSON(cJSON* json) {
   return LSP_getLocationOf(text_id.file_name, range.pos1.row, range.pos1.column, range.pos2.row, range.pos2.column);
 }
 
+void LSP_destroyLocation(Location* location) { LSP_destroyTextDocumentIdentifier(&location->file_name); }
+
+
+// Internal helper for handling Location and LocationLink
+Location LSP_getLocationOrLocationLinkFromJSON_internal(cJSON* json) {
+  cJSON* uri_obj = cJSON_GetObjectItem(json, "uri");
+  if (uri_obj == NULL) {
+    uri_obj = cJSON_GetObjectItem(json, "targetUri");
+  }
+
+  // we abstract the range system to just save the range where to jump. Prioritizing precises ranges.
+  cJSON* range_obj = cJSON_GetObjectItem(json, "range");
+  if (range_obj == NULL) {
+    range_obj = cJSON_GetObjectItem(json, "targetSelectionRange");
+  }
+  if (range_obj == NULL) {
+    range_obj = cJSON_GetObjectItem(json, "targetRange");
+  }
+
+  char* uri = cJSON_GetStringValue(uri_obj);
+  char decoded_path[PATH_MAX];
+  decodeURI(uri, decoded_path, PATH_MAX);
+
+  TextDocumentIdentifier text_id;
+  strncpy(text_id.file_name, decoded_path, PATH_MAX);
+  Range range = LSP_getRangeFromJSON(range_obj);
+
+  return (Location){.file_name = text_id, .range = range};
+}
+
+void LSP_getLocationArrayFromJSON(cJSON* json, LocationArray* array) {
+  if (json == NULL || cJSON_IsNull(json)) {
+    array->size = 0;
+    array->items = NULL;
+    return;
+  }
+
+  if (cJSON_IsArray(json)) {
+    int count = cJSON_GetArraySize(json);
+    array->size = count;
+    array->items = malloc(sizeof(Location) * count);
+    for (int i = 0; i < count; i++) {
+      cJSON* item = cJSON_GetArrayItem(json, i);
+      // Handle Location or LocationLink
+      cJSON* uri = cJSON_GetObjectItem(item, "uri");
+      if (uri == NULL) {
+        // LocationLink has targetUri instead
+        uri = cJSON_GetObjectItem(item, "targetUri");
+      }
+      cJSON* range = cJSON_GetObjectItem(item, "range");
+      if (range == NULL) {
+        // LocationLink has targetRange or targetSelectionRange
+        range = cJSON_GetObjectItem(item, "targetRange");
+      }
+
+      array->items[i] = LSP_getLocationOrLocationLinkFromJSON_internal(item);
+    }
+  }
+  else {
+    array->size = 1;
+    array->items = malloc(sizeof(Location));
+    array->items[0] = LSP_getLocationOrLocationLinkFromJSON_internal(json);
+  }
+}
+
+
+void LSP_destroyLocationArray(LocationArray* array) {
+  if (array->items) {
+    for (int i = 0; i < array->size; i++) {
+      LSP_destroyLocation(array->items + i);
+    }
+    free(array->items);
+    array->items = NULL;
+  }
+  array->size = 0;
+}
+
+
 void initDiagnostic(Diagnostic* diagnostic) {
   diagnostic->code[0] = '\0';
   diagnostic->message[0] = '\0';
@@ -619,8 +706,11 @@ void initDiagnostic(Diagnostic* diagnostic) {
   diagnostic->severity = SEVERITY_NONE;
   diagnostic->source[0] = '\0';
 }
+
 Diagnostic LSP_getDiagnosticOf(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column);
+
 cJSON* LSP_getJSONDiagnostic(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column);
+
 Diagnostic LSP_getDiagnosticFromJSON(cJSON* json) {
   Diagnostic diagnostic;
   initDiagnostic(&diagnostic);
@@ -655,7 +745,8 @@ Diagnostic LSP_getDiagnosticFromJSON(cJSON* json) {
 
   return diagnostic;
 }
-void LSP_destroyDiagnostic(Diagnostic diagnostic) {}
+
+void LSP_destroyDiagnostic(Diagnostic* diagnostic) {}
 
 
 void LSP_getCompletionListFromJSON(cJSON* json, CompletionList* list) {
@@ -762,10 +853,6 @@ void LSP_getCompletionItemFromJSON(cJSON* json, CompletionItem* item) {
   // fill if present textEdit
   if ((tmp_item = cJSON_GetObjectItem(json, "textEdit"))) {
     item->text_edit = LSP_getTextEditFromJSON(tmp_item);
-    char* tmp_char = item->text_edit.new_text;
-    int size = strlen(item->text_edit.new_text);
-    item->text_edit.new_text = malloc(sizeof(char) * (size + 1));
-    strlcpy(item->text_edit.new_text, tmp_char, size + 1);
     item->is_text_edit = true;
   }
 
@@ -774,24 +861,26 @@ void LSP_getCompletionItemFromJSON(cJSON* json, CompletionItem* item) {
     item->additionalTextEdits = malloc(item->additionalTextEditsSize * sizeof(TextEdit));
     for (int i = 0; i < item->additionalTextEditsSize; i++) {
       item->additionalTextEdits[i] = LSP_getTextEditFromJSON(cJSON_GetArrayItem(tmp_item, i));
-      char* tmp_char = item->additionalTextEdits[i].new_text;
-      int size = strlen(item->additionalTextEdits[i].new_text);
-      item->additionalTextEdits[i].new_text = malloc(sizeof(char) * (size + 1));
-      strlcpy(item->additionalTextEdits[i].new_text, tmp_char, size + 1);
     }
   }
 }
 
+void LSP_destroyCompletionItem(CompletionItem* item) {
+  if (item->is_text_edit) {
+    LSP_destroyTextEdit(item->text_edit);
+  }
+  for (int j = 0; j < item->additionalTextEditsSize; j++) {
+    LSP_destroyTextEdit(item->additionalTextEdits[j]);
+  }
+  free(item->additionalTextEdits);
+  item->additionalTextEdits = NULL;
+  item->additionalTextEditsSize = 0;
+}
+
+
 void LSP_destroyCompletionList(CompletionList* completion_list) {
   for (int i = 0; i < completion_list->completions.size; i++) {
-    if (completion_list->completions.items[i].is_text_edit) {
-      free(completion_list->completions.items[i].text_edit.new_text);
-    }
-    for (int j = 0; j < completion_list->completions.items[i].additionalTextEditsSize; j++) {
-      free(completion_list->completions.items[i].additionalTextEdits[j].new_text);
-    }
-    free(completion_list->completions.items[i].additionalTextEdits);
-    completion_list->completions.items[i].additionalTextEdits = NULL;
+    LSP_destroyCompletionItem(completion_list->completions.items + i);
   }
   free(completion_list->completions.items);
 
@@ -967,6 +1056,41 @@ void LSP_requestHover(LSP_Server* lsp, char* file_name, int row, int column) {
   pos->column = column;
 
   LSP_addResponseContext(lsp, id, "textDocument/hover", file_name, pos);
+
+  cJSON_Delete(request_content);
+}
+
+
+char* LSP_getMethodForGotoType(LSP_GOTO_TYPE goto_type) {
+  switch (goto_type) {
+    case LSP_GOTO_DECLARATION:
+      return "textDocument/declaration";
+    case LSP_GOTO_DEFINITION:
+      return "textDocument/definition";
+    case LSP_GOTO_TYPE_DEFINITION:
+      return "textDocument/typeDefinition";
+    case LSP_GOTO_IMPLEMENTATION:
+      return "textDocument/implementation";
+    case LSP_FIND_REFERENCE:
+      return "textDocument/references";
+  }
+  assert(false);
+}
+
+void LSP_requestGoto(LSP_Server* lsp, char* file_name, int row, int column, LSP_GOTO_TYPE goto_type) {
+  char* goto_method = LSP_getMethodForGotoType(goto_type);
+
+  cJSON* request_content = cJSON_CreateObject();
+
+  cJSON* text_document = LSP_getJSONTextDocumentIdentifier(file_name);
+  cJSON_AddItemToObject(request_content, "textDocument", text_document);
+
+  cJSON* position_json = LSP_getJSONPosition(row, column);
+  cJSON_AddItemToObject(request_content, "position", position_json);
+
+  LSP_PacketID id = LSP_sendPacketWithJSON(lsp, goto_method, request_content, REQUEST);
+
+  LSP_addResponseContext(lsp, id, goto_method, file_name, NULL);
 
   cJSON_Delete(request_content);
 }

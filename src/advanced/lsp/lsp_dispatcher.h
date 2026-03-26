@@ -5,11 +5,9 @@
 
 #include "../../data-management/file_management.h"
 #include "../../io_management/viewport_history.h"
-#include "../../terminal/windows/gui_entities.h"
 
 typedef struct {
-  FileContainer* files;
-  int size;
+  FilesState files_state;
   ViewPort view_port;
   Cursor *cursor;
 } DispatcherPayload;

@@ -12,7 +12,7 @@
 #include "advanced/lsp/lsp_client.h"
 #include "advanced/lsp/lsp_dispatcher.h"
 #include "advanced/lsp/lsp_features/lsp_completion.h"
-#include "advanced/lsp/lsp_features/lsp_highlighter.h"
+#include "advanced/lsp/lsp_highlighter.h"
 #include "advanced/tree-sitter/tree_manager.h"
 #include "advanced/tree-sitter/tree_sitter_highlighter.h"
 #include "config/config.h"
@@ -270,9 +270,8 @@ int main(int file_count, char** args) {
 
 
     DispatcherPayload payload;
-    payload.files = files;
-    payload.size = file_count;
-    payload.view_port = getViewPort(&gui_context, screen_x, screen_y);
+    payload.files_state = filesStateOf(&files, &file_count, &current_file_index, &refresh_local_vars);
+    payload.view_port = viewPortOf(&gui_context, screen_x, screen_y);
     payload.cursor = cursor;
 
 
@@ -285,6 +284,11 @@ int main(int file_count, char** args) {
         }
       }
       cell = cell->next;
+    }
+
+    // flag if the lsp may have changed the opened file
+    if (refresh_local_vars) {
+      continue;
     }
 
     if (hash == ERR) {

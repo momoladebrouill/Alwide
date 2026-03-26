@@ -13,6 +13,7 @@
 
 #define MESSAGE_LENGTH 4092
 #define METHOD_MAX_LENGTH 200
+#define LANGUAGE_ID_LENGTH 100
 
 typedef enum { REQUEST, NOTIFICATION, RESPONSE } PACKET_TYPE;
 
@@ -29,8 +30,8 @@ struct _LSP_ResponseContext {
 typedef struct _LSP_ResponseContext LSP_ResponseContext;
 
 typedef struct {
-  char name[100];
-  char language[100];
+  char name[LANGUAGE_ID_LENGTH];
+  char language[LANGUAGE_ID_LENGTH];
   pid_t pid;
   int inpipefd[2];
   int outpipefd[2];
@@ -81,7 +82,15 @@ cJSON* LSP_getPacketResult(cJSON* request_body);
 
 cJSON* LSP_getNotificationParams(cJSON* notification_body);
 
-//// -------- JSON conversion --------
+//// -------- JSON conversion --------*
+
+typedef enum {
+  LSP_GOTO_DECLARATION,
+  LSP_GOTO_DEFINITION,
+  LSP_GOTO_TYPE_DEFINITION,
+  LSP_GOTO_IMPLEMENTATION,
+  LSP_FIND_REFERENCE
+} LSP_GOTO_TYPE;
 
 typedef struct {
   int row;
@@ -102,8 +111,8 @@ cJSON* LSP_getJSONRange(int cur1_row, int cur1_column, int cur2_row, int cur2_co
 Range LSP_getRangeFromJSON(cJSON* json);
 
 typedef struct {
-  char* file_name;
-  char* languageId;
+  char file_name[PATH_MAX];
+  char languageId[LANGUAGE_ID_LENGTH];
   int version;
   char* text;
 } TextDocumentItem;
@@ -114,13 +123,13 @@ TextDocumentItem LSP_getTextDocumentItemFromJSON(cJSON* json);
 void LSP_destroyTextDocumentItem(TextDocumentItem text_document_item);
 
 typedef struct {
-  char* file_name;
+  char file_name[PATH_MAX];
 } TextDocumentIdentifier;
 
 TextDocumentIdentifier LSP_getTextDocumentIdentifierOf(char* file_name);
 cJSON* LSP_getJSONTextDocumentIdentifier(char* file_name);
 TextDocumentIdentifier LSP_getTextDocumentIdentifierFromJSON(cJSON* json);
-void LSP_destroyTextDocumentIdentifier(TextDocumentIdentifier text_document_identifier);
+void LSP_destroyTextDocumentIdentifier(TextDocumentIdentifier* text_document_identifier);
 
 cJSON* LSP_getJSONTextDocumentIdentifierVersionned(char* file_name, int version);
 
@@ -164,7 +173,15 @@ typedef struct {
 Location LSP_getLocationOf(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column);
 cJSON* LSP_getJSONLocation(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column);
 Location LSP_getLocationFromJSON(cJSON* json);
-void LSP_destroyLocation(Location location);
+void LSP_destroyLocation(Location* location);
+
+typedef struct {
+  Location* items;
+  int size;
+} LocationArray;
+
+void LSP_getLocationArrayFromJSON(cJSON* json, LocationArray* array);
+void LSP_destroyLocationArray(LocationArray* array);
 
 typedef struct {
   Location location;
@@ -197,7 +214,7 @@ typedef struct {
 Diagnostic LSP_getDiagnosticOf(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column);
 cJSON* LSP_getJSONDiagnostic(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column);
 Diagnostic LSP_getDiagnosticFromJSON(cJSON* json);
-void LSP_destroyDiagnostic(Diagnostic diagnostic);
+void LSP_destroyDiagnostic(Diagnostic* diagnostic);
 
 
 typedef enum {
@@ -267,6 +284,7 @@ typedef struct {
 void LSP_getCompletionListFromJSON(cJSON* json, CompletionList* list);
 void LSP_getCompletionArrayFromJSON(cJSON* json, CompletionArray* array);
 void LSP_getCompletionItemFromJSON(cJSON* json, CompletionItem* item);
+void LSP_destroyCompletionItem(CompletionItem* item);
 void LSP_destroyCompletionList(CompletionList* completion_list);
 
 
@@ -276,7 +294,7 @@ typedef struct MarkedString {
 } MarkedString;
 
 typedef struct Hover {
-  MarkedString *contents;
+  MarkedString* contents;
   int size;
   bool is_range;
   Range range;
@@ -294,12 +312,18 @@ bool LSP_dispatchOnReceive(LSP_Server* lsp, void (*dispatcher)(cJSON* packet, LS
                            void* payload);
 
 
-//// -------- Send Functions --------
+//// -------- Notify Functions --------
 
 
 void LSP_notifyLspFileDidOpen(LSP_Server* lsp, char* file_name, char* file_content);
 void LSP_notifyLspFileDidChange(LSP_Server* lsp, char* file_name, cJSON* array_of_changes, int version);
+
+
+//// -------- Request Functions --------
+
+
 void LSP_requestCompletion(LSP_Server* lsp, char* file_name, int row, int column);
 void LSP_requestHover(LSP_Server* lsp, char* file_name, int row, int column);
+void LSP_requestGoto(LSP_Server* lsp, char* file_name, int row, int column, LSP_GOTO_TYPE goto_type);
 
 #endif // CLIENT_H

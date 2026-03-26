@@ -27,14 +27,9 @@ void dispatcher(cJSON* packet, LSP_Server* lsp, void* payload) {
 }
 
 int getIndexFileContainerForName(DispatcherPayload* payload, char* file_name) {
-  for (int i = 0; i < payload->size; i++) {
-    // fprintf(stderr, "Comparing :\n%s\n%s\n", payload->files[i].io_file.path_abs, uri + 7);
-    if (strcmp(payload->files[i].io_file.path_abs, file_name) == 0) {
-      // fprintf(stderr, "=> equals\n");
+  for (int i = 0; i < *payload->files_state.size; i++) {
+    if (strcmp((*payload->files_state.files)[i].io_file.path_abs, file_name) == 0) {
       return i;
-    }
-    else {
-      // fprintf(stderr, "=> not equals\n");
     }
   }
   return -1;

@@ -14,7 +14,7 @@ typedef enum {
 typedef struct {
   FILE_STATUS status;
   char path_abs[PATH_MAX];
-  char* path_args;
+  char path_args[PATH_MAX];
 } IO_FileID;
 
 Cursor initWrittableFileFromFile(char* fileName);

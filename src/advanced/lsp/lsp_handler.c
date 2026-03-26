@@ -40,7 +40,7 @@ void LSP_destroyComputedData(LSP_ComputedData* lsp_payload) {
 
   // free diagnostics
   for (int i = 0; i < lsp_payload->diagnostics_size; i++) {
-    LSP_destroyDiagnostic(lsp_payload->diagnostics[i]);
+    LSP_destroyDiagnostic(lsp_payload->diagnostics + i);
   }
   free(lsp_payload->diagnostics);
 
@@ -49,9 +49,14 @@ void LSP_destroyComputedData(LSP_ComputedData* lsp_payload) {
 
   // free hoverlist
   LSP_destroyHover(&lsp_payload->hover);
+
+  // free definition-like lists
+  LSP_destroyLocationArray(&lsp_payload->gotos);
 }
 
 void LSP_initComputedData(LSP_ComputedData* payload) {
+  // TODO create LSP_init***** to avoid initializing every fields of every fields...
+
   // init diagnostics
   payload->diagnostics = NULL;
   payload->diagnostics_size = 0;
@@ -65,6 +70,10 @@ void LSP_initComputedData(LSP_ComputedData* payload) {
   payload->hover.size = 0;
   payload->hover.contents = NULL;
   payload->hover.is_range = false;
+
+  // init definition-like lists
+  payload->gotos.items = NULL;
+  payload->gotos.size = 0;
 }
 
 void initLSPServerList(LSPServerLinkedList* list) { list->head = NULL; }

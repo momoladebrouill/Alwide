@@ -172,6 +172,12 @@ void setupOpenedFiles(int* file_count, char** file_names, FileContainer** files)
   }
 }
 
+FilesState filesStateOf(FileContainer** files, int* size, int* current_file_index,
+                                        bool* refresh_local_vars) {
+  return (FilesState){
+    .files = files, .size = size, .current_file_index = current_file_index, .refresh_local_vars = refresh_local_vars};
+}
+
 //// -------------- CURSOR MANAGEMENT --------------
 
 Cursor moveRight(Cursor cursor) {
