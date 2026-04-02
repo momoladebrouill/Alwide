@@ -9,7 +9,7 @@
 
 
 void receiveHoverData(cJSON* packet, FileContainer* file, ViewPort* view_port, Cursor* cursor, void* payload) {
-  Hover hover;
+  LSP_Hover hover;
   LSP_getHoverFromJSON(LSP_getPacketResult(packet), &hover);
   assert(payload != NULL);
 
@@ -24,7 +24,7 @@ void receiveHoverData(cJSON* packet, FileContainer* file, ViewPort* view_port, C
 
   // create range using cursor position when request if not present
   if (file->lsp_datas.computed->hover.size > 0 && file->lsp_datas.computed->hover.is_range == false) {
-    Position* pos = payload;
+    LSP_Position* pos = payload;
 
     Cursor end = tryToReachAbsPosition(*cursor, pos->row, pos->column);
     Cursor begin = cursor_disable(*cursor);
@@ -32,9 +32,9 @@ void receiveHoverData(cJSON* packet, FileContainer* file, ViewPort* view_port, C
 
     // set up the new range
     file->lsp_datas.computed->hover.range.pos1 =
-      (Position){.row = begin.file_id.absolute_row - 1, .column = begin.line_id.absolute_column};
+      (LSP_Position){.row = begin.file_id.absolute_row - 1, .column = begin.line_id.absolute_column};
     file->lsp_datas.computed->hover.range.pos2 =
-      (Position){.row = end.file_id.absolute_row - 1, .column = end.line_id.absolute_column};
+      (LSP_Position){.row = end.file_id.absolute_row - 1, .column = end.line_id.absolute_column};
     file->lsp_datas.computed->hover.is_range = true;
   }
 

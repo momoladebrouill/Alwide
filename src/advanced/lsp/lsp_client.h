@@ -95,132 +95,137 @@ typedef enum {
 typedef struct {
   int row;
   int column;
-} Position;
-
-Position LSP_getPositionOf(int cursor_row, int cursor_column);
-cJSON* LSP_getJSONPosition(int cursor_row, int cursor_column);
-Position LSP_getPositionFromJSON(cJSON* json);
+} LSP_Position;
 
 typedef struct {
-  Position pos1;
-  Position pos2;
-} Range;
+  LSP_Position pos;
+  LSP_GOTO_TYPE goto_type;
+} GotoContext;
 
-Range LSP_getRangeOf(int cur1_row, int cur1_column, int cur2_row, int cur2_column);
+LSP_Position LSP_getPositionOf(int cursor_row, int cursor_column);
+cJSON* LSP_getJSONPosition(int cursor_row, int cursor_column);
+LSP_Position LSP_getPositionFromJSON(cJSON* json);
+
+typedef struct {
+  LSP_Position pos1;
+  LSP_Position pos2;
+} LSP_Range;
+
+LSP_Range LSP_getRangeOf(int cur1_row, int cur1_column, int cur2_row, int cur2_column);
 cJSON* LSP_getJSONRange(int cur1_row, int cur1_column, int cur2_row, int cur2_column);
-Range LSP_getRangeFromJSON(cJSON* json);
+LSP_Range LSP_getRangeFromJSON(cJSON* json);
 
 typedef struct {
   char file_name[PATH_MAX];
   char languageId[LANGUAGE_ID_LENGTH];
   int version;
   char* text;
-} TextDocumentItem;
+} LSP_TextDocumentItem;
 
-TextDocumentItem LSP_getTextDocumentItemOf(char* file_name, char* languageId, int version, char* text);
+LSP_TextDocumentItem LSP_getTextDocumentItemOf(char* file_name, char* languageId, int version, char* text);
 cJSON* LSP_getJSONTextDocumentItem(char* file_name, char* languageId, int version, char* text);
-TextDocumentItem LSP_getTextDocumentItemFromJSON(cJSON* json);
-void LSP_destroyTextDocumentItem(TextDocumentItem text_document_item);
+LSP_TextDocumentItem LSP_getTextDocumentItemFromJSON(cJSON* json);
+void LSP_destroyTextDocumentItem(LSP_TextDocumentItem text_document_item);
 
 typedef struct {
   char file_name[PATH_MAX];
-} TextDocumentIdentifier;
+} LSP_TextDocumentIdentifier;
 
-TextDocumentIdentifier LSP_getTextDocumentIdentifierOf(char* file_name);
+LSP_TextDocumentIdentifier LSP_getTextDocumentIdentifierOf(char* file_name);
 cJSON* LSP_getJSONTextDocumentIdentifier(char* file_name);
-TextDocumentIdentifier LSP_getTextDocumentIdentifierFromJSON(cJSON* json);
-void LSP_destroyTextDocumentIdentifier(TextDocumentIdentifier* text_document_identifier);
+LSP_TextDocumentIdentifier LSP_getTextDocumentIdentifierFromJSON(cJSON* json);
+void LSP_destroyTextDocumentIdentifier(LSP_TextDocumentIdentifier* text_document_identifier);
 
 cJSON* LSP_getJSONTextDocumentIdentifierVersionned(char* file_name, int version);
 
 typedef struct {
-  TextDocumentIdentifier text_id;
-  Position position;
-} TextDocumentPositionParams;
+  LSP_TextDocumentIdentifier text_id;
+  LSP_Position position;
+} LSP_TextDocumentPositionParams;
 
-TextDocumentPositionParams LSP_getTextDocumentPositionParamsOf(char* file_name, int cur_row, int cur_column);
+LSP_TextDocumentPositionParams LSP_getTextDocumentPositionParamsOf(char* file_name, int cur_row, int cur_column);
 cJSON* LSP_getJSONTextDocumentPositionParams(char* file_name, int cur_row, int cur_column);
-TextDocumentPositionParams LSP_getTextDocumentPositionParamsFromJSON(cJSON* json);
-void LSP_destroyTextDocumentPositionParams(TextDocumentPositionParams text_document_position_params);
+LSP_TextDocumentPositionParams LSP_getTextDocumentPositionParamsFromJSON(cJSON* json);
+void LSP_destroyTextDocumentPositionParams(LSP_TextDocumentPositionParams text_document_position_params);
 
 typedef struct {
-  Range range;
+  LSP_Range range;
   char* new_text;
-} TextEdit;
+} LSP_TextEdit;
 
-TextEdit LSP_getTextEditOf(int cur1_row, int cur1_column, int cur2_row, int cur2_column, char* new_text);
+LSP_TextEdit LSP_getTextEditOf(int cur1_row, int cur1_column, int cur2_row, int cur2_column, char* new_text);
 cJSON* LSP_getJSONTextEdit(int cur1_row, int cur1_column, int cur2_row, int cur2_column, char* new_text);
-TextEdit LSP_getTextEditFromJSON(cJSON* json);
-void LSP_destroyTextEdit(TextEdit text_edit);
+LSP_TextEdit LSP_getTextEditFromJSON(cJSON* json);
+void LSP_destroyTextEdit(LSP_TextEdit text_edit);
 
 typedef struct {
-  TextDocumentIdentifier file_name;
-  TextEdit edits[1];
-} TextDocumentEdit;
+  LSP_TextDocumentIdentifier file_name;
+  LSP_TextEdit edits[1];
+} LSP_TextDocumentEdit;
 
-TextDocumentEdit LSP_getTextDocumentEditOf(char* file_name, int cur1_row, int cur1_column, int cur2_row,
+LSP_TextDocumentEdit LSP_getTextDocumentEditOf(char* file_name, int cur1_row, int cur1_column, int cur2_row,
                                            int cur2_column, char* new_text);
 cJSON* LSP_getJSONTextDocumentEdit(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column,
                                    char* new_text);
-TextDocumentEdit LSP_getTextDocumentEditFromJSON(cJSON* json);
-void LSP_destroyTextDocumentEdit(TextDocumentEdit text_document_edit);
+LSP_TextDocumentEdit LSP_getTextDocumentEditFromJSON(cJSON* json);
+void LSP_destroyTextDocumentEdit(LSP_TextDocumentEdit text_document_edit);
 
 typedef struct {
-  TextDocumentIdentifier file_name;
-  Range range;
-} Location;
+  LSP_TextDocumentIdentifier file_name;
+  LSP_Range range;
+} LSP_Location;
 
-Location LSP_getLocationOf(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column);
+LSP_Location LSP_getLocationOf(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column);
 cJSON* LSP_getJSONLocation(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column);
-Location LSP_getLocationFromJSON(cJSON* json);
-void LSP_destroyLocation(Location* location);
+LSP_Location LSP_getLocationFromJSON(cJSON* json);
+void LSP_destroyLocation(LSP_Location* location);
 
 typedef struct {
-  Location* items;
+  LSP_Location* items;
   int size;
-} LocationArray;
+} LSP_LocationArray;
 
-void LSP_getLocationArrayFromJSON(cJSON* json, LocationArray* array);
-void LSP_destroyLocationArray(LocationArray* array);
+void LSP_getLocationArrayFromJSON(cJSON* json, LSP_LocationArray* array);
+void LSP_destroyLocationArray(LSP_LocationArray* array);
 
 typedef struct {
-  Location location;
+  LSP_Location location;
   char message[MESSAGE_LENGTH];
-} DiagnosticRelatedInformation;
+} LSP_DiagnosticRelatedInformation;
 
 // TODO implement if needed
-DiagnosticRelatedInformation LSP_getDiagnosticRelatedInformationOf(char* file_name, int cur1_row, int cur1_column,
+LSP_DiagnosticRelatedInformation LSP_getDiagnosticRelatedInformationOf(char* file_name, int cur1_row, int cur1_column,
                                                                    int cur2_row, int cur2_column);
 cJSON* LSP_getJSONDiagnosticRelatedInformation(char* file_name, int cur1_row, int cur1_column, int cur2_row,
                                                int cur2_column);
-DiagnosticRelatedInformation LSP_getDiagnosticRelatedInformationFromJSON(cJSON* json);
-void LSP_destroyDiagnosticRelatedInformation(DiagnosticRelatedInformation location);
+LSP_DiagnosticRelatedInformation LSP_getDiagnosticRelatedInformationFromJSON(cJSON* json);
+void LSP_destroyDiagnosticRelatedInformation(LSP_DiagnosticRelatedInformation location);
 
-typedef enum { ERROR = 1, WARNING = 2, INFORMATION = 3, HINT = 4, SEVERITY_NONE = 0 } DiagnosticSeverity;
-typedef enum { UNNECESSARY = 1, DEPRECATED = 2, TAG_NONE = 0 } DiagnosticTag;
+typedef enum { ERROR = 1, WARNING = 2, INFORMATION = 3, HINT = 4, SEVERITY_NONE = 0 } LSP_DiagnosticSeverity;
+typedef enum { UNNECESSARY = 1, DEPRECATED = 2, TAG_NONE = 0 } LSP_DiagnosticTag;
 typedef struct {
-  DiagnosticSeverity severity;
-  Range range;
+  LSP_DiagnosticSeverity severity;
+  LSP_Range range;
   char source[100];
   char code[MESSAGE_LENGTH];
   char message[MESSAGE_LENGTH];
   char codeDescription[MESSAGE_LENGTH];
   // TODO implement if needed
-  DiagnosticTag tags[100];
+  LSP_DiagnosticTag tags[100];
   // TODO implement if needed
-  DiagnosticRelatedInformation infos[0];
-} Diagnostic;
+  LSP_DiagnosticRelatedInformation infos[0];
+} LSP_Diagnostic;
 
-Diagnostic LSP_getDiagnosticOf(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column);
+LSP_Diagnostic LSP_getDiagnosticOf(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column);
 cJSON* LSP_getJSONDiagnostic(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column);
-Diagnostic LSP_getDiagnosticFromJSON(cJSON* json);
-void LSP_destroyDiagnostic(Diagnostic* diagnostic);
+LSP_Diagnostic LSP_getDiagnosticFromJSON(cJSON* json);
+void LSP_destroyDiagnostic(LSP_Diagnostic* diagnostic);
 
 
 typedef enum {
   dt_PLAIN_TEXT,
   dt_MARKDOWN,
-} DocumentationType;
+} LSP_DocumentationType;
 
 typedef enum {
   ct_Text = 1,
@@ -248,62 +253,62 @@ typedef enum {
   ct_Event = 23,
   ct_Operator = 24,
   ct_TypeParameter = 25,
-} CompletionType;
+} LSP_CompletionType;
 
-typedef enum { citf_PlainText = 1, citf_Snippet = 2 } CompletionInsertTextFormat;
+typedef enum { citf_PlainText = 1, citf_Snippet = 2 } LSP_CompletionInsertTextFormat;
 
 
 struct _CompletionItem {
   char label[METHOD_MAX_LENGTH];
   char detail[METHOD_MAX_LENGTH];
   char description[MESSAGE_LENGTH];
-  CompletionType kind;
+  LSP_CompletionType kind;
   char documentation[MESSAGE_LENGTH];
-  DocumentationType documentationType;
+  LSP_DocumentationType documentationType;
   char sortText[METHOD_MAX_LENGTH];
   char filterText[METHOD_MAX_LENGTH];
   char insertText[METHOD_MAX_LENGTH];
-  TextEdit text_edit;
+  LSP_TextEdit text_edit;
   bool is_text_edit;
-  TextEdit* additionalTextEdits;
+  LSP_TextEdit* additionalTextEdits;
   int additionalTextEditsSize;
 };
 
-typedef struct _CompletionItem CompletionItem;
+typedef struct _CompletionItem LSP_CompletionItem;
 
 typedef struct {
   int size;
-  CompletionItem* items;
-} CompletionArray;
+  LSP_CompletionItem* items;
+} LSP_CompletionArray;
 
 typedef struct {
   bool isIncomplete;
-  CompletionArray completions;
-} CompletionList;
+  LSP_CompletionArray completions;
+} LSP_CompletionList;
 
-void LSP_getCompletionListFromJSON(cJSON* json, CompletionList* list);
-void LSP_getCompletionArrayFromJSON(cJSON* json, CompletionArray* array);
-void LSP_getCompletionItemFromJSON(cJSON* json, CompletionItem* item);
-void LSP_destroyCompletionItem(CompletionItem* item);
-void LSP_destroyCompletionList(CompletionList* completion_list);
+void LSP_getCompletionListFromJSON(cJSON* json, LSP_CompletionList* list);
+void LSP_getCompletionArrayFromJSON(cJSON* json, LSP_CompletionArray* array);
+void LSP_getCompletionItemFromJSON(cJSON* json, LSP_CompletionItem* item);
+void LSP_destroyCompletionItem(LSP_CompletionItem* item);
+void LSP_destroyCompletionList(LSP_CompletionList* completion_list);
 
 
 typedef struct MarkedString {
   char value[MESSAGE_LENGTH];
-  DocumentationType documentationType;
-} MarkedString;
+  LSP_DocumentationType documentationType;
+} LSP_MarkedString;
 
 typedef struct Hover {
-  MarkedString* contents;
+  LSP_MarkedString* contents;
   int size;
   bool is_range;
-  Range range;
-} Hover;
+  LSP_Range range;
+} LSP_Hover;
 
 
-void LSP_getHoverFromJSON(cJSON* json, Hover* hover_list);
-void LSP_getMarkedStringFromJSON(cJSON* json, MarkedString* item);
-void LSP_destroyHover(Hover* hover_list);
+void LSP_getHoverFromJSON(cJSON* json, LSP_Hover* hover_list);
+void LSP_getMarkedStringFromJSON(cJSON* json, LSP_MarkedString* item);
+void LSP_destroyHover(LSP_Hover* hover_list);
 
 
 //// -------- Receive Functions --------

@@ -6,7 +6,7 @@
 #include "../../data-management/file_management.h"
 #include "../../io_management/viewport_history.h"
 
-typedef struct {
+typedef struct DispatcherPayload {
   FilesState files_state;
   ViewPort view_port;
   Cursor *cursor;

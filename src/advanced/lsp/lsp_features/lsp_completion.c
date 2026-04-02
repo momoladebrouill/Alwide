@@ -9,7 +9,7 @@
 #include "../../../terminal/windows/pow.h"
 
 
-void applyTextEdit(Cursor* cursor, TextEdit* text_edit, History** history_p, PayloadStateChange payload_state_change) {
+void applyTextEdit(Cursor* cursor, LSP_TextEdit* text_edit, History** history_p, PayloadStateChange payload_state_change) {
   // As a text edit can represent a "replacement" we have to handle this deleting old text and inserting new text after.
   // Delete part
   *cursor = tryToReachAbsPosition(*cursor, text_edit->range.pos1.row + 1, text_edit->range.pos1.column);
@@ -20,8 +20,8 @@ void applyTextEdit(Cursor* cursor, TextEdit* text_edit, History** history_p, Pay
 }
 
 int compareTextEdit(const void* e1_p, const void* e2_p) {
-  TextEdit* e1 = (TextEdit*)e1_p;
-  TextEdit* e2 = (TextEdit*)e2_p;
+  LSP_TextEdit* e1 = (LSP_TextEdit*)e1_p;
+  LSP_TextEdit* e2 = (LSP_TextEdit*)e2_p;
   if (e1->range.pos1.row < e2->range.pos1.row)
     return 1;
   if (e1->range.pos1.row > e2->range.pos1.row)
@@ -30,7 +30,7 @@ int compareTextEdit(const void* e1_p, const void* e2_p) {
   return e1->range.pos1.column <= e2->range.pos1.column ? 1 : -1;
 }
 
-Range getReplaceRange(Cursor* cursor, char insertText[METHOD_MAX_LENGTH]) {
+LSP_Range getReplaceRange(Cursor* cursor, char insertText[METHOD_MAX_LENGTH]) {
   Cursor select = cursor_disable(*cursor);
   if (cursor->line_id.absolute_column != 0) {
     Cursor tmp = *cursor;
@@ -58,11 +58,11 @@ Range getReplaceRange(Cursor* cursor, char insertText[METHOD_MAX_LENGTH]) {
     begin = *cursor;
   }
 
-  return (Range){.pos1 = {.row = begin.file_id.absolute_row - 1, .column = begin.line_id.absolute_column},
+  return (LSP_Range){.pos1 = {.row = begin.file_id.absolute_row - 1, .column = begin.line_id.absolute_column},
                  .pos2 = {.row = cursor->file_id.absolute_row - 1, .column = cursor->line_id.absolute_column}};
 }
 
-void LSP_executeCompletion(Cursor* cursor, CompletionItem* item, History** history_p,
+void LSP_executeCompletion(Cursor* cursor, LSP_CompletionItem* item, History** history_p,
                            PayloadStateChange payload_state_change) {
   if (!item->is_text_edit) {
     // copy the text to the edit.
@@ -80,7 +80,7 @@ void LSP_executeCompletion(Cursor* cursor, CompletionItem* item, History** histo
   position_after_insert.column = -1;
 
   // TODO may check if it check well using multiple additionalTextEdit
-  qsort(item->additionalTextEdits, item->additionalTextEditsSize, sizeof(TextEdit), compareTextEdit);
+  qsort(item->additionalTextEdits, item->additionalTextEditsSize, sizeof(LSP_TextEdit), compareTextEdit);
 
   int i = 0;
   while (i < item->additionalTextEditsSize) {

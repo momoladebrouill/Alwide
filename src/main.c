@@ -295,8 +295,8 @@ int main(int file_count, char** args) {
       goto read_input;
     }
 
-    bool has_popup_handle_input =
-      gui_handlePopupInput(&gui_context, cursor, hash, c, lsp_data->computed, history_frame, payload_state_change);
+    bool has_popup_handle_input = gui_handlePopupInput(&gui_context, cursor, hash, c, lsp_data->computed, history_frame,
+                                                       payload_state_change, &payload);
     if (has_popup_handle_input) {
       c = ONLY_REPAINT_INPUT;
       hash = ONLY_REPAINT_INPUT;

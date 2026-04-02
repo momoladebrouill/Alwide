@@ -179,7 +179,7 @@ void handleEditorClick(GUIContext* gui_context, Cursor* cursor, Cursor* select_c
 
   // line number marker.
   if (isClickInsideWindow(gui_context->edw_context.lnw, m_event)) {
-    Diagnostic* diagnostic;
+    LSP_Diagnostic* diagnostic;
     LineMarker marker = gui_getMarkerForCurrentLine(*screen_y + m_event->y - getbegy(gui_context->edw_context.lnw),
                                                     highlight_descriptor, 0, (void**)&diagnostic);
 
@@ -201,18 +201,20 @@ void handleEditorClick(GUIContext* gui_context, Cursor* cursor, Cursor* select_c
         LSP_requestGoto(getLSPServerForLanguage(&lsp_servers, file->lsp_datas.lang_id), file->io_file.path_abs,
                         hover_cursor.file_id.absolute_row, hover_cursor.line_id.absolute_column, LSP_GOTO_DEFINITION);
       }
-      else if (file->lsp_datas.computed->hover.is_range == false ||
-               !cursor_desc_is_between(cursor_to_desc(hover_cursor),
-                                       positionToCursorDescriptor(file->lsp_datas.computed->hover.range.pos1),
-                                       positionToCursorDescriptor(file->lsp_datas.computed->hover.range.pos2))) {
-        // Regulate the hover requests, to avoid spamming for nothing. Don't reask for the same word.
-        LSP_requestHover(getLSPServerForLanguage(&lsp_servers, file->lsp_datas.lang_id), file->io_file.path_abs,
-                         hover_cursor.file_id.absolute_row, hover_cursor.line_id.absolute_column);
-      }
-      else if (file->lsp_datas.computed->hover.size != 0) {
-        // We resume the hover data previously fetched.
-        ViewPort view_port = (ViewPort){.gui = gui_context, .screen_x = screen_x, .screen_y = screen_y};
-        gui_resumeHoverInformation(cursor, &view_port, &file->lsp_datas.computed->hover);
+      if (gui_context->edw_context.pow_owner != GOTO_CHOICE) {
+        if (file->lsp_datas.computed->hover.is_range == false ||
+            !cursor_desc_is_between(cursor_to_desc(hover_cursor),
+                                    positionToCursorDescriptor(file->lsp_datas.computed->hover.range.pos1),
+                                    positionToCursorDescriptor(file->lsp_datas.computed->hover.range.pos2))) {
+          // Regulate the hover requests, to avoid spamming for nothing. Don't reask for the same word.
+          LSP_requestHover(getLSPServerForLanguage(&lsp_servers, file->lsp_datas.lang_id), file->io_file.path_abs,
+                           hover_cursor.file_id.absolute_row, hover_cursor.line_id.absolute_column);
+        }
+        else if (file->lsp_datas.computed->hover.size != 0) {
+          // We resume the hover data previously fetched.
+          ViewPort view_port = (ViewPort){.gui = gui_context, .screen_x = screen_x, .screen_y = screen_y};
+          gui_resumeHoverInformation(cursor, &view_port, &file->lsp_datas.computed->hover);
+        }
       }
     }
   }

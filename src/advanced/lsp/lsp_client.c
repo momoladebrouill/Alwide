@@ -397,8 +397,8 @@ cJSON* LSP_getNotificationParams(cJSON* notification_body) {
   return param_obj;
 }
 
-Position LSP_getPositionOf(int cursor_row, int cursor_column) {
-  Position pos;
+LSP_Position LSP_getPositionOf(int cursor_row, int cursor_column) {
+  LSP_Position pos;
   pos.row = cursor_row;
   pos.column = cursor_column;
   return pos;
@@ -412,14 +412,14 @@ cJSON* LSP_getJSONPosition(int cursor_row, int cursor_column) {
   return position;
 }
 
-Position LSP_getPositionFromJSON(cJSON* json) {
+LSP_Position LSP_getPositionFromJSON(cJSON* json) {
   return LSP_getPositionOf(cJSON_GetNumberValue(cJSON_GetObjectItem(json, "line")),
                            cJSON_GetNumberValue(cJSON_GetObjectItem(json, "character")));
 }
 
 
-Range LSP_getRangeOf(int cur1_row, int cur1_column, int cur2_row, int cur2_column) {
-  Range range;
+LSP_Range LSP_getRangeOf(int cur1_row, int cur1_column, int cur2_row, int cur2_column) {
+  LSP_Range range;
   range.pos1 = LSP_getPositionOf(cur1_row, cur1_column);
   range.pos2 = LSP_getPositionOf(cur2_row, cur2_column);
 
@@ -434,14 +434,14 @@ cJSON* LSP_getJSONRange(int cur1_row, int cur1_column, int cur2_row, int cur2_co
   return range;
 }
 
-Range LSP_getRangeFromJSON(cJSON* json) {
-  Position start = LSP_getPositionFromJSON(cJSON_GetObjectItem(json, "start"));
-  Position end = LSP_getPositionFromJSON(cJSON_GetObjectItem(json, "end"));
+LSP_Range LSP_getRangeFromJSON(cJSON* json) {
+  LSP_Position start = LSP_getPositionFromJSON(cJSON_GetObjectItem(json, "start"));
+  LSP_Position end = LSP_getPositionFromJSON(cJSON_GetObjectItem(json, "end"));
   return LSP_getRangeOf(start.row, start.column, end.row, end.column);
 }
 
-TextDocumentItem LSP_getTextDocumentItemOf(char* file_name, char* languageId, int version, char* text) {
-  TextDocumentItem text_document_item;
+LSP_TextDocumentItem LSP_getTextDocumentItemOf(char* file_name, char* languageId, int version, char* text) {
+  LSP_TextDocumentItem text_document_item;
   strncpy(text_document_item.file_name, file_name, PATH_MAX);
   strncpy(text_document_item.languageId, languageId, LANGUAGE_ID_LENGTH);
   text_document_item.version = version;
@@ -464,17 +464,17 @@ cJSON* LSP_getJSONTextDocumentItem(char* file_name, char* languageId, int versio
   return text_document;
 }
 
-TextDocumentItem LSP_getTextDocumentItemFromJSON(cJSON* json) {
+LSP_TextDocumentItem LSP_getTextDocumentItemFromJSON(cJSON* json) {
   return LSP_getTextDocumentItemOf(cJSON_GetStringValue(cJSON_GetObjectItem(json, "uri")),
                                    cJSON_GetStringValue(cJSON_GetObjectItem(json, "languageId")),
                                    cJSON_GetNumberValue(cJSON_GetObjectItem(json, "version")),
                                    cJSON_GetStringValue(cJSON_GetObjectItem(json, "text")));
 }
 
-void LSP_destroyTextDocumentItem(TextDocumentItem text_document_item) { free(text_document_item.text); }
+void LSP_destroyTextDocumentItem(LSP_TextDocumentItem text_document_item) { free(text_document_item.text); }
 
-TextDocumentIdentifier LSP_getTextDocumentIdentifierOf(char* file_name) {
-  TextDocumentIdentifier text_id;
+LSP_TextDocumentIdentifier LSP_getTextDocumentIdentifierOf(char* file_name) {
+  LSP_TextDocumentIdentifier text_id;
   strncpy(text_id.file_name, file_name, PATH_MAX);
 
   return text_id;
@@ -499,14 +499,14 @@ cJSON* LSP_getJSONTextDocumentIdentifierVersionned(char* file_name, int version)
   return text_document_id;
 }
 
-TextDocumentIdentifier LSP_getTextDocumentIdentifierFromJSON(cJSON* json) {
+LSP_TextDocumentIdentifier LSP_getTextDocumentIdentifierFromJSON(cJSON* json) {
   return LSP_getTextDocumentIdentifierOf(cJSON_GetStringValue(cJSON_GetObjectItem(json, "uri")));
 }
 
-void LSP_destroyTextDocumentIdentifier(TextDocumentIdentifier* text_document_identifier) {}
+void LSP_destroyTextDocumentIdentifier(LSP_TextDocumentIdentifier* text_document_identifier) {}
 
-TextDocumentPositionParams LSP_getTextDocumentPositionParamsOf(char* file_name, int cur_row, int cur_column) {
-  TextDocumentPositionParams text_document_position_params;
+LSP_TextDocumentPositionParams LSP_getTextDocumentPositionParamsOf(char* file_name, int cur_row, int cur_column) {
+  LSP_TextDocumentPositionParams text_document_position_params;
   text_document_position_params.text_id = LSP_getTextDocumentIdentifierOf(file_name);
   text_document_position_params.position = LSP_getPositionOf(cur_row, cur_column);
 
@@ -525,19 +525,19 @@ cJSON* LSP_getJSONTextDocumentPositionParams(char* file_name, int cur_row, int c
   return text_document_position_params;
 }
 
-TextDocumentPositionParams LSP_getTextDocumentPositionParamsFromJSON(cJSON* json) {
-  TextDocumentIdentifier text_id = LSP_getTextDocumentIdentifierFromJSON(cJSON_GetObjectItem(json, "textDocument"));
-  Position position = LSP_getPositionFromJSON(cJSON_GetObjectItem(json, "position"));
+LSP_TextDocumentPositionParams LSP_getTextDocumentPositionParamsFromJSON(cJSON* json) {
+  LSP_TextDocumentIdentifier text_id = LSP_getTextDocumentIdentifierFromJSON(cJSON_GetObjectItem(json, "textDocument"));
+  LSP_Position position = LSP_getPositionFromJSON(cJSON_GetObjectItem(json, "position"));
   return LSP_getTextDocumentPositionParamsOf(text_id.file_name, position.row, position.column);
 }
 
-void LSP_destroyTextDocumentPositionParams(TextDocumentPositionParams text_document_position_params) {
+void LSP_destroyTextDocumentPositionParams(LSP_TextDocumentPositionParams text_document_position_params) {
   LSP_destroyTextDocumentIdentifier(&text_document_position_params.text_id);
 }
 
 
-TextEdit LSP_getTextEditOf(int cur1_row, int cur1_column, int cur2_row, int cur2_column, char* new_text) {
-  TextEdit text_edit;
+LSP_TextEdit LSP_getTextEditOf(int cur1_row, int cur1_column, int cur2_row, int cur2_column, char* new_text) {
+  LSP_TextEdit text_edit;
   text_edit.range = LSP_getRangeOf(cur1_row, cur1_column, cur2_row, cur2_column);
   text_edit.new_text = strdup(new_text);
   return text_edit;
@@ -555,17 +555,17 @@ cJSON* LSP_getJSONTextEdit(int cur1_row, int cur1_column, int cur2_row, int cur2
   return text_edit;
 }
 
-TextEdit LSP_getTextEditFromJSON(cJSON* json) {
-  Range range = LSP_getRangeFromJSON(cJSON_GetObjectItem(json, "range"));
+LSP_TextEdit LSP_getTextEditFromJSON(cJSON* json) {
+  LSP_Range range = LSP_getRangeFromJSON(cJSON_GetObjectItem(json, "range"));
   return LSP_getTextEditOf(range.pos1.row, range.pos1.column, range.pos2.row, range.pos2.column,
                            cJSON_GetStringValue(cJSON_GetObjectItem(json, "newText")));
 }
 
-void LSP_destroyTextEdit(TextEdit text_edit) { free(text_edit.new_text); }
+void LSP_destroyTextEdit(LSP_TextEdit text_edit) { free(text_edit.new_text); }
 
-TextDocumentEdit LSP_getTextDocumentEditOf(char* file_name, int cur1_row, int cur1_column, int cur2_row,
+LSP_TextDocumentEdit LSP_getTextDocumentEditOf(char* file_name, int cur1_row, int cur1_column, int cur2_row,
                                            int cur2_column, char* new_text) {
-  TextDocumentEdit text_document_edit;
+  LSP_TextDocumentEdit text_document_edit;
   text_document_edit.file_name = LSP_getTextDocumentIdentifierOf(file_name);
   text_document_edit.edits[0] = LSP_getTextEditOf(cur1_row, cur1_column, cur2_row, cur2_column, new_text);
   return text_document_edit;
@@ -586,15 +586,15 @@ cJSON* LSP_getJSONTextDocumentEdit(char* file_name, int cur1_row, int cur1_colum
   return text_document_edit;
 }
 
-TextDocumentEdit LSP_getTextDocumentEditFromJSON(cJSON* json) {
-  TextEdit text_edit = LSP_getTextEditFromJSON(cJSON_GetArrayItem(cJSON_GetObjectItem(json, "edits"), 0));
-  TextDocumentIdentifier text_id = LSP_getTextDocumentIdentifierFromJSON(cJSON_GetObjectItem(json, "textDocument"));
+LSP_TextDocumentEdit LSP_getTextDocumentEditFromJSON(cJSON* json) {
+  LSP_TextEdit text_edit = LSP_getTextEditFromJSON(cJSON_GetArrayItem(cJSON_GetObjectItem(json, "edits"), 0));
+  LSP_TextDocumentIdentifier text_id = LSP_getTextDocumentIdentifierFromJSON(cJSON_GetObjectItem(json, "textDocument"));
   return LSP_getTextDocumentEditOf(text_id.file_name, text_edit.range.pos1.row, text_edit.range.pos1.column,
                                    text_edit.range.pos2.row, text_edit.range.pos2.column, text_edit.new_text);
 }
 
-Location LSP_getLocationOf(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column) {
-  Location location;
+LSP_Location LSP_getLocationOf(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column) {
+  LSP_Location location;
   location.file_name = LSP_getTextDocumentIdentifierOf(file_name);
   location.range = LSP_getRangeOf(cur1_row, cur1_column, cur2_row, cur2_column);
   return location;
@@ -613,18 +613,18 @@ cJSON* LSP_getJSONLocation(char* file_name, int cur1_row, int cur1_column, int c
   return location;
 }
 
-Location LSP_getLocationFromJSON(cJSON* json) {
-  TextDocumentIdentifier text_id = LSP_getTextDocumentIdentifierFromJSON(cJSON_GetObjectItem(json, "uri"));
-  Range range = LSP_getRangeFromJSON(cJSON_GetObjectItem(json, "range"));
+LSP_Location LSP_getLocationFromJSON(cJSON* json) {
+  LSP_TextDocumentIdentifier text_id = LSP_getTextDocumentIdentifierFromJSON(cJSON_GetObjectItem(json, "uri"));
+  LSP_Range range = LSP_getRangeFromJSON(cJSON_GetObjectItem(json, "range"));
 
   return LSP_getLocationOf(text_id.file_name, range.pos1.row, range.pos1.column, range.pos2.row, range.pos2.column);
 }
 
-void LSP_destroyLocation(Location* location) { LSP_destroyTextDocumentIdentifier(&location->file_name); }
+void LSP_destroyLocation(LSP_Location* location) { LSP_destroyTextDocumentIdentifier(&location->file_name); }
 
 
 // Internal helper for handling Location and LocationLink
-Location LSP_getLocationOrLocationLinkFromJSON_internal(cJSON* json) {
+LSP_Location LSP_getLocationOrLocationLinkFromJSON_internal(cJSON* json) {
   cJSON* uri_obj = cJSON_GetObjectItem(json, "uri");
   if (uri_obj == NULL) {
     uri_obj = cJSON_GetObjectItem(json, "targetUri");
@@ -643,14 +643,14 @@ Location LSP_getLocationOrLocationLinkFromJSON_internal(cJSON* json) {
   char decoded_path[PATH_MAX];
   decodeURI(uri, decoded_path, PATH_MAX);
 
-  TextDocumentIdentifier text_id;
+  LSP_TextDocumentIdentifier text_id;
   strncpy(text_id.file_name, decoded_path, PATH_MAX);
-  Range range = LSP_getRangeFromJSON(range_obj);
+  LSP_Range range = LSP_getRangeFromJSON(range_obj);
 
-  return (Location){.file_name = text_id, .range = range};
+  return (LSP_Location){.file_name = text_id, .range = range};
 }
 
-void LSP_getLocationArrayFromJSON(cJSON* json, LocationArray* array) {
+void LSP_getLocationArrayFromJSON(cJSON* json, LSP_LocationArray* array) {
   if (json == NULL || cJSON_IsNull(json)) {
     array->size = 0;
     array->items = NULL;
@@ -660,7 +660,7 @@ void LSP_getLocationArrayFromJSON(cJSON* json, LocationArray* array) {
   if (cJSON_IsArray(json)) {
     int count = cJSON_GetArraySize(json);
     array->size = count;
-    array->items = malloc(sizeof(Location) * count);
+    array->items = malloc(sizeof(LSP_Location) * count);
     for (int i = 0; i < count; i++) {
       cJSON* item = cJSON_GetArrayItem(json, i);
       // Handle Location or LocationLink
@@ -680,13 +680,13 @@ void LSP_getLocationArrayFromJSON(cJSON* json, LocationArray* array) {
   }
   else {
     array->size = 1;
-    array->items = malloc(sizeof(Location));
+    array->items = malloc(sizeof(LSP_Location));
     array->items[0] = LSP_getLocationOrLocationLinkFromJSON_internal(json);
   }
 }
 
 
-void LSP_destroyLocationArray(LocationArray* array) {
+void LSP_destroyLocationArray(LSP_LocationArray* array) {
   if (array->items) {
     for (int i = 0; i < array->size; i++) {
       LSP_destroyLocation(array->items + i);
@@ -698,7 +698,7 @@ void LSP_destroyLocationArray(LocationArray* array) {
 }
 
 
-void initDiagnostic(Diagnostic* diagnostic) {
+void initDiagnostic(LSP_Diagnostic* diagnostic) {
   diagnostic->code[0] = '\0';
   diagnostic->message[0] = '\0';
   diagnostic->codeDescription[0] = '\0';
@@ -707,12 +707,12 @@ void initDiagnostic(Diagnostic* diagnostic) {
   diagnostic->source[0] = '\0';
 }
 
-Diagnostic LSP_getDiagnosticOf(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column);
+LSP_Diagnostic LSP_getDiagnosticOf(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column);
 
 cJSON* LSP_getJSONDiagnostic(char* file_name, int cur1_row, int cur1_column, int cur2_row, int cur2_column);
 
-Diagnostic LSP_getDiagnosticFromJSON(cJSON* json) {
-  Diagnostic diagnostic;
+LSP_Diagnostic LSP_getDiagnosticFromJSON(cJSON* json) {
+  LSP_Diagnostic diagnostic;
   initDiagnostic(&diagnostic);
 
   diagnostic.range = LSP_getRangeFromJSON(cJSON_GetObjectItem(json, "range"));
@@ -746,10 +746,10 @@ Diagnostic LSP_getDiagnosticFromJSON(cJSON* json) {
   return diagnostic;
 }
 
-void LSP_destroyDiagnostic(Diagnostic* diagnostic) {}
+void LSP_destroyDiagnostic(LSP_Diagnostic* diagnostic) {}
 
 
-void LSP_getCompletionListFromJSON(cJSON* json, CompletionList* list) {
+void LSP_getCompletionListFromJSON(cJSON* json, LSP_CompletionList* list) {
   assert(json != NULL);
 
   // isIncomplete
@@ -760,7 +760,7 @@ void LSP_getCompletionListFromJSON(cJSON* json, CompletionList* list) {
 }
 
 
-void LSP_getCompletionArrayFromJSON(cJSON* json, CompletionArray* array) {
+void LSP_getCompletionArrayFromJSON(cJSON* json, LSP_CompletionArray* array) {
   array->items = NULL;
   array->size = 0;
 
@@ -769,14 +769,14 @@ void LSP_getCompletionArrayFromJSON(cJSON* json, CompletionArray* array) {
   }
 
   array->size = cJSON_GetArraySize(json);
-  array->items = malloc(array->size * sizeof(CompletionItem));
+  array->items = malloc(array->size * sizeof(LSP_CompletionItem));
   for (int i = 0; i < array->size; i++) {
     LSP_getCompletionItemFromJSON(cJSON_GetArrayItem(json, i), array->items + i);
   }
 }
 
 
-void LSP_getCompletionItemFromJSON(cJSON* json, CompletionItem* item) {
+void LSP_getCompletionItemFromJSON(cJSON* json, LSP_CompletionItem* item) {
   assert(item != NULL);
 
   // defaults
@@ -858,14 +858,14 @@ void LSP_getCompletionItemFromJSON(cJSON* json, CompletionItem* item) {
 
   if ((tmp_item = cJSON_GetObjectItem(json, "additionalTextEdits"))) {
     item->additionalTextEditsSize = cJSON_GetArraySize(tmp_item);
-    item->additionalTextEdits = malloc(item->additionalTextEditsSize * sizeof(TextEdit));
+    item->additionalTextEdits = malloc(item->additionalTextEditsSize * sizeof(LSP_TextEdit));
     for (int i = 0; i < item->additionalTextEditsSize; i++) {
       item->additionalTextEdits[i] = LSP_getTextEditFromJSON(cJSON_GetArrayItem(tmp_item, i));
     }
   }
 }
 
-void LSP_destroyCompletionItem(CompletionItem* item) {
+void LSP_destroyCompletionItem(LSP_CompletionItem* item) {
   if (item->is_text_edit) {
     LSP_destroyTextEdit(item->text_edit);
   }
@@ -878,7 +878,7 @@ void LSP_destroyCompletionItem(CompletionItem* item) {
 }
 
 
-void LSP_destroyCompletionList(CompletionList* completion_list) {
+void LSP_destroyCompletionList(LSP_CompletionList* completion_list) {
   for (int i = 0; i < completion_list->completions.size; i++) {
     LSP_destroyCompletionItem(completion_list->completions.items + i);
   }
@@ -891,7 +891,7 @@ void LSP_destroyCompletionList(CompletionList* completion_list) {
 }
 
 
-void LSP_getHoverFromJSON(cJSON* json, Hover* hover_list) {
+void LSP_getHoverFromJSON(cJSON* json, LSP_Hover* hover_list) {
   if (!json || cJSON_IsNull(json)) {
     hover_list->size = 0;
     hover_list->contents = NULL;
@@ -911,7 +911,7 @@ void LSP_getHoverFromJSON(cJSON* json, Hover* hover_list) {
   cJSON* contents = cJSON_GetObjectItem(json, "contents");
   if (cJSON_IsArray(contents)) {
     hover_list->size = cJSON_GetArraySize(contents);
-    hover_list->contents = malloc(sizeof(MarkedString) * hover_list->size);
+    hover_list->contents = malloc(sizeof(LSP_MarkedString) * hover_list->size);
     for (int i = 0; i < hover_list->size; i++) {
       LSP_getMarkedStringFromJSON(cJSON_GetArrayItem(contents, i), &hover_list->contents[i]);
       if (hover_list->contents[i].value[0] == '\0') {
@@ -922,7 +922,7 @@ void LSP_getHoverFromJSON(cJSON* json, Hover* hover_list) {
   }
   else {
     hover_list->size = 1;
-    hover_list->contents = malloc(sizeof(MarkedString));
+    hover_list->contents = malloc(sizeof(LSP_MarkedString));
     LSP_getMarkedStringFromJSON(contents, &hover_list->contents[0]);
     if (hover_list->contents[0].value[0] == '\0') {
       hover_list->size = 0;
@@ -930,7 +930,7 @@ void LSP_getHoverFromJSON(cJSON* json, Hover* hover_list) {
   }
 }
 
-void LSP_getMarkedStringFromJSON(cJSON* json, MarkedString* item) {
+void LSP_getMarkedStringFromJSON(cJSON* json, LSP_MarkedString* item) {
   if (cJSON_IsString(json)) {
     strlcpy(item->value, cJSON_GetStringValue(json), MESSAGE_LENGTH);
     item->documentationType = dt_PLAIN_TEXT;
@@ -963,7 +963,7 @@ void LSP_getMarkedStringFromJSON(cJSON* json, MarkedString* item) {
   }
 }
 
-void LSP_destroyHover(Hover* hover_list) {
+void LSP_destroyHover(LSP_Hover* hover_list) {
   if (hover_list->contents) {
     free(hover_list->contents);
     hover_list->contents = NULL;
@@ -1051,7 +1051,7 @@ void LSP_requestHover(LSP_Server* lsp, char* file_name, int row, int column) {
 
   LSP_PacketID id = LSP_sendPacketWithJSON(lsp, "textDocument/hover", request_content, REQUEST);
 
-  Position* pos = malloc(sizeof(Position));
+  LSP_Position* pos = malloc(sizeof(LSP_Position));
   pos->row = row;
   pos->column = column;
 
@@ -1088,9 +1088,21 @@ void LSP_requestGoto(LSP_Server* lsp, char* file_name, int row, int column, LSP_
   cJSON* position_json = LSP_getJSONPosition(row, column);
   cJSON_AddItemToObject(request_content, "position", position_json);
 
+  // little tweakfor find_reference which is not strictly following the same API
+  if (goto_type == LSP_FIND_REFERENCE) {
+    cJSON* context = cJSON_CreateObject();
+    cJSON_AddBoolToObject(context, "includeDeclaration", true);
+    cJSON_AddItemToObject(request_content, "context", context);
+  }
+
   LSP_PacketID id = LSP_sendPacketWithJSON(lsp, goto_method, request_content, REQUEST);
 
-  LSP_addResponseContext(lsp, id, goto_method, file_name, NULL);
+  GotoContext* goto_payload = malloc(sizeof(GotoContext));
+  goto_payload->pos.row = row;
+  goto_payload->pos.column = column;
+  goto_payload->goto_type = goto_type;
+
+  LSP_addResponseContext(lsp, id, goto_method, file_name, goto_payload);
 
   cJSON_Delete(request_content);
 }

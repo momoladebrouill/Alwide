@@ -414,6 +414,6 @@ void decodeURI(const char* src, char* dest, size_t dest_size) {
 }
 
 
-CursorDescriptor positionToCursorDescriptor(Position position) {
+CursorDescriptor positionToCursorDescriptor(LSP_Position position) {
   return (CursorDescriptor){.row = position.row + 1, .column = position.column};
 }

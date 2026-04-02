@@ -57,6 +57,6 @@ void decodeURI(const char* src, char* dest, size_t dest_size);
 
 void encodeURI(const char* src, char* dest, size_t dest_size);
 
-CursorDescriptor positionToCursorDescriptor(Position position);
+CursorDescriptor positionToCursorDescriptor(LSP_Position position);
 
 #endif // TOOLS_H

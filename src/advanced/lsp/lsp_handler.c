@@ -74,6 +74,7 @@ void LSP_initComputedData(LSP_ComputedData* payload) {
   // init definition-like lists
   payload->gotos.items = NULL;
   payload->gotos.size = 0;
+  payload->goto_type = LSP_GOTO_DEFINITION;
 }
 
 void initLSPServerList(LSPServerLinkedList* list) { list->head = NULL; }

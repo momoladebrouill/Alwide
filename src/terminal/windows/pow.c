@@ -1,17 +1,18 @@
 #include "pow.h"
 
 #include <assert.h>
+#include <libgen.h>
 #include <string.h>
-#include <unicode/urename.h>
 
 #include "../../advanced/lsp/lsp_features/lsp_completion.h"
+#include "../../advanced/lsp/lsp_features/lsp_goto.h"
 #include "../../io_management/viewport_history.h"
 #include "../../utils/key_management.h"
 #include "../term_handler.h"
 #include "edw.h"
 
 
-bool gui_resumeHoverInformation(Cursor* cursor, ViewPort* view_port, Hover* hover) {
+bool gui_resumeHoverInformation(Cursor* cursor, ViewPort* view_port, LSP_Hover* hover) {
   assert(hover->is_range);
   CursorDescriptor start_descriptor = positionToCursorDescriptor(hover->range.pos1);
   CursorDescriptor end_descriptor = positionToCursorDescriptor(hover->range.pos2);
@@ -20,11 +21,10 @@ bool gui_resumeHoverInformation(Cursor* cursor, ViewPort* view_port, Hover* hove
           start_descriptor.row, start_descriptor.column, end_descriptor.row, end_descriptor.column);
 
 
-  // if the last cursor position is not inside the range we don't trigger the popup !
-  if (!cursor_desc_is_between(view_port->gui->edw_context.lastMousePosition, start_descriptor,
-                                    end_descriptor)) {
-
-    fprintf(stderr, "don't opening popup !\n");
+  // if the last cursor position is not inside the range we don't trigger the popup ! Or if the popup is owned by
+  // GOTO_CHOICE
+  if (!cursor_desc_is_between(view_port->gui->edw_context.lastMousePosition, start_descriptor, end_descriptor) ||
+      view_port->gui->edw_context.pow_owner == GOTO_CHOICE) {
     return false;
   }
 
@@ -51,6 +51,11 @@ bool gui_resumeHoverInformation(Cursor* cursor, ViewPort* view_port, Hover* hove
   }
 
   gui_showGenericPopupWithTextAnchor(view_port, &new_cur, total_height + 2, global_max_width + 2, HOVER_DIAGNOSTICS);
+  return true;
+}
+
+bool gui_resumeGotoChoice(ViewPort* view_port, Cursor* cursor) {
+  gui_showGenericPopupWithTextAnchor(view_port, cursor, 8, 60, GOTO_CHOICE);
   return true;
 }
 
@@ -82,8 +87,8 @@ void gui_showGenericPopup(GUIContext* gui_context, int y, int x, int prefered_he
     return;
   }
 
-  gui_context->edw_context.completion_offset_y = 0;
-  gui_context->edw_context.completion_selected = 0;
+  gui_context->edw_context.item_select_offset_y = 0;
+  gui_context->edw_context.item_selected = 0;
 
   wbkgd(gui_context->edw_context.pow, COLOR_PAIR(INFO_COLOR_PAIR));
 }
@@ -92,7 +97,7 @@ void gui_setLastTextAnchor(GUIContext* gui_context, CursorDescriptor descriptor)
   gui_context->edw_context.lastTextAnchor = descriptor;
 }
 
-void gui_showDiagnostic(GUIContext* gui_context, int y, int x, Diagnostic* diagnostic) {
+void gui_showDiagnostic(GUIContext* gui_context, int y, int x, LSP_Diagnostic* diagnostic) {
   if (diagnostic == NULL) {
     return;
   }
@@ -144,13 +149,13 @@ void gui_printCompletionPopup(EDW_GUIContext* context, Cursor* cursor, LSP_Compu
 
   // for the height lines.
   for (int i = 0; i < height; i++) {
-    int index = context->completion_offset_y + i;
+    int index = context->item_select_offset_y + i;
     if (index >= lsp_data->completions.completions.size) {
       break; // reach the end of the completions.
     }
 
     // setup color for current line.
-    if (context->completion_selected == index) {
+    if (context->item_selected == index) {
       wattr_set(context->pow, A_NORMAL | A_ITALIC, WARNING_COLOR_HOVER_PAIR, NULL);
     }
     else {
@@ -161,6 +166,54 @@ void gui_printCompletionPopup(EDW_GUIContext* context, Cursor* cursor, LSP_Compu
   }
 }
 
+const char* gui_getGotoLabel(LSP_GOTO_TYPE type) {
+  switch (type) {
+    case LSP_GOTO_DEFINITION:
+      return "Definitions";
+    case LSP_GOTO_DECLARATION:
+      return "Declarations";
+    case LSP_GOTO_TYPE_DEFINITION:
+      return "Type Definitions";
+    case LSP_GOTO_IMPLEMENTATION:
+      return "Implementations";
+    case LSP_FIND_REFERENCE:
+      return "References";
+    default:
+      return "Choices";
+  }
+}
+
+void gui_printGotoChoicePopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* lsp_data) {
+  int width = getmaxx(context->pow), height = getmaxy(context->pow);
+  werase(context->pow);
+
+  wattr_set(context->pow, A_BOLD, INFO_COLOR_PAIR, NULL);
+
+  box(context->pow, 0, 0);
+  mvwprintw(context->pow, 0, 1, " Multiple %s found ", gui_getGotoLabel(lsp_data->goto_type));
+
+  for (int i = 0; i < height - 2; i++) {
+    int index = context->item_select_offset_y + i;
+    if (index >= lsp_data->gotos.size) {
+      break;
+    }
+
+    if (context->item_selected == index) {
+      wattr_set(context->pow, A_NORMAL | A_REVERSE, WARNING_COLOR_HOVER_PAIR, NULL);
+    }
+    else {
+      wattr_set(context->pow, A_NORMAL, INFO_COLOR_PAIR, NULL);
+    }
+
+    LSP_Location loc = lsp_data->gotos.items[index];
+    char line[PATH_MAX + 30];
+    char* filename_copy = strdup(loc.file_name.file_name);
+    snprintf(line, sizeof(line), "  📄 %-20s : line %-4d", basename(filename_copy), loc.range.pos1.row + 1);
+    free(filename_copy);
+
+    printToWindow(context->pow, line, -1, 1, i + 1, width - 2, 1);
+  }
+}
 
 void gui_printHoverPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* lsp_data) {
   int width = getmaxx(context->pow), height = getmaxy(context->pow);
@@ -204,6 +257,9 @@ void gui_printPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* l
     case HOVER_DIAGNOSTICS:
       gui_printHoverPopup(context, cursor, lsp_data);
       break;
+    case GOTO_CHOICE:
+      gui_printGotoChoicePopup(context, cursor, lsp_data);
+      break;
     default:
       break;
   }
@@ -215,35 +271,33 @@ bool gui_handleCompletionInput(GUIContext* context, Cursor* cursor, int c_hash, 
   int height = getmaxy(context->edw_context.pow);
   switch (c_hash) {
     case H_KEY_UP:
-      if (context->edw_context.completion_selected > 0) {
-        context->edw_context.completion_selected--;
+      if (context->edw_context.item_selected > 0) {
+        context->edw_context.item_selected--;
       }
-      if (context->edw_context.completion_selected < context->edw_context.completion_offset_y) {
-        context->edw_context.completion_offset_y = context->edw_context.completion_selected;
+      if (context->edw_context.item_selected < context->edw_context.item_select_offset_y) {
+        context->edw_context.item_select_offset_y = context->edw_context.item_selected;
       }
       return true;
     case H_KEY_DOWN:
-      context->edw_context.completion_selected++;
-      if (context->edw_context.completion_selected >= lsp_data->completions.completions.size) {
-        context->edw_context.completion_selected = lsp_data->completions.completions.size - 1;
+      context->edw_context.item_selected++;
+      if (context->edw_context.item_selected >= lsp_data->completions.completions.size) {
+        context->edw_context.item_selected = lsp_data->completions.completions.size - 1;
       }
-      if (context->edw_context.completion_selected >= context->edw_context.completion_offset_y + height) {
-        context->edw_context.completion_offset_y++;
+      if (context->edw_context.item_selected >= context->edw_context.item_select_offset_y + height) {
+        context->edw_context.item_select_offset_y++;
       }
       return true;
     case '\n':
     case KEY_ENTER:
-      if (context->edw_context.completion_selected < lsp_data->completions.completions.size) {
-        LSP_executeCompletion(cursor,
-                              lsp_data->completions.completions.items + context->edw_context.completion_selected,
+      if (context->edw_context.item_selected < lsp_data->completions.completions.size) {
+        LSP_executeCompletion(cursor, lsp_data->completions.completions.items + context->edw_context.item_selected,
                               history_p, payload_state_change);
       }
       gui_closePopup(context);
       return true;
     case KEY_TAB:
-      if (context->edw_context.completion_selected < lsp_data->completions.completions.size) {
-        LSP_executeCompletion(cursor,
-                              lsp_data->completions.completions.items + context->edw_context.completion_selected,
+      if (context->edw_context.item_selected < lsp_data->completions.completions.size) {
+        LSP_executeCompletion(cursor, lsp_data->completions.completions.items + context->edw_context.item_selected,
                               history_p, payload_state_change);
       }
       gui_closePopup(context);
@@ -255,14 +309,54 @@ bool gui_handleCompletionInput(GUIContext* context, Cursor* cursor, int c_hash, 
   return false;
 }
 
+bool gui_handleGotoChoiceInput(GUIContext* context, Cursor* cursor, int c_hash, int c_raw, LSP_ComputedData* lsp_data,
+                               History** history_p, PayloadStateChange payload_state_change,
+                               DispatcherPayload* payload) {
+  int height = getmaxy(context->edw_context.pow) - 2;
+  switch (c_hash) {
+    case H_KEY_UP:
+      if (context->edw_context.item_selected > 0) {
+        context->edw_context.item_selected--;
+      }
+      if (context->edw_context.item_selected < context->edw_context.item_select_offset_y) {
+        context->edw_context.item_select_offset_y = context->edw_context.item_selected;
+      }
+      return true;
+    case H_KEY_DOWN:
+      context->edw_context.item_selected++;
+      if (context->edw_context.item_selected >= lsp_data->gotos.size) {
+        context->edw_context.item_selected = lsp_data->gotos.size - 1;
+      }
+      if (context->edw_context.item_selected >= context->edw_context.item_select_offset_y + height) {
+        context->edw_context.item_select_offset_y++;
+      }
+      return true;
+    case '\n':
+    case KEY_ENTER:
+    case KEY_TAB:
+      if (context->edw_context.item_selected < lsp_data->gotos.size && payload != NULL) {
+        jumpToLocation(payload, lsp_data->gotos.items[context->edw_context.item_selected]);
+      }
+      gui_closePopup(context);
+      return true;
+    default:
+      break;
+  }
+
+  return false;
+}
+
 bool gui_handlePopupInput(GUIContext* context, Cursor* cursor, int c_hash, int c_raw, LSP_ComputedData* lsp_data,
-                          History** history_p, PayloadStateChange payload_state_change) {
+                          History** history_p, PayloadStateChange payload_state_change, DispatcherPayload* payload) {
   if (context->edw_context.show_pow == false || context->edw_context.pow == NULL) {
     return false;
   }
   switch (context->edw_context.pow_owner) {
     case COMPLETION:
       return gui_handleCompletionInput(context, cursor, c_hash, c_raw, lsp_data, history_p, payload_state_change);
+    case GOTO_CHOICE:
+      return gui_handleGotoChoiceInput(context, cursor, c_hash, c_raw, lsp_data, history_p, payload_state_change,
+                                       payload);
     default:
       break;
   }

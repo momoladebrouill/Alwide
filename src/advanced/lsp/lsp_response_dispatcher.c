@@ -50,7 +50,7 @@ void responseDispatcher(cJSON* packet, LSP_Server* lsp, DispatcherPayload* data)
            strcmp(context.method, "textDocument/typeDefinition") == 0 ||
            strcmp(context.method, "textDocument/implementation") == 0 ||
            strcmp(context.method, "textDocument/references") == 0) {
-    receiveGotoData(packet, file, data, &file->lsp_datas.computed->gotos, context.method);
+    receiveGotoData(packet, lsp, file, data, &file->lsp_datas.computed->gotos, context.method, context.payload);
   }
   else {
     fprintf(stderr, "Response method NOT SUPPORTED !\n      => %s\n", context.method);

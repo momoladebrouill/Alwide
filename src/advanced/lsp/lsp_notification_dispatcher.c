@@ -7,7 +7,7 @@ void readPublishDiagnostic(cJSON* params, LSP_ComputedData* computed_data) {
   cJSON* diagnostics_item = cJSON_GetObjectItem(params, "diagnostics");
   int count = (computed_data->diagnostics_size = cJSON_GetArraySize(diagnostics_item));
 
-  computed_data->diagnostics = realloc(computed_data->diagnostics, sizeof(Diagnostic) * count);
+  computed_data->diagnostics = realloc(computed_data->diagnostics, sizeof(LSP_Diagnostic) * count);
 
   for (int i = 0; i < count; i++) {
     computed_data->diagnostics[i] = LSP_getDiagnosticFromJSON(cJSON_GetArrayItem(diagnostics_item, i));
