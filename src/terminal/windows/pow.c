@@ -8,6 +8,7 @@
 #include "../../advanced/lsp/lsp_features/lsp_goto.h"
 #include "../../io_management/viewport_history.h"
 #include "../../utils/key_management.h"
+#include "../click_handler.h"
 #include "../term_handler.h"
 #include "edw.h"
 
@@ -265,10 +266,45 @@ void gui_printPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* l
   }
 }
 
-
 bool gui_handleCompletionInput(GUIContext* context, Cursor* cursor, int c_hash, int c_raw, LSP_ComputedData* lsp_data,
-                               History** history_p, PayloadStateChange payload_state_change) {
+                               History** history_p, PayloadStateChange payload_state_change, MEVENT* m_event) {
   int height = getmaxy(context->edw_context.pow);
+
+  if (c_hash == KEY_MOUSE && m_event != NULL) {
+
+    int item_count = lsp_data->completions.completions.size;
+    if (m_event->bstate & BUTTON4_PRESSED) {
+      if (context->edw_context.item_select_offset_y > 0) {
+        context->edw_context.item_select_offset_y--;
+        gui_updateEDW(context);
+      }
+    }
+    else if (m_event->bstate & BUTTON5_PRESSED) {
+      if (context->edw_context.item_select_offset_y + height < item_count) {
+        context->edw_context.item_select_offset_y++;
+        gui_updateEDW(context);
+      }
+    }
+    else if (m_event->bstate & (BUTTON1_PRESSED | BUTTON1_CLICKED)) {
+      int clicked_item = context->edw_context.item_select_offset_y + (m_event->y - getbegy(context->edw_context.pow));
+      if (clicked_item < item_count) {
+        context->edw_context.item_selected = clicked_item;
+        gui_updateEDW(context);
+      }
+    }
+
+    if (m_event->bstate & BUTTON1_DOUBLE_CLICKED) {
+      int clicked_item = context->edw_context.item_select_offset_y + (m_event->y - getbegy(context->edw_context.pow));
+      if (clicked_item < item_count) {
+        LSP_executeCompletion(cursor, lsp_data->completions.completions.items + clicked_item, history_p,
+                              payload_state_change);
+        gui_closePopup(context);
+      }
+    }
+
+    return true;
+  }
+
   switch (c_hash) {
     case H_KEY_UP:
       if (context->edw_context.item_selected > 0) {
@@ -310,9 +346,47 @@ bool gui_handleCompletionInput(GUIContext* context, Cursor* cursor, int c_hash, 
 }
 
 bool gui_handleGotoChoiceInput(GUIContext* context, Cursor* cursor, int c_hash, int c_raw, LSP_ComputedData* lsp_data,
-                               History** history_p, PayloadStateChange payload_state_change,
-                               DispatcherPayload* payload) {
+                               History** history_p, PayloadStateChange payload_state_change, DispatcherPayload* payload,
+                               MEVENT* m_event) {
   int height = getmaxy(context->edw_context.pow) - 2;
+
+  if (c_hash == KEY_MOUSE && m_event != NULL) {
+    int item_count = lsp_data->gotos.size;
+    int items_per_page = height;
+
+    if (m_event->bstate & BUTTON4_PRESSED) {
+      if (context->edw_context.item_select_offset_y > 0) {
+        context->edw_context.item_select_offset_y--;
+        gui_updateEDW(context);
+      }
+    }
+    else if (m_event->bstate & BUTTON5_PRESSED) {
+      if (context->edw_context.item_select_offset_y + items_per_page < item_count) {
+        context->edw_context.item_select_offset_y++;
+        gui_updateEDW(context);
+      }
+    }
+    else if (m_event->bstate & (BUTTON1_PRESSED | BUTTON1_CLICKED)) {
+      int clicked_item =
+        context->edw_context.item_select_offset_y + (m_event->y - getbegy(context->edw_context.pow) - 1);
+      if (clicked_item >= 0 && clicked_item < item_count) {
+        context->edw_context.item_selected = clicked_item;
+        gui_updateEDW(context);
+      }
+    }
+
+    if (m_event->bstate & BUTTON1_DOUBLE_CLICKED) {
+      int clicked_item =
+        context->edw_context.item_select_offset_y + (m_event->y - getbegy(context->edw_context.pow) - 1);
+      if (clicked_item >= 0 && clicked_item < item_count) {
+        jumpToLocation(payload, lsp_data->gotos.items[clicked_item]);
+        gui_closePopup(context);
+      }
+    }
+    return true;
+
+  }
+
   switch (c_hash) {
     case H_KEY_UP:
       if (context->edw_context.item_selected > 0) {
@@ -347,16 +421,23 @@ bool gui_handleGotoChoiceInput(GUIContext* context, Cursor* cursor, int c_hash, 
 }
 
 bool gui_handlePopupInput(GUIContext* context, Cursor* cursor, int c_hash, int c_raw, LSP_ComputedData* lsp_data,
-                          History** history_p, PayloadStateChange payload_state_change, DispatcherPayload* payload) {
+                          History** history_p, PayloadStateChange payload_state_change, DispatcherPayload* payload,
+                          MEVENT* m_event) {
   if (context->edw_context.show_pow == false || context->edw_context.pow == NULL) {
     return false;
   }
+
+  if (c_hash == KEY_MOUSE && m_event != NULL && !isClickInsideWindow(context->edw_context.pow, m_event)) {
+    return false;
+  }
+
   switch (context->edw_context.pow_owner) {
     case COMPLETION:
-      return gui_handleCompletionInput(context, cursor, c_hash, c_raw, lsp_data, history_p, payload_state_change);
+      return gui_handleCompletionInput(context, cursor, c_hash, c_raw, lsp_data, history_p, payload_state_change,
+                                       m_event);
     case GOTO_CHOICE:
       return gui_handleGotoChoiceInput(context, cursor, c_hash, c_raw, lsp_data, history_p, payload_state_change,
-                                       payload);
+                                       payload, m_event);
     default:
       break;
   }

@@ -6,6 +6,9 @@
 #include "../io_management/io_explorer.h"
 #include "term_handler.h"
 
+#include "../advanced/lsp/lsp_dispatcher.h"
+
+bool isClickInsideWindow(WINDOW* w, MEVENT* m_event);
 
 void handleClick(GUIContext* gui_context, FileContainer** files, int* file_count, int* current_file_index,
                  ExplorerFolder* pwd, Cursor* cursor, Cursor* select_cursor, int* desired_column, int* screen_x,

@@ -295,8 +295,17 @@ int main(int file_count, char** args) {
       goto read_input;
     }
 
-    bool has_popup_handle_input = gui_handlePopupInput(&gui_context, cursor, hash, c, lsp_data->computed, history_frame,
-                                                       payload_state_change, &payload);
+    if (hash == KEY_MOUSE) {
+      if (getmouse(&m_event) != OK) {
+        fprintf(stderr, "MOUVE_EVENT_NOT_OK !\r\n");
+        goto read_input;
+      }
+      detectComplexMouseEvents(&m_event);
+    }
+
+    bool has_popup_handle_input =
+      gui_handlePopupInput(&gui_context, cursor, hash, c, lsp_data->computed, history_frame, payload_state_change,
+                           &payload, (hash == KEY_MOUSE ? &m_event : NULL));
     if (has_popup_handle_input) {
       c = ONLY_REPAINT_INPUT;
       hash = ONLY_REPAINT_INPUT;

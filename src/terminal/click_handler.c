@@ -38,8 +38,6 @@ void handleClick(GUIContext* gui_context, FileContainer** files, int* file_count
 mouse_read:;
   assert(mouse_drag != NULL);
 
-  detectComplexMouseEvents(m_event);
-
   // Avoid too much refresh, to avoid input buffer full.
   if (m_event->bstate == NO_EVENT_MOUSE && *mouse_drag == true) {
     time_val current_time = timeInMilliseconds();
