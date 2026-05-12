@@ -266,8 +266,10 @@ void gui_printPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* l
   }
 }
 
-bool gui_handleCompletionInput(GUIContext* context, Cursor* cursor, int c_hash, int c_raw, LSP_ComputedData* lsp_data,
-                               History** history_p, PayloadStateChange payload_state_change, MEVENT* m_event) {
+bool gui_handleCompletionInput(GUIContext* context, FileContainer* fc, int c_hash, int c_raw, PayloadStateChange payload_state_change, MEVENT* m_event) {
+  Cursor* cursor = &fc->cursor;
+  LSP_ComputedData* lsp_data = fc->lsp_datas.computed;
+  History** history_p = &fc->history_frame;
   int height = getmaxy(context->edw_context.pow);
 
   if (c_hash == KEY_MOUSE && m_event != NULL) {
@@ -345,9 +347,8 @@ bool gui_handleCompletionInput(GUIContext* context, Cursor* cursor, int c_hash, 
   return false;
 }
 
-bool gui_handleGotoChoiceInput(GUIContext* context, Cursor* cursor, int c_hash, int c_raw, LSP_ComputedData* lsp_data,
-                               History** history_p, PayloadStateChange payload_state_change, DispatcherPayload* payload,
-                               MEVENT* m_event) {
+bool gui_handleGotoChoiceInput(GUIContext* context, FileContainer* fc, int c_hash, int c_raw, PayloadStateChange payload_state_change, DispatcherPayload* payload, MEVENT* m_event) {
+  LSP_ComputedData* lsp_data = fc->lsp_datas.computed;
   int height = getmaxy(context->edw_context.pow) - 2;
 
   if (c_hash == KEY_MOUSE && m_event != NULL) {
@@ -420,9 +421,7 @@ bool gui_handleGotoChoiceInput(GUIContext* context, Cursor* cursor, int c_hash, 
   return false;
 }
 
-bool gui_handlePopupInput(GUIContext* context, Cursor* cursor, int c_hash, int c_raw, LSP_ComputedData* lsp_data,
-                          History** history_p, PayloadStateChange payload_state_change, DispatcherPayload* payload,
-                          MEVENT* m_event) {
+bool gui_handlePopupInput(GUIContext* context, FileContainer* fc, int c_hash, int c_raw, PayloadStateChange payload_state_change, DispatcherPayload* payload, MEVENT* m_event) {
   if (context->edw_context.show_pow == false || context->edw_context.pow == NULL) {
     return false;
   }
@@ -433,11 +432,9 @@ bool gui_handlePopupInput(GUIContext* context, Cursor* cursor, int c_hash, int c
 
   switch (context->edw_context.pow_owner) {
     case COMPLETION:
-      return gui_handleCompletionInput(context, cursor, c_hash, c_raw, lsp_data, history_p, payload_state_change,
-                                       m_event);
+      return gui_handleCompletionInput(context, fc, c_hash, c_raw, payload_state_change, m_event);
     case GOTO_CHOICE:
-      return gui_handleGotoChoiceInput(context, cursor, c_hash, c_raw, lsp_data, history_p, payload_state_change,
-                                       payload, m_event);
+      return gui_handleGotoChoiceInput(context, fc, c_hash, c_raw, payload_state_change, payload, m_event);
     default:
       break;
   }

@@ -23,8 +23,8 @@ void gui_printPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* l
 struct DispatcherPayload;
 typedef struct DispatcherPayload DispatcherPayload;
 
-bool gui_handlePopupInput(GUIContext* context, Cursor* cursor, int c_hash, int c_raw, LSP_ComputedData* lsp_data,
-                          History** history_p, PayloadStateChange payload_state_change, DispatcherPayload* payload,
-                          MEVENT* m_event);
+#include "../../data-management/file_management.h"
+
+bool gui_handlePopupInput(GUIContext* context, FileContainer* fc, int c_hash, int c_raw, PayloadStateChange payload_state_change, DispatcherPayload* payload, MEVENT* m_event);
 
 #endif // WISHWIM_POW_H

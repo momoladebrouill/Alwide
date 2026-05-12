@@ -77,7 +77,8 @@ static void setup_environment() {
     FILE* f = fopen("/dev/null", "w");
     dup2(fileno(f), STDERR_FILENO);
     fclose(f);
-  } else {
+  }
+  else {
     FILE* f = fopen("./.logs.txt", "w");
     if (f != NULL) {
       dup2(fileno(f), STDERR_FILENO);
@@ -138,7 +139,8 @@ static void run_post_processing(EditorContext* ctx) {
   }
 
   // If it needed to reparse the current file for tree. Looking for state changes.
-  if (fc->highlight_data.is_active == true && (ctx->old_history_frame != fc->history_frame || fc->highlight_data.tree == NULL)) {
+  if (fc->highlight_data.is_active == true &&
+      (ctx->old_history_frame != fc->history_frame || fc->highlight_data.tree == NULL)) {
     parseTree(&fc->root, &fc->history_frame, &fc->highlight_data, &ctx->old_history_frame);
     optimizeHistory(fc->history_root, &fc->history_frame);
     ctx->old_history_frame = fc->history_frame;
@@ -152,17 +154,62 @@ static void paint_gui(EditorContext* ctx) {
     whd_reset(&ctx->highlight_descriptor);
 
     // calculate tree_sitter Highlight
-    TS_highlightCurrentFile(&fc->highlight_data, ctx->gui_context.edw_context.ftw, fc->screen_x, fc->screen_y, fc->cursor,
-                            &ctx->highlight_descriptor);
+    TS_highlightCurrentFile(&fc->highlight_data, ctx->gui_context.edw_context.ftw, fc->screen_x, fc->screen_y,
+                            fc->cursor, &ctx->highlight_descriptor);
 
     // add lsp highlights
     LSP_highlightCurrentFile(&fc->lsp_datas, fc->cursor, &ctx->highlight_descriptor, &ctx->gui_context);
   }
 
-  gui_repaintGUI(&ctx->gui_context, &ctx->highlight_descriptor, &ctx->pwd, ctx->files, ctx->file_count, ctx->current_file_index);
+  gui_repaintGUI(&ctx->gui_context, &ctx->highlight_descriptor, &ctx->pwd, ctx->files, ctx->file_count,
+                 ctx->current_file_index);
 
   assert(checkFileIntegrity(fc->root) == true);
   assert(checkByteCountIntegrity(fc->root) == true);
+}
+
+static DispatcherPayload build_dispatcher_payload(EditorContext* ctx) {
+  FileContainer* fc = &ctx->files[ctx->current_file_index];
+  DispatcherPayload payload;
+  payload.files_state = filesStateOf(&ctx->files, &ctx->file_count, &ctx->current_file_index, &ctx->refresh_local_vars);
+  payload.view_port = viewPortOf(&ctx->gui_context, &fc->screen_x, &fc->screen_y);
+  payload.cursor = &fc->cursor;
+  return payload;
+}
+
+static bool handle_popup_input(EditorContext* ctx, int hash, int c, DispatcherPayload* payload) {
+  FileContainer* fc = &ctx->files[ctx->current_file_index];
+  MEVENT* mouse_event = (hash == KEY_MOUSE) ? &ctx->m_event : NULL;
+  return gui_handlePopupInput(&ctx->gui_context, fc, hash, c, ctx->payload_state_change, payload, mouse_event);
+}
+
+static void read_next_input(EditorContext* ctx, int* out_c, int* out_hash) {
+  int c;
+  if (ctx->peek_c == -1) {
+    c = getch();
+  } else {
+    c = ctx->peek_c;
+    ctx->peek_c = -1;
+  }
+  int hash = c;
+
+  ctx->t_date = timeInMilliseconds();
+  ctx->t_clock = clock();
+
+  if (c != KEY_MOUSE && c != -1) {
+    fprintf(stderr, "Code %d, Key : '%s' hash into %d.\n", c, keyname(c), hashString((unsigned char*)keyname(c)));
+    const char* key_str = keyname(c);
+    if (key_str != NULL && key_str[0] != '\0') {
+      if (key_str[0] != '^') {
+        hash = hashString((unsigned char*)key_str);
+      }
+    } else {
+      fprintf(stderr, "keyname is NULL");
+    }
+  }
+
+  *out_c = c;
+  *out_hash = hash;
 }
 
 static void dispatch_lsp(DispatcherPayload* payload, int* c, int* hash) {
@@ -207,22 +254,27 @@ static EventLoopAction process_key_event(EditorContext* ctx, int hash, int c) {
       break;
 
     case KEY_MOUSE:
-      handleClick(&ctx->gui_context, &ctx->files, &ctx->file_count, &ctx->current_file_index, &ctx->pwd, cursor, select_cursor, desired_column,
-                  screen_x, screen_y, &ctx->refresh_local_vars, &ctx->m_event, &ctx->peek_c, &ctx->mouse_drag, &ctx->last_time_mouse_drag,
-                  &ctx->t_date, &ctx->t_clock, &c, &ctx->highlight_descriptor);
+      handleClick(&ctx->gui_context, &ctx->files, &ctx->file_count, &ctx->current_file_index, &ctx->pwd, cursor,
+                  select_cursor, desired_column, screen_x, screen_y, &ctx->refresh_local_vars, &ctx->m_event,
+                  &ctx->peek_c, &ctx->mouse_drag, &ctx->last_time_mouse_drag, &ctx->t_date, &ctx->t_clock, &c,
+                  &ctx->highlight_descriptor);
       if (!gui_doesGUINeedRepaint(&ctx->gui_context)) {
         return EVENT_READ_INPUT;
       }
       break;
 
     case H_KEY_RIGHT:
-      if (cursor_is_disabled(*select_cursor)) *cursor = moveRight(*cursor);
+      if (cursor_is_disabled(*select_cursor)) {
+        *cursor = moveRight(*cursor);
+      }
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_RIGHT);
       setDesiredColumn(*cursor, desired_column);
       askCompletion(&ctx->gui_context, cursor, screen_x, screen_y, lsp_data, false, false);
       break;
     case H_KEY_LEFT:
-      if (cursor_is_disabled(*select_cursor)) *cursor = moveLeft(*cursor);
+      if (cursor_is_disabled(*select_cursor)) {
+        *cursor = moveLeft(*cursor);
+      }
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_LEFT);
       setDesiredColumn(*cursor, desired_column);
       askCompletion(&ctx->gui_context, cursor, screen_x, screen_y, lsp_data, false, false);
@@ -280,12 +332,16 @@ static EventLoopAction process_key_event(EditorContext* ctx, int hash, int c) {
       setDesiredColumn(*cursor, desired_column);
       break;
     case H_KEY_CTRL_MAJ_DOWN:
-      if (ctx->current_file_index != 0) ctx->current_file_index--;
+      if (ctx->current_file_index != 0) {
+        ctx->current_file_index--;
+      }
       ctx->refresh_local_vars = true;
       gui_updateOFW(&ctx->gui_context);
       break;
     case H_KEY_CTRL_MAJ_UP:
-      if (ctx->current_file_index != ctx->file_count - 1) ctx->current_file_index++;
+      if (ctx->current_file_index != ctx->file_count - 1) {
+        ctx->current_file_index++;
+      }
       ctx->refresh_local_vars = true;
       gui_updateOFW(&ctx->gui_context);
       break;
@@ -382,13 +438,17 @@ static EventLoopAction process_key_event(EditorContext* ctx, int hash, int c) {
       setDesiredColumn(*cursor, desired_column);
       break;
     case H_KEY_DELETE:
-      if (cursor_is_disabled(*select_cursor)) { *select_cursor = moveLeft(*cursor); }
+      if (cursor_is_disabled(*select_cursor)) {
+        *select_cursor = moveLeft(*cursor);
+      }
       deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
       setDesiredColumn(*cursor, desired_column);
       askCompletion(&ctx->gui_context, cursor, screen_x, screen_y, lsp_data, false, false);
       break;
     case H_KEY_SUPPR:
-      if (cursor_is_disabled(*select_cursor)) { *select_cursor = moveRight(*cursor); }
+      if (cursor_is_disabled(*select_cursor)) {
+        *select_cursor = moveRight(*cursor);
+      }
       deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
       setDesiredColumn(*cursor, desired_column);
       askCompletion(&ctx->gui_context, cursor, screen_x, screen_y, lsp_data, false, false);
@@ -407,7 +467,8 @@ static EventLoopAction process_key_event(EditorContext* ctx, int hash, int c) {
       tmp = cursor_to_desc(*cursor);
       if (TAB_CHAR_USE) {
         *cursor = insertCharInLineC(*cursor, readChar_U8FromInput('\t'));
-      } else {
+      }
+      else {
         for (int i = 0; i < TAB_SIZE; i++) {
           *cursor = insertCharInLineC(*cursor, readChar_U8FromInput(' '));
         }
@@ -417,21 +478,32 @@ static EventLoopAction process_key_event(EditorContext* ctx, int hash, int c) {
       setDesiredColumn(*cursor, desired_column);
       break;
     case CTRL('d'):
-      if (cursor_is_disabled(*select_cursor) == true) { selectLine(cursor, select_cursor); }
+      if (cursor_is_disabled(*select_cursor) == true) {
+        selectLine(cursor, select_cursor);
+      }
       deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
       setDesiredColumn(*cursor, desired_column);
       gui_closePopup(&ctx->gui_context);
       gui_updateEDW(&ctx->gui_context);
       break;
-    case CTRL('e'): switchFEW(&ctx->gui_context); break;
-    case CTRL('l'): gui_switchOFW(&ctx->gui_context); break;
-    case CTRL(' '): askCompletion(&ctx->gui_context, cursor, screen_x, screen_y, lsp_data, true, true); break;
+    case CTRL('e'):
+      switchFEW(&ctx->gui_context);
+      break;
+    case CTRL('l'):
+      gui_switchOFW(&ctx->gui_context);
+      break;
+    case CTRL(' '):
+      askCompletion(&ctx->gui_context, cursor, screen_x, screen_y, lsp_data, true, true);
+      break;
     case H_KEY_ESCAPE:
-    case CTRL('['): gui_closePopup(&ctx->gui_context); break;
+    case CTRL('['):
+      gui_closePopup(&ctx->gui_context);
+      break;
     default:
       if (iscntrl(c)) {
         printf("Unsupported touch %d", c);
-      } else {
+      }
+      else {
         deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
         tmp = cursor_to_desc(*cursor);
         *cursor = insertCharInLineC(*cursor, readChar_U8FromInput(c));
@@ -477,7 +549,9 @@ int main(int file_count, char** args) {
   setupOpenedFiles(&ctx.file_count, file_names, &ctx.files);
 
   char* dir_path = getenv("PWD");
-  if (dir_path == NULL) dir_path = getenv("HOME");
+  if (dir_path == NULL) {
+    dir_path = getenv("HOME");
+  }
   initFolder(workspace_settings.is_used == true ? workspace_settings.dir_path : dir_path, &ctx.pwd);
   ctx.pwd.open = true;
 
@@ -488,37 +562,13 @@ int main(int file_count, char** args) {
     paint_gui(&ctx);
 
   read_input:;
-    int c;
-    if (ctx.peek_c == -1) {
-      c = getch();
-    } else {
-      c = ctx.peek_c;
-      ctx.peek_c = -1;
-    }
-    int hash = c;
+    int c, hash;
+    read_next_input(&ctx, &c, &hash);
 
-    ctx.t_date = timeInMilliseconds();
-    ctx.t_clock = clock();
-
-    if (c != KEY_MOUSE && c != -1) {
-      fprintf(stderr, "Code %d, Key : '%s' hash into %d.\n", c, keyname(c), hashString((unsigned char*)keyname(c)));
-      const char* key_str = keyname(c);
-      if (key_str != NULL && key_str[0] != '\0') {
-        if (key_str[0] != '^') {
-          hash = hashString((unsigned char*)key_str);
-        }
-      } else {
-        fprintf(stderr, "keyname is NULL");
-      }
-    }
-
-    DispatcherPayload payload;
-    payload.files_state = filesStateOf(&ctx.files, &ctx.file_count, &ctx.current_file_index, &ctx.refresh_local_vars);
-    payload.view_port = viewPortOf(&ctx.gui_context, &ctx.files[ctx.current_file_index].screen_x, &ctx.files[ctx.current_file_index].screen_y);
-    payload.cursor = &ctx.files[ctx.current_file_index].cursor;
-
+    DispatcherPayload payload = build_dispatcher_payload(&ctx);
     dispatch_lsp(&payload, &c, &hash);
 
+    // lsp ask to refresh local_vars
     if (ctx.refresh_local_vars) {
       continue;
     }
@@ -535,21 +585,22 @@ int main(int file_count, char** args) {
       detectComplexMouseEvents(&ctx.m_event);
     }
 
-    bool has_popup_handle_input = gui_handlePopupInput(
-        &ctx.gui_context, &ctx.files[ctx.current_file_index].cursor, hash, c,
-        ctx.files[ctx.current_file_index].lsp_datas.computed,
-        &ctx.files[ctx.current_file_index].history_frame, ctx.payload_state_change, &payload,
-        (hash == KEY_MOUSE ? &ctx.m_event : NULL));
+    EventLoopAction action = EVENT_CONTINUE;
+    bool has_popup_handle_input = handle_popup_input(&ctx, hash, c, &payload);
 
     if (has_popup_handle_input) {
-      c = ONLY_REPAINT_INPUT;
-      hash = ONLY_REPAINT_INPUT;
+      action = EVENT_CONTINUE;
+    }
+    else {
+      action = process_key_event(&ctx, hash, c);
     }
 
-    EventLoopAction action = process_key_event(&ctx, hash, c);
-
-    if (action == EVENT_QUIT) goto end;
-    if (action == EVENT_READ_INPUT) goto read_input;
+    if (action == EVENT_QUIT) {
+      goto end;
+    }
+    if (action == EVENT_READ_INPUT) {
+      goto read_input;
+    }
   }
 
 end:
@@ -561,8 +612,8 @@ end:
   if (workspace_settings.is_used == true) {
     WorkspaceSettings new_settings;
     getWorkspaceSettingsForCurrentDir(&new_settings, ctx.files, ctx.file_count, ctx.current_file_index,
-                                      ctx.gui_context.ofw_context.ofw_height != 0, ctx.gui_context.few_context.few_width != 0,
-                                      FILE_EXPLORER_WIDTH);
+                                      ctx.gui_context.ofw_context.ofw_height != 0,
+                                      ctx.gui_context.few_context.few_width != 0, FILE_EXPLORER_WIDTH);
     saveWorkspaceSettings(workspace_settings.dir_path, &new_settings);
     destroyWorkspaceSettings(&new_settings);
   }
