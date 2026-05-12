@@ -1,6 +1,8 @@
 #ifndef CONTANTS_H
 #define CONTANTS_H
 
+#define SHOW_ERROR true
+
 #define LANG_ID_LENGTH 100
 
 // #define PARSE_PRINT
