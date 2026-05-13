@@ -21,6 +21,7 @@
 #include "utils/key_management.h"
 
 #include "core/editor_context.h"
+#include "core/editor_destroy.h"
 #include "core/editor_init.h"
 #include "core/editor_input.h"
 #include "core/editor_lsp.h"
@@ -140,31 +141,10 @@ int main(int file_count, char** args) {
     }
   }
 
-end:
-  printf("\033[?1003l\033[0 q\n");
-  fflush(stdout);
+  /// --- Editor Destroy ---
+end:;
+  // release ressources
+  finalizeEditor(&ctx);
 
-  whd_free(&ctx.highlight_descriptor);
-
-  if (workspace_settings.is_used == true) {
-    WorkspaceSettings new_settings;
-    getWorkspaceSettingsForCurrentDir(&new_settings, ctx.files, ctx.file_count, ctx.current_file_index,
-                                      ctx.gui_context.ofw_context.ofw_height != 0,
-                                      ctx.gui_context.few_context.few_width != 0, FILE_EXPLORER_WIDTH);
-    saveWorkspaceSettings(workspace_settings.dir_path, &new_settings);
-    destroyWorkspaceSettings(&new_settings);
-  }
-
-  for (int i = 0; i < ctx.file_count; i++) {
-    destroyFileContainer(ctx.files + i);
-  }
-  destroyFolder(&ctx.pwd);
-  free(ctx.files);
-  cJSON_Delete(config);
-  destroyParserList(&parsers);
-
-  usleep(30000);
-  flushinp();
-  endwin();
   return 0;
 }

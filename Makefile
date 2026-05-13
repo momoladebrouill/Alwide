@@ -46,6 +46,7 @@ SRC_MODULES= \
 	src/core/editor_render.c \
 	src/core/editor_lsp.c \
 	src/core/editor_input.c \
+	src/core/editor_destroy.c \
 	src/environnement/setup.c
 
 # C Library sources
