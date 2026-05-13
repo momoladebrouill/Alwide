@@ -2,7 +2,7 @@
 #define WISHWIM_POW_H
 #include "gui_entities.h"
 
-#include "../../io_management/viewport_history.h"
+#include "../../io-management/viewport_history.h"
 
 bool gui_resumeHoverInformation(Cursor* cursor, ViewPort* view_port, LSP_Hover* hover);
 

@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #include "../data-management/file_management.h"
-#include "../io_management/io_explorer.h"
+#include "../io-management/io_explorer.h"
 #include "../terminal/highlight.h"
 #include "../terminal/windows/edw.h"
 

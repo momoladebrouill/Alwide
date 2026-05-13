@@ -5,7 +5,7 @@
 #include "../../../lib/tree-sitter/lib/include/tree_sitter/api.h"
 #include "../../data-management/state_control.h"
 #include "../../environnement/constants.h"
-#include "../../io_management/io_manager.h"
+#include "../../io-management/io_manager.h"
 #include "../theme.h"
 
 #define CHAR_CHUNK_SIZE_TSINPUT 500

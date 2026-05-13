@@ -4,7 +4,7 @@
 #include "../core/editor_context.h"
 #include "../data-management/file_management.h"
 #include "../data-management/file_structure.h"
-#include "../io_management/io_explorer.h"
+#include "../io-management/io_explorer.h"
 #include "term_handler.h"
 
 #include "../advanced/lsp/lsp_dispatcher.h"

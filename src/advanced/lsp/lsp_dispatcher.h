@@ -4,7 +4,7 @@
 #include "../../../lib/cJSON/cJSON.h"
 
 #include "../../data-management/file_management.h"
-#include "../../io_management/viewport_history.h"
+#include "../../io-management/viewport_history.h"
 
 typedef struct ModuleContext {
   FilesState files_state;

@@ -11,7 +11,7 @@
 #include "../advanced/lsp/lsp_features/lsp_completion.h"
 #include "../data-management/state_control.h"
 #include "../environnement/global-variables.h"
-#include "../io_management/io_manager.h"
+#include "../io-management/io_manager.h"
 #include "../terminal/click_handler.h"
 #include "../terminal/windows/few.h"
 #include "../terminal/windows/ofw.h"

@@ -9,8 +9,8 @@
 #include "../data-management/file_management.h"
 #include "../environnement/constants.h"
 #include "../environnement/global-variables.h"
-#include "../io_management/io_explorer.h"
-#include "../io_management/workspace_settings.h"
+#include "../io-management/io_explorer.h"
+#include "../io-management/workspace_settings.h"
 #include "../terminal/highlight.h"
 
 static void finalizeTerminal() {

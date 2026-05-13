@@ -5,7 +5,7 @@
 
 #include "../data-management/file_management.h"
 #include "../data-management/file_structure.h"
-#include "../io_management/io_explorer.h"
+#include "../io-management/io_explorer.h"
 #include "highlight.h"
 #include "windows/gui_entities.h"
 

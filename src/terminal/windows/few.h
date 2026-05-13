@@ -1,6 +1,6 @@
 #ifndef WISHWIM_FEW_H
 #define WISHWIM_FEW_H
-#include "../../io_management/io_explorer.h"
+#include "../../io-management/io_explorer.h"
 #include "gui_entities.h"
 
 void gui_initFEWContext(FEW_GUIContext* context);

@@ -6,7 +6,7 @@
 
 #include "../../advanced/lsp/lsp_features/lsp_completion.h"
 #include "../../advanced/lsp/lsp_features/lsp_goto.h"
-#include "../../io_management/viewport_history.h"
+#include "../../io-management/viewport_history.h"
 #include "../../utils/key_management.h"
 #include "../click_handler.h"
 #include "../term_handler.h"

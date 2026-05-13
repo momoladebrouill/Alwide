@@ -7,7 +7,7 @@
 #include <sys/types.h>
 
 #include "../advanced/lsp/lsp_client.h"
-#include "../io_management/io_manager.h"
+#include "../io-management/io_manager.h"
 
 #define URI_MAX (PATH_MAX * 3 + 8)
 

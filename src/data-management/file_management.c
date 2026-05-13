@@ -8,7 +8,7 @@
 
 #include "../environnement/constants.h"
 #include "../environnement/global-variables.h"
-#include "../io_management/viewport_history.h"
+#include "../io-management/viewport_history.h"
 #include "../terminal/term_handler.h"
 
 

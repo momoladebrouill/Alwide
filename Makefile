@@ -12,13 +12,13 @@ SRC_MODULES= \
 	src/data-management/file_structure.c \
 	src/data-management/file_management.c \
 	src/utils/tools.c \
-	src/io_management/io_manager.c \
+	src/io-management/io_manager.c \
 	src/utils/key_management.c \
 	src/utils/clipboard_manager.c \
-	src/io_management/viewport_history.c \
+	src/io-management/viewport_history.c \
 	src/data-management/state_control.c \
 	src/terminal/term_handler.c \
-	src/io_management/io_explorer.c \
+	src/io-management/io_explorer.c \
 	src/advanced/lsp/lsp_client.c \
 	src/advanced/tree-sitter/tree_manager.c \
 	src/advanced/tree-sitter/tree_query.c \
@@ -31,7 +31,7 @@ SRC_MODULES= \
 	src/terminal/windows/ofw.c \
 	src/terminal/windows/pow.c \
 	src/config/config.c \
-	src/io_management/workspace_settings.c \
+	src/io-management/workspace_settings.c \
 	src/advanced/lsp/lsp_handler.c \
 	src/advanced/lsp/lsp_notification_dispatcher.c \
 	src/advanced/lsp/lsp_response_dispatcher.c \

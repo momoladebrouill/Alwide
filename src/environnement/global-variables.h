@@ -3,7 +3,7 @@
 
 #include "../advanced/lsp/lsp_handler.h"
 #include "../advanced/tree-sitter/tree_manager.h"
-#include "../io_management/workspace_settings.h"
+#include "../io-management/workspace_settings.h"
 
 
 extern cJSON* config;

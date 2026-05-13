@@ -5,7 +5,7 @@
 #include "../../../data-management/file_structure.h"
 #include "../../../data-management/state_control.h"
 #include "../../../environnement/global-variables.h"
-#include "../../../io_management/viewport_history.h"
+#include "../../../io-management/viewport_history.h"
 #include "../../shared.h"
 #include "../lsp_client.h"
 
