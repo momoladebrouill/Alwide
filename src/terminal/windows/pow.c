@@ -4,8 +4,8 @@
 #include <libgen.h>
 #include <string.h>
 
-#include "../../advanced/lsp/lsp_features/lsp_completion.h"
-#include "../../advanced/lsp/lsp_features/lsp_goto.h"
+#include "../../advanced/lsp/lsp-features/lsp_completion.h"
+#include "../../advanced/lsp/lsp-features/lsp_goto.h"
 #include "../../io-management/viewport_history.h"
 #include "../../utils/key_management.h"
 #include "../click_handler.h"

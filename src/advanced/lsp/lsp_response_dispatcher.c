@@ -6,9 +6,9 @@
 #include "../../terminal/term_handler.h"
 #include "../../terminal/windows/edw.h"
 #include "../../terminal/windows/pow.h"
-#include "lsp_features/lsp_completion.h"
-#include "lsp_features/lsp_goto.h"
-#include "lsp_features/lsp_hover.h"
+#include "lsp-features/lsp_completion.h"
+#include "lsp-features/lsp_goto.h"
+#include "lsp-features/lsp_hover.h"
 
 
 void responseDispatcher(cJSON* packet, LSP_Server* lsp, ModuleContext* data) {

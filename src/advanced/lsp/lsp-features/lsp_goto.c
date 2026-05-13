@@ -1,10 +1,10 @@
 #include "lsp_goto.h"
+#include <stdlib.h>
+#include <string.h>
 #include "../../../terminal/term_handler.h"
 #include "../../../terminal/windows/edw.h"
 #include "../../../terminal/windows/pow.h"
-#include "../lsp_features/lsp_completion.h"
-#include <stdlib.h>
-#include <string.h>
+#include "../lsp-features/lsp_completion.h"
 
 void jumpToLocation(ModuleContext* data, LSP_Location location) {
   openNewFile(location.file_name.file_name, data->files_state.files, data->files_state.size,

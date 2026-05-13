@@ -5,7 +5,7 @@
 #include "../../../terminal/term_handler.h"
 #include "../../../terminal/windows/edw.h"
 #include "../../../terminal/windows/pow.h"
-#include "../lsp_features/lsp_completion.h"
+#include "../lsp-features/lsp_completion.h"
 
 
 void receiveHoverData(cJSON* packet, FileContainer* file, ViewPort* view_port, Cursor* cursor, void* payload) {

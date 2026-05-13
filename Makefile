@@ -1,4 +1,13 @@
 CC=clang
+
+# Check Clang version
+CLANG_VERSION := $(shell $(CC) --version | sed -n 's/.*version \([0-9]*\).*/\1/p')
+MIN_CLANG_VERSION := 18
+
+ifeq ($(shell expr $(CLANG_VERSION) \< $(MIN_CLANG_VERSION)), 1)
+$(error Clang version $(CLANG_VERSION) is too old. Please update to at least version $(MIN_CLANG_VERSION))
+endif
+
 CFLAGS=-g -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600 -O3  # -fsanitize=address # -lncurses # -Wall -Wextra -Werror -gdwarf-4
 #CFLAGS=-g -fsanitize=address # -lncurses # -Wall -Wextra -Werror -gdwarf-4
 
@@ -36,9 +45,9 @@ SRC_MODULES= \
 	src/advanced/lsp/lsp_notification_dispatcher.c \
 	src/advanced/lsp/lsp_response_dispatcher.c \
 	src/advanced/lsp/lsp_highlighter.c \
-	src/advanced/lsp/lsp_features/lsp_completion.c \
-	src/advanced/lsp/lsp_features/lsp_goto.c \
-	src/advanced/lsp/lsp_features/lsp_hover.c \
+	src/advanced/lsp/lsp-features/lsp_completion.c \
+	src/advanced/lsp/lsp-features/lsp_goto.c \
+	src/advanced/lsp/lsp-features/lsp_hover.c \
 	src/advanced/lsp/lsp_dispatcher.c \
 	src/advanced/lsp/lsp_emitter.c \
 	src/core/editor_init.c \

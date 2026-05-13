@@ -8,7 +8,7 @@
 #include <sys/ttydefaults.h>
 #include <time.h>
 
-#include "../advanced/lsp/lsp_features/lsp_completion.h"
+#include "../advanced/lsp/lsp-features/lsp_completion.h"
 #include "../data-management/state_control.h"
 #include "../environnement/global-variables.h"
 #include "../io-management/io_manager.h"
