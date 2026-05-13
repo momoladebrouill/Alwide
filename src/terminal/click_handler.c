@@ -35,25 +35,33 @@ mouse_read:;
   assert(&ctx->mouse_drag != NULL);
 
   // Avoid too much refresh, to avoid input buffer full.
+  // We drain pending mouse events if they arrive too fast.
   if (ctx->m_event.bstate == NO_EVENT_MOUSE && ctx->mouse_drag == true) {
     time_val current_time = timeInMilliseconds();
     if (diff2Time(ctx->last_time_mouse_drag, current_time) < SKIP_MOUSE_EVENT_DELAY) {
-      ctx->peek_c = getch();
-      if (ctx->peek_c != ERR && ctx->peek_c == KEY_MOUSE) {
+      nodelay(stdscr, TRUE);
+      int next_c = getch();
+      if (next_c != ERR && next_c == KEY_MOUSE) {
         MEVENT tmp_event;
         if (getmouse(&tmp_event) == OK) {
-          // skip current event.
-          *c = ctx->peek_c;
-          ctx->peek_c = -1;
+          // skip current event but process its state change
+          detectComplexMouseEvents(&tmp_event);
+          *c = next_c;
           ctx->m_event = tmp_event;
           ctx->t_date = timeInMilliseconds();
           ctx->t_clock = clock();
+          nodelay(stdscr, FALSE);
           goto mouse_read;
         }
-        return;
       }
+      if (next_c != ERR) {
+        ctx->peek_c = next_c;
+      }
+      nodelay(stdscr, FALSE);
     }
-    ctx->last_time_mouse_drag = current_time;
+    else {
+      ctx->last_time_mouse_drag = current_time;
+    }
   }
 
   // If pressed enable drag
