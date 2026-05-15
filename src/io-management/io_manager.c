@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <libgen.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -128,7 +129,27 @@ void setupFile(char* path, IO_FileID* file) {
     else {
       // File doesn't exist.
       file->status = DONT_EXIST;
-      strncpy(file->path_abs, path, PATH_MAX);
+      char path_copy1[PATH_MAX];
+      char path_copy2[PATH_MAX];
+      strncpy(path_copy1, path, PATH_MAX);
+      strncpy(path_copy2, path, PATH_MAX);
+      
+      char* dname = dirname(path_copy1);
+      char* bname = basename(path_copy2);
+      
+      char dir_abs[PATH_MAX];
+      if (realpath(dname, dir_abs) != NULL) {
+        snprintf(file->path_abs, PATH_MAX, "%s/%s", dir_abs, bname);
+      } else {
+        // Fallback
+        if (path[0] == '/') {
+          strncpy(file->path_abs, path, PATH_MAX);
+        } else {
+          char cwd[PATH_MAX];
+          getcwd(cwd, sizeof(cwd));
+          snprintf(file->path_abs, PATH_MAX, "%s/%s", cwd, path);
+        }
+      }
     }
   }
   else {
@@ -138,3 +159,4 @@ void setupFile(char* path, IO_FileID* file) {
     strcpy(file->path_abs, "untitled");
   }
 }
+

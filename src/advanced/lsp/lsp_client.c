@@ -44,8 +44,10 @@ bool LSP_openLSPServer(char* name, char* command_args, char* language, LSP_Serve
 
   server->request_id = 0;
   server->response_contexts = NULL;
-  pthread_mutex_init(&server->initDone, NULL);
-  pthread_mutex_lock(&server->initDone);
+  server->pending_packets = NULL;
+  pthread_mutex_init(&server->init_done, NULL);
+  pthread_mutex_lock(&server->init_done);
+  pthread_mutex_init(&server->pending_lock, NULL);
 
   // printf("Starting server on path : %s\n", pathMemSafe);
 
@@ -101,7 +103,21 @@ void LSP_closeLSPServer(LSP_Server* server) {
   waitpid(server->pid, &status, 0);
   cJSON_Delete(server->init_result);
   LSP_clearResponseContext(server);
-  pthread_mutex_destroy(&server->initDone);
+
+  pthread_mutex_lock(&server->pending_lock);
+  LSP_PendingPacket* curr = server->pending_packets;
+  while (curr != NULL) {
+    LSP_PendingPacket* tmp = curr;
+    curr = curr->next;
+    free(tmp->method);
+    free(tmp->params);
+    free(tmp);
+  }
+  server->pending_packets = NULL;
+  pthread_mutex_unlock(&server->pending_lock);
+
+  pthread_mutex_destroy(&server->init_done);
+  pthread_mutex_destroy(&server->pending_lock);
 }
 
 
@@ -217,11 +233,7 @@ cJSON* LSP_readPacketAsJSON(LSP_Server* server, bool block) {
   return at_return;
 }
 
-int LSP_sendPacket(LSP_Server* server, char* method, char* params, LSP_PACKET_TYPE type) {
-  if (strcmp(method, "initialize") != 0) {
-    pthread_mutex_lock(&server->initDone);
-    pthread_mutex_unlock(&server->initDone);
-  }
+static int _LSP_sendPacketInternal(LSP_Server* server, char* method, char* params, LSP_PACKET_TYPE type, LSP_PacketID id) {
   if (params == NULL) {
     params = "{}";
   }
@@ -230,8 +242,7 @@ int LSP_sendPacket(LSP_Server* server, char* method, char* params, LSP_PACKET_TY
   cJSON_AddStringToObject(json_request_obj, "method", method);
   cJSON_AddRawToObject(json_request_obj, "params", params);
   if (type == LSP_REQUEST) {
-    server->request_id++;
-    cJSON_AddNumberToObject(json_request_obj, "id", server->request_id);
+    cJSON_AddNumberToObject(json_request_obj, "id", id);
   }
 
   char* content_str = cJSON_PrintUnformatted(json_request_obj);
@@ -261,9 +272,53 @@ int LSP_sendPacket(LSP_Server* server, char* method, char* params, LSP_PACKET_TY
   cJSON_Delete(json_request_obj);
 
   if (type == LSP_REQUEST) {
-    return server->request_id;
+    return id;
   }
   return 0;
+}
+
+int LSP_sendPacket(LSP_Server* server, char* method, char* params, LSP_PACKET_TYPE type) {
+  if (strcmp(method, "initialize") != 0) {
+    if (pthread_mutex_trylock(&server->init_done) != 0) {
+      // Buffer packet
+      pthread_mutex_lock(&server->pending_lock);
+      LSP_PendingPacket* new_packet = malloc(sizeof(LSP_PendingPacket));
+      new_packet->method = strdup(method);
+      new_packet->params = strdup(params ? params : "{}");
+      new_packet->type = type;
+      new_packet->id = 0;
+      if (type == LSP_REQUEST) {
+        server->request_id++;
+        new_packet->id = server->request_id;
+      }
+      new_packet->next = NULL;
+
+      if (server->pending_packets == NULL) {
+        server->pending_packets = new_packet;
+      }
+      else {
+        LSP_PendingPacket* curr = server->pending_packets;
+        while (curr->next != NULL) {
+          curr = curr->next;
+        }
+        curr->next = new_packet;
+      }
+      int returned_id = new_packet->id;
+      pthread_mutex_unlock(&server->pending_lock);
+      return returned_id;
+    }
+    else {
+      pthread_mutex_unlock(&server->init_done);
+    }
+  }
+
+  LSP_PacketID packet_id = 0;
+  if (type == LSP_REQUEST) {
+    server->request_id++;
+    packet_id = server->request_id;
+  }
+
+  return _LSP_sendPacketInternal(server, method, params, type, packet_id);
 }
 
 int LSP_sendPacketWithJSON(LSP_Server* server, char* method, cJSON* content, LSP_PACKET_TYPE type) {
@@ -386,7 +441,21 @@ void LSP_initializeServer(LSP_Server* lsp, char* client_name, char* client_versi
   fprintf(stderr, "INIT: \n%s\n", init_text);
   free(init_text);
   cJSON_Delete(content);
-  pthread_mutex_unlock(&lsp->initDone);
+  pthread_mutex_unlock(&lsp->init_done);
+
+  // Flush pending notifications
+  pthread_mutex_lock(&lsp->pending_lock);
+  LSP_PendingPacket* curr = lsp->pending_packets;
+  while (curr != NULL) {
+    _LSP_sendPacketInternal(lsp, curr->method, curr->params, curr->type, curr->id);
+    LSP_PendingPacket* tmp = curr;
+    curr = curr->next;
+    free(tmp->method);
+    free(tmp->params);
+    free(tmp);
+  }
+  lsp->pending_packets = NULL;
+  pthread_mutex_unlock(&lsp->pending_lock);
 }
 
 

@@ -35,6 +35,16 @@ struct _LSP_ResponseContext {
 
 typedef struct _LSP_ResponseContext LSP_ResponseContext;
 
+struct _LSP_PendingPacket {
+  char* method;
+  char* params;
+  LSP_PACKET_TYPE type;
+  LSP_PacketID id;
+  struct _LSP_PendingPacket* next;
+};
+
+typedef struct _LSP_PendingPacket LSP_PendingPacket;
+
 typedef struct {
   char name[LANGUAGE_ID_LENGTH];
   char language[LANGUAGE_ID_LENGTH];
@@ -46,7 +56,9 @@ typedef struct {
   LSP_ResponseContext* response_contexts;
 
   // Internal wait
-  pthread_mutex_t initDone;
+  pthread_mutex_t init_done;
+  LSP_PendingPacket* pending_packets;
+  pthread_mutex_t pending_lock;
 } LSP_Server;
 
 
