@@ -10,6 +10,7 @@
 
 #include "../advanced/lsp/lsp-features/lsp_completion.h"
 #include "../advanced/lsp/lsp-features/lsp_formatting.h"
+#include "../advanced/lsp/lsp-features/lsp_signature_help.h"
 #include "../advanced/lsp/lsp_dispatcher.h"
 #include "../data-management/state_control.h"
 #include "../environnement/global-variables.h"
@@ -101,7 +102,7 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       }
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_RIGHT);
       setDesiredColumn(*cursor, desired_column);
-      askCompletion(&ctx->gui_context, cursor, screen_x, screen_y, lsp_data, false, false);
+      askCompletion(&ctx->gui_context, fc, false, false);
       break;
     case H_KEY_LEFT:
       if (cursor_is_disabled(*select_cursor)) {
@@ -109,15 +110,17 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       }
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_LEFT);
       setDesiredColumn(*cursor, desired_column);
-      askCompletion(&ctx->gui_context, cursor, screen_x, screen_y, lsp_data, false, false);
+      askCompletion(&ctx->gui_context, fc, false, false);
       break;
     case H_KEY_UP:
       *cursor = moveUp(*cursor, *desired_column);
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_LEFT);
+      gui_closePopup(&ctx->gui_context);
       break;
     case H_KEY_DOWN:
       *cursor = moveDown(*cursor, *desired_column);
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_RIGHT);
+      gui_closePopup(&ctx->gui_context);
       break;
     case H_KEY_MAJ_RIGHT:
       setSelectCursorOn(*cursor, select_cursor);
@@ -132,22 +135,24 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
     case H_KEY_MAJ_UP:
       setSelectCursorOn(*cursor, select_cursor);
       *cursor = moveUp(*cursor, *desired_column);
+      gui_closePopup(&ctx->gui_context);
       break;
     case H_KEY_MAJ_DOWN:
       setSelectCursorOn(*cursor, select_cursor);
       *cursor = moveDown(*cursor, *desired_column);
+      gui_closePopup(&ctx->gui_context);
       break;
     case H_KEY_CTRL_RIGHT:
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_RIGHT);
       *cursor = moveToNextWord(*cursor);
       setDesiredColumn(*cursor, desired_column);
-      askCompletion(&ctx->gui_context, cursor, screen_x, screen_y, lsp_data, true, false);
+      askCompletion(&ctx->gui_context, fc, true, false);
       break;
     case H_KEY_CTRL_LEFT:
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_LEFT);
       *cursor = moveToPreviousWord(*cursor);
       setDesiredColumn(*cursor, desired_column);
-      askCompletion(&ctx->gui_context, cursor, screen_x, screen_y, lsp_data, true, false);
+      askCompletion(&ctx->gui_context, fc, true, false);
       break;
     case H_KEY_CTRL_DOWN:
     case H_KEY_CTRL_UP:
@@ -169,6 +174,7 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       }
       ctx->refresh_local_vars = true;
       gui_updateOFW(&ctx->gui_context);
+      gui_closePopup(&ctx->gui_context);
       break;
     case H_KEY_CTRL_MAJ_UP:
       if (ctx->current_file_index != ctx->file_count - 1) {
@@ -176,6 +182,7 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       }
       ctx->refresh_local_vars = true;
       gui_updateOFW(&ctx->gui_context);
+      gui_closePopup(&ctx->gui_context);
       break;
     case CTRL('R'):
       askFormatting(fc);
@@ -190,6 +197,7 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_LEFT);
       *cursor = moveToPreviousWord(*cursor);
       setDesiredColumn(*cursor, desired_column);
+      gui_closePopup(&ctx->gui_context);
       break;
     case H_KEY_END:
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_RIGHT);
@@ -200,6 +208,7 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       setSelectCursorOn(*cursor, select_cursor);
       *cursor = goToEnd(*cursor);
       setDesiredColumn(*cursor, desired_column);
+      gui_closePopup(&ctx->gui_context);
       break;
     case CTRL('z'):
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_LEFT);
@@ -207,7 +216,7 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       ctx->old_history_frame = NULL;
       setDesiredColumn(*cursor, desired_column);
       gui_updateEDW(&ctx->gui_context);
-      askCompletion(&ctx->gui_context, cursor, screen_x, screen_y, lsp_data, true, false);
+      askCompletion(&ctx->gui_context, fc, true, false);
       break;
     case CTRL('y'):
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_LEFT);
@@ -215,7 +224,7 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       ctx->old_history_frame = NULL;
       setDesiredColumn(*cursor, desired_column);
       gui_updateEDW(&ctx->gui_context);
-      askCompletion(&ctx->gui_context, cursor, screen_x, screen_y, lsp_data, true, false);
+      askCompletion(&ctx->gui_context, fc, true, false);
       break;
     case CTRL('c'):
       saveToClipBoard(*cursor, *select_cursor);
@@ -265,7 +274,7 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       *cursor = moveToPreviousWord(*cursor);
       deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
       setDesiredColumn(*cursor, desired_column);
-      askCompletion(&ctx->gui_context, cursor, screen_x, screen_y, lsp_data, false, false);
+      askCompletion(&ctx->gui_context, fc, false, false);
       break;
     case '\n':
     case KEY_ENTER:
@@ -280,10 +289,11 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
     case H_KEY_DELETE:
       if (cursor_is_disabled(*select_cursor)) {
         *select_cursor = moveLeft(*cursor);
+        adaptSignatureHelp(cursor, lsp_data);
       }
       deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
       setDesiredColumn(*cursor, desired_column);
-      askCompletion(&ctx->gui_context, cursor, screen_x, screen_y, lsp_data, false, false);
+      askCompletion(&ctx->gui_context, fc, false, false);
       break;
     case H_KEY_SUPPR:
       if (cursor_is_disabled(*select_cursor)) {
@@ -291,7 +301,7 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       }
       deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
       setDesiredColumn(*cursor, desired_column);
-      askCompletion(&ctx->gui_context, cursor, screen_x, screen_y, lsp_data, false, false);
+      askCompletion(&ctx->gui_context, fc, false, false);
       gui_updateEDW(&ctx->gui_context);
       break;
     case H_KEY_CTRL_SUPPR:
@@ -299,7 +309,7 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       *cursor = moveToNextWord(*cursor);
       deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
       setDesiredColumn(*cursor, desired_column);
-      askCompletion(&ctx->gui_context, cursor, screen_x, screen_y, lsp_data, false, false);
+      askCompletion(&ctx->gui_context, fc, false, false);
       gui_updateEDW(&ctx->gui_context);
       break;
     case KEY_TAB:
@@ -334,7 +344,7 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       gui_switchOFW(&ctx->gui_context);
       break;
     case CTRL(' '):
-      askCompletion(&ctx->gui_context, cursor, screen_x, screen_y, lsp_data, true, true);
+      askCompletion(&ctx->gui_context, fc, true, true);
       break;
     case H_KEY_ESCAPE:
     case CTRL('['):
@@ -355,8 +365,14 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
         if (ctx->gui_context.edw_context.pow_owner == DIAGNOSTICS) {
           gui_closePopup(&ctx->gui_context);
         }
-        askCompletion(&ctx->gui_context, cursor, screen_x, screen_y, lsp_data, false, false);
+        askCompletion(&ctx->gui_context, fc, false, false);
         askOnTypeFormatting(fc, u8.t, &lsp_ctx);
+        if (c == '(' || c == ',') {
+          askSignatureHelp(fc, cursor);
+        }
+        else if (c == ')' && ctx->gui_context.edw_context.pow_owner == SIGNATURE_HELP) {
+          gui_closePopup(&ctx->gui_context);
+        }
       }
       break;
   }

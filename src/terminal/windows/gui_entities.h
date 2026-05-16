@@ -31,7 +31,7 @@ typedef struct {
 } FEW_GUIContext;
 
 
-typedef enum { DIAGNOSTICS, COMPLETION, HOVER_DIAGNOSTICS, GOTO_CHOICE, NO_OWNER } PopupOwner;
+typedef enum { DIAGNOSTICS, COMPLETION, HOVER_DIAGNOSTICS, GOTO_CHOICE, SIGNATURE_HELP, NO_OWNER } PopupOwner;
 
 typedef struct {
   // NCurses items

@@ -63,7 +63,8 @@ bool gui_resumeGotoChoice(ViewPort* view_port, Cursor* cursor) {
 bool gui_resumeCompletionTextAnchor(ViewPort* view_port, Cursor* cursor) {
   if ((cursor->file_id.absolute_row == view_port->gui->edw_context.lastTextAnchor.row &&
        cursor->line_id.absolute_column == view_port->gui->edw_context.lastTextAnchor.column &&
-       view_port->gui->edw_context.pow_owner == NO_OWNER) ||
+       (view_port->gui->edw_context.pow_owner == NO_OWNER ||
+        view_port->gui->edw_context.pow_owner == SIGNATURE_HELP)) ||
       view_port->gui->edw_context.pow_owner == COMPLETION) {
     gui_showGenericPopupWithTextAnchor(view_port, cursor, 7, 50, COMPLETION);
     return true;
@@ -250,6 +251,96 @@ void gui_printHoverPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedDa
 }
 
 
+void gui_printSignatureHelpPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* lsp_data) {
+  int width = getmaxx(context->pow), height = getmaxy(context->pow);
+  werase(context->pow);
+
+  LSP_SignatureHelp* help = &lsp_data->signature_help;
+  if (help->signatures_size == 0) {
+    return;
+  }
+
+  int sig_idx = help->activeSignature;
+  if (sig_idx < 0 || sig_idx >= help->signatures_size) {
+    sig_idx = 0;
+  }
+
+  LSP_SignatureInformation* sig = &help->signatures[sig_idx];
+
+  // Determine active parameter and highlighting range
+  int active_param_idx = sig->activeParameter;
+  if (active_param_idx == -1) {
+    active_param_idx = help->activeParameter;
+  }
+
+  int h_start = -1, h_end = -1;
+  if (active_param_idx >= 0 && active_param_idx < sig->parameters_size) {
+    LSP_ParameterInformation* param = &sig->parameters[active_param_idx];
+    if (param->start != -1) {
+      h_start = param->start;
+      h_end = param->end;
+    }
+    else if (param->label[0] != '\0') {
+      char* p = strstr(sig->label, param->label);
+      if (p) {
+        h_start = p - sig->label;
+        h_end = h_start + strlen(param->label);
+      }
+    }
+  }
+
+  int label_len = strlen(sig->label);
+  int cur_y;
+
+  wattr_set(context->pow, A_NORMAL, WARNING_COLOR_PAIR, NULL);
+
+  // check if we found a parameter to highlight
+  if (h_start != -1 && h_end != -1) {
+    // if yes we split in 3 part prefix + hightligh part + suffix
+
+    // 1. Prefix
+    if (h_start > 0) {
+      printToWindow(context->pow, sig->label, h_start, 0, 0, width, 0);
+    }
+
+    // 2. Highlighted param
+    int r_pre = 0, c_pre = 0, w_pre = width;
+    countStringFrame(sig->label, h_start, &r_pre, &c_pre, &w_pre);
+
+    wattr_set(context->pow, A_NORMAL | A_UNDERLINE | A_ITALIC | A_BOLD, WARNING_COLOR_HOVER_PAIR, NULL);
+    printToWindow(context->pow, sig->label + h_start, h_end - h_start, c_pre, r_pre, width, 0);
+    wattr_set(context->pow, A_NORMAL, WARNING_COLOR_PAIR, NULL);
+
+
+    // 3. Suffix
+    if (h_end < label_len) {
+      int r_param = 0, c_param = 0, w_param = width;
+      countStringFrame(sig->label, h_end, &r_param, &c_param, &w_param);
+      printToWindow(context->pow, sig->label + h_end, -1, c_param, r_param, width, 0);
+    }
+
+    // Calculate final height
+    int r_all = 0, c_all = 0, w_all = width;
+    countStringFrame(sig->label, label_len, &r_all, &c_all, &w_all);
+    cur_y = r_all + 1;
+  }
+  else {
+    // No highlight, just print normally
+    printToWindow(context->pow, sig->label, -1, 0, 0, width, 0);
+    int r_all = 0, c_all = 0, w_all = width;
+    countStringFrame(sig->label, label_len, &r_all, &c_all, &w_all);
+    cur_y = r_all + 1;
+  }
+
+  wattr_set(context->pow, A_NORMAL, INFO_COLOR_PAIR, NULL);
+
+  if (sig->documentation[0] != '\0') {
+    mvwhline(context->pow, cur_y ,0, ACS_HLINE, width);
+    printToWindow(context->pow, sig->documentation, -1, 0, cur_y + 1, width, height - (cur_y + 1));
+  }
+}
+
+
 void gui_printPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* lsp_data) {
   switch (context->pow_owner) {
     case COMPLETION:
@@ -260,6 +351,9 @@ void gui_printPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* l
       break;
     case GOTO_CHOICE:
       gui_printGotoChoicePopup(context, cursor, lsp_data);
+      break;
+    case SIGNATURE_HELP:
+      gui_printSignatureHelpPopup(context, cursor, lsp_data);
       break;
     default:
       break;
@@ -300,7 +394,7 @@ bool gui_handleCompletionInput(GUIContext* context, FileContainer* fc, int c_has
       int clicked_item = context->edw_context.item_select_offset_y + (m_event->y - getbegy(context->edw_context.pow));
       if (clicked_item < item_count) {
         executeLSPCompletion(cursor, lsp_data->completions.completions.items + clicked_item, history_p,
-                              payload_state_change);
+                             payload_state_change);
         gui_closePopup(context);
       }
     }
@@ -332,14 +426,14 @@ bool gui_handleCompletionInput(GUIContext* context, FileContainer* fc, int c_has
     case KEY_ENTER:
       if (context->edw_context.item_selected < lsp_data->completions.completions.size) {
         executeLSPCompletion(cursor, lsp_data->completions.completions.items + context->edw_context.item_selected,
-                              history_p, payload_state_change);
+                             history_p, payload_state_change);
       }
       gui_closePopup(context);
       return true;
     case KEY_TAB:
       if (context->edw_context.item_selected < lsp_data->completions.completions.size) {
         executeLSPCompletion(cursor, lsp_data->completions.completions.items + context->edw_context.item_selected,
-                              history_p, payload_state_change);
+                             history_p, payload_state_change);
       }
       gui_closePopup(context);
       return true;
@@ -441,6 +535,8 @@ bool gui_handlePopupInput(GUIContext* context, FileContainer* fc, int c_raw, int
       return gui_handleCompletionInput(context, fc, c_hash, c_raw, payload_state_change, m_event);
     case GOTO_CHOICE:
       return gui_handleGotoChoiceInput(context, fc, c_hash, c_raw, payload_state_change, payload, m_event);
+    case SIGNATURE_HELP:
+      return false; // Let the editor handle typing, which will trigger updates
     default:
       break;
   }

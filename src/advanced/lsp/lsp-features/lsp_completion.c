@@ -7,6 +7,7 @@
 #include "../../../io-management/viewport_history.h"
 #include "../../../terminal/windows/edw.h"
 #include "../../../terminal/windows/pow.h"
+#include "lsp_signature_help.h"
 #include "lsp_tools.h"
 
 
@@ -43,7 +44,7 @@ LSP_Range getReplaceRange(Cursor* cursor, char insertText[METHOD_MAX_LENGTH]) {
 }
 
 void executeLSPCompletion(Cursor* cursor, LSP_CompletionItem* item, History** history_p,
-                           PayloadStateChange payload_state_change) {
+                          PayloadStateChange payload_state_change) {
   if (!item->is_text_edit) {
     // copy the text to the edit.
     item->text_edit.new_text = malloc(sizeof(char) * METHOD_MAX_LENGTH);
@@ -93,25 +94,34 @@ void executeLSPCompletion(Cursor* cursor, LSP_CompletionItem* item, History** hi
 }
 
 
-void askCompletion(GUIContext* gui_context, Cursor* cursor, int* screen_x, int* screen_y, LSP_Data* lsp_data,
-                   bool reset, bool force) {
-  if (lsp_data->is_enable) {
-    if (!force && !isAfterAWord(cursor)) {
-      LSP_destroyCompletionList(&lsp_data->computed->completions);
+void askCompletion(GUIContext* gui_context, FileContainer* fc, bool reset, bool force) {
+  if (fc->lsp_datas.is_enable) {
+    if (hasElementBeforeLine(fc->cursor.line_id)) {
+      Char_U8 u8 = getCharAtCursor(fc->cursor);
+      if (areChar_U8Equals(u8, readChar_U8FromCharArray("("))) {
+        askSignatureHelp(fc, &fc->cursor);
+        return;
+      }
+    }
+    if (!force && gui_context->edw_context.pow_owner == SIGNATURE_HELP) {
+      return;
+    }
+    if (!force && !isAfterAWord(&fc->cursor)) {
+      LSP_destroyCompletionList(&fc->lsp_datas.computed->completions);
       gui_closePopup(gui_context);
       return;
     }
     if (reset) {
-      LSP_destroyCompletionList(&lsp_data->computed->completions);
+      LSP_destroyCompletionList(&fc->lsp_datas.computed->completions);
     }
-    LSP_requestCompletion(getLSPServerForLanguage(&lsp_servers, lsp_data->lang_id), lsp_data->path_abs,
-                          LSP_pos_from_cursor(cursor_row(*cursor), cursor_col(*cursor)));
+    LSP_requestCompletion(getLSPServerForLanguage(&lsp_servers, fc->lsp_datas.lang_id), fc->lsp_datas.path_abs,
+                          LSP_pos_from_cursor(cursor_row(fc->cursor), cursor_col(fc->cursor)));
     if (gui_context->edw_context.pow_owner != COMPLETION) {
-      gui_setLastTextAnchor(gui_context, cursor_to_desc(*cursor));
+      gui_setLastTextAnchor(gui_context, cursor_to_desc(fc->cursor));
     }
     else {
-      ViewPort view_port = viewPortOf(gui_context, screen_x, screen_y);
-      gui_showGenericPopupWithTextAnchor(&view_port, cursor, 7, 50, COMPLETION);
+      ViewPort view_port = viewPortOf(gui_context, &fc->screen_x, &fc->screen_y);
+      gui_showGenericPopupWithTextAnchor(&view_port, &fc->cursor, 7, 50, COMPLETION);
     }
   }
 }

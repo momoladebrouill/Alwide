@@ -10,11 +10,11 @@
 #include "../lsp_client.h"
 
 void executeLSPCompletion(Cursor* cursor, LSP_CompletionItem* item, History** history_p,
-                           PayloadStateChange payload_state_change);
+                          PayloadStateChange payload_state_change);
 
 
-void askCompletion(GUIContext* gui_context, Cursor* cursor, int* screen_x, int* screen_y, LSP_Data* lsp_data,
-                   bool reset, bool force);
+void askCompletion(GUIContext* gui_context, FileContainer* fc, bool reset, bool force);
+
 void receiveCompletionData(cJSON* packet, FileContainer* file, ViewPort* view_port, Cursor* cursor);
 
 #endif // WISHWIM_LSP_COMPLETION_H

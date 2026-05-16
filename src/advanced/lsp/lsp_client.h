@@ -63,8 +63,7 @@ typedef struct {
   // Capabilities
   char** on_type_trigger_chars;
   int on_type_trigger_chars_count;
-  } LSP_Server;
-
+} LSP_Server;
 
 
 //////// ---------------- JSON TOOLS ---------------------
@@ -335,6 +334,28 @@ typedef struct {
 } LSP_Hover;
 
 typedef struct {
+  char label[MESSAGE_LENGTH];
+  int start;
+  int end;
+  char documentation[MESSAGE_LENGTH];
+} LSP_ParameterInformation;
+
+typedef struct {
+  char label[MESSAGE_LENGTH];
+  char documentation[MESSAGE_LENGTH];
+  LSP_ParameterInformation* parameters;
+  int parameters_size;
+  int activeParameter;
+} LSP_SignatureInformation;
+
+typedef struct {
+  LSP_SignatureInformation* signatures;
+  int signatures_size;
+  int activeSignature;
+  int activeParameter;
+} LSP_SignatureHelp;
+
+typedef struct {
   int tabSize;
   bool insertSpaces;
   bool trimTrailingWhitespace;
@@ -345,6 +366,9 @@ typedef struct {
 void LSP_getHoverFromJSON(cJSON* json, LSP_Hover* hover_list);
 void LSP_getMarkedStringFromJSON(cJSON* json, LSP_MarkedString* item);
 void LSP_destroyHover(LSP_Hover* hover_list);
+
+void LSP_getSignatureHelpFromJSON(cJSON* json, LSP_SignatureHelp* help);
+void LSP_destroySignatureHelp(LSP_SignatureHelp* help);
 
 
 //// -------- Receive Functions --------
@@ -367,7 +391,9 @@ void LSP_requestCompletion(LSP_Server* lsp, char* file_name, LSP_Position pos);
 void LSP_requestHover(LSP_Server* lsp, char* file_name, LSP_Position pos);
 void LSP_requestGoto(LSP_Server* lsp, char* file_name, LSP_Position pos, LSP_GOTO_TYPE goto_type);
 void LSP_requestFormatting(LSP_Server* lsp, char* file_name, LSP_FormattingOptions options);
-void LSP_requestOnTypeFormatting(LSP_Server* lsp, char* file_name, LSP_Position pos, char* ch, LSP_FormattingOptions options);
+void LSP_requestOnTypeFormatting(LSP_Server* lsp, char* file_name, LSP_Position pos, char* ch,
+                                 LSP_FormattingOptions options);
+void LSP_requestSignatureHelp(LSP_Server* lsp, char* file_name, LSP_Position pos);
 
 
 #endif // CLIENT_H

@@ -49,6 +49,7 @@ SRC_MODULES= \
 	src/advanced/lsp/lsp-features/lsp_formatting.c \
 	src/advanced/lsp/lsp-features/lsp_goto.c \
 	src/advanced/lsp/lsp-features/lsp_hover.c \
+	src/advanced/lsp/lsp-features/lsp_signature_help.c \
 	src/advanced/lsp/lsp-features/lsp_tools.c \
 	src/advanced/lsp/lsp_dispatcher.c \
 	src/advanced/lsp/lsp_emitter.c \

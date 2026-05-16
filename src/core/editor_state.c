@@ -17,6 +17,12 @@ void runPostProcessing(EditorContext* ctx) {
 
   // flag cursor change
   if (!cursor_eq(fc->cursor, fc->old_cur)) {
+    if (cursor_row(fc->cursor) != cursor_row(fc->old_cur)) {
+      // flag cursor changed row
+      if (ctx->gui_context.edw_context.pow_owner == SIGNATURE_HELP) {
+        gui_closePopup(&ctx->gui_context);
+      }
+    }
     fc->old_cur = fc->cursor;
     moveScreenToMatchCursor(&ctx->gui_context, fc->cursor, &fc->screen_x, &fc->screen_y);
     gui_updateEDW(&ctx->gui_context);

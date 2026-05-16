@@ -10,6 +10,7 @@
 #include "lsp-features/lsp_formatting.h"
 #include "lsp-features/lsp_goto.h"
 #include "lsp-features/lsp_hover.h"
+#include "lsp-features/lsp_signature_help.h"
 
 
 void responseDispatcher(cJSON* packet, LSP_Server* lsp, ModuleContext* data) {
@@ -49,6 +50,9 @@ void responseDispatcher(cJSON* packet, LSP_Server* lsp, ModuleContext* data) {
   }
   else if (strcmp(context.method, "textDocument/hover") == 0) {
     receiveHoverData(packet, file, &data->view_port, data->cursor, context.payload);
+  }
+  else if (strcmp(context.method, "textDocument/signatureHelp") == 0) {
+    receiveSignatureHelpData(packet, file, data->view_port.gui, data->cursor);
   }
   else if (strcmp(context.method, "textDocument/definition") == 0 ||
            strcmp(context.method, "textDocument/declaration") == 0 ||

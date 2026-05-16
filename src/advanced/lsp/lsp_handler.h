@@ -12,6 +12,7 @@ typedef struct {
   int diagnostics_size;
   LSP_CompletionList completions;
   LSP_Hover hover;
+  LSP_SignatureHelp signature_help;
   // used by the TUI when multiple choice happens to let choose the user.
   LSP_LocationArray gotos;
   LSP_GOTO_TYPE goto_type;

@@ -50,6 +50,9 @@ void LSP_destroyComputedData(LSP_ComputedData* lsp_payload) {
   // free hoverlist
   LSP_destroyHover(&lsp_payload->hover);
 
+  // free signature help
+  LSP_destroySignatureHelp(&lsp_payload->signature_help);
+
   // free definition-like lists
   LSP_destroyLocationArray(&lsp_payload->gotos);
 }
@@ -70,6 +73,12 @@ void LSP_initComputedData(LSP_ComputedData* payload) {
   payload->hover.size = 0;
   payload->hover.contents = NULL;
   payload->hover.is_range = false;
+
+  // init signature help
+  payload->signature_help.signatures = NULL;
+  payload->signature_help.signatures_size = 0;
+  payload->signature_help.activeSignature = -1;
+  payload->signature_help.activeParameter = -1;
 
   // init definition-like lists
   payload->gotos.items = NULL;

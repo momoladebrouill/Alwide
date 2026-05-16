@@ -244,7 +244,8 @@ cJSON* LSP_readPacketAsJSON(LSP_Server* server, bool block) {
   return at_return;
 }
 
-static int _LSP_sendPacketInternal(LSP_Server* server, char* method, char* params, LSP_PACKET_TYPE type, LSP_PacketID id) {
+static int _LSP_sendPacketInternal(LSP_Server* server, char* method, char* params, LSP_PACKET_TYPE type,
+                                   LSP_PacketID id) {
   if (params == NULL) {
     params = "{}";
   }
@@ -289,6 +290,13 @@ static int _LSP_sendPacketInternal(LSP_Server* server, char* method, char* param
 }
 
 int LSP_sendPacket(LSP_Server* server, char* method, char* params, LSP_PACKET_TYPE type) {
+  // We have to take care about not sending a paquet until the init packet from the lsp has been received.
+  // We let the initialize packet be sended to the server.
+  // LSP_sendPacket() is not a blocking function. If we have to wait for the init we build the packet to JSON (so all
+  // data are copied).
+  // Then the init packet from the server is received we send all the buffered packet.
+  // If the init packet is already received, this function we send the packet to the lsp process (it may be block a bit
+  // until the lsp server read his stdin buffer).
   if (strcmp(method, "initialize") != 0) {
     if (pthread_mutex_trylock(&server->initDone) != 0) {
       // Buffer packet
@@ -409,9 +417,8 @@ void LSP_clearResponseContext(LSP_Server* server) {
 
 //// -------- Tools Functions --------
 
-// TODO Implement send of Capabality
-// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#initialize
-void LSP_initializeServer(LSP_Server* lsp, char* client_name, char* client_version, char* current_workspace_path) {
+// TODO add capacity when implemented to the init packet
+static cJSON* buildInitPacket(LSP_Server* lsp, char* client_name, char* client_version, char* current_workspace_path) {
   cJSON* init_params = cJSON_CreateObject();
   cJSON_AddNumberToObject(init_params, "processId", lsp->pid);
 
@@ -427,7 +434,7 @@ void LSP_initializeServer(LSP_Server* lsp, char* client_name, char* client_versi
 
   cJSON* capabilities = cJSON_AddObjectToObject(init_params, "capabilities");
   cJSON* textDocument = cJSON_AddObjectToObject(capabilities, "textDocument");
-  
+
   // Synchronization
   cJSON* sync = cJSON_AddObjectToObject(textDocument, "synchronization");
   cJSON_AddBoolToObject(sync, "dynamicRegistration", true);
@@ -448,6 +455,12 @@ void LSP_initializeServer(LSP_Server* lsp, char* client_name, char* client_versi
   cJSON* onType = cJSON_AddObjectToObject(textDocument, "onTypeFormatting");
   cJSON_AddBoolToObject(onType, "dynamicRegistration", true);
 
+  cJSON* signatureHelp = cJSON_AddObjectToObject(textDocument, "signatureHelp");
+  cJSON_AddBoolToObject(signatureHelp, "dynamicRegistration", true);
+  cJSON* signatureInformation = cJSON_AddObjectToObject(signatureHelp, "signatureInformation");
+  cJSON* parameterInformation = cJSON_AddObjectToObject(signatureInformation, "parameterInformation");
+  cJSON_AddBoolToObject(parameterInformation, "labelOffsetSupport", false);
+
   cJSON* workspace_array = cJSON_AddArrayToObject(init_params, "workspaceFolders");
 
   cJSON* workspace = cJSON_CreateObject();
@@ -458,20 +471,10 @@ void LSP_initializeServer(LSP_Server* lsp, char* client_name, char* client_versi
   cJSON* general = cJSON_AddObjectToObject(init_params, "general");
   cJSON* positionEncodings = cJSON_AddArrayToObject(general, "positionEncodings");
   cJSON_AddItemToArray(positionEncodings, cJSON_CreateString("utf-8"));
+  return init_params;
+}
 
-  int tmp_id = LSP_sendPacketWithJSON(lsp, "initialize", init_params, LSP_REQUEST);
-
-  char* init_params_text = cJSON_Print(init_params);
-  fprintf(stderr, "INIT_SEND:\n%s\n", init_params_text);
-  free(init_params_text);
-
-  cJSON_Delete(init_params);
-
-  cJSON* content = LSP_readPacketAsJSON(lsp, true);
-  // this assert will also check if the packet is a request.
-  assert(tmp_id == LSP_getPacketID(content));
-  lsp->init_result = LSP_extractPacketResult(content);
-
+static void extractDataFromServerCapability(LSP_Server* lsp) {
   // Extract on-type trigger characters
   cJSON* server_capabilities = cJSON_GetObjectItem(lsp->init_result, "capabilities");
   if (server_capabilities) {
@@ -497,7 +500,31 @@ void LSP_initializeServer(LSP_Server* lsp, char* client_name, char* client_versi
       }
     }
   }
+}
 
+// TODO Implement send of Capabality
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#initialize
+void LSP_initializeServer(LSP_Server* lsp, char* client_name, char* client_version, char* current_workspace_path) {
+  cJSON* init_params = buildInitPacket(lsp, client_name, client_version, current_workspace_path);
+  int tmp_id = LSP_sendPacketWithJSON(lsp, "initialize", init_params, LSP_REQUEST);
+
+  // print for logs. to delete.
+  char* init_params_text = cJSON_Print(init_params);
+  fprintf(stderr, "INIT_SEND:\n%s\n", init_params_text);
+  free(init_params_text);
+
+  cJSON_Delete(init_params);
+
+  // Wait for the lsp init packet to be received
+  cJSON* content = LSP_readPacketAsJSON(lsp, true);
+  // this assert will also check if the packet is a request.
+  assert(tmp_id == LSP_getPacketID(content));
+  lsp->init_result = LSP_extractPacketResult(content);
+
+  // Extract data from the packet just received from the lsp server.
+  extractDataFromServerCapability(lsp);
+
+  // print for logs. to delete.
   char* init_text = cJSON_Print(lsp->init_result);
   fprintf(stderr, "INIT: \n%s\n", init_text);
   free(init_text);
@@ -505,7 +532,7 @@ void LSP_initializeServer(LSP_Server* lsp, char* client_name, char* client_versi
   cJSON_Delete(content);
   pthread_mutex_unlock(&lsp->initDone);
 
-  // Flush pending notifications
+  // Flush pending packet to send
   pthread_mutex_lock(&lsp->pending_lock);
   LSP_PendingPacket* curr = lsp->pending_packets;
   while (curr != NULL) {
@@ -1125,6 +1152,97 @@ void LSP_destroyHover(LSP_Hover* hover_list) {
   hover_list->is_range = false;
 }
 
+void LSP_getSignatureHelpFromJSON(cJSON* json, LSP_SignatureHelp* help) {
+  if (!json) {
+    return;
+  }
+  help->activeSignature = (int)cJSON_GetNumberValue(cJSON_GetObjectItem(json, "activeSignature"));
+  help->activeParameter = (int)cJSON_GetNumberValue(cJSON_GetObjectItem(json, "activeParameter"));
+
+  cJSON* signatures_json = cJSON_GetObjectItem(json, "signatures");
+  help->signatures_size = cJSON_GetArraySize(signatures_json);
+  help->signatures = malloc(sizeof(LSP_SignatureInformation) * help->signatures_size);
+
+  for (int i = 0; i < help->signatures_size; i++) {
+    cJSON* sig_json = cJSON_GetArrayItem(signatures_json, i);
+    LSP_SignatureInformation* sig = &help->signatures[i];
+
+    sig->label[0] = '\0';
+    sig->documentation[0] = '\0';
+
+    cJSON* label = cJSON_GetObjectItem(sig_json, "label");
+    if (cJSON_IsString(label)) {
+      strncpy(sig->label, label->valuestring, MESSAGE_LENGTH - 1);
+    }
+
+    cJSON* doc = cJSON_GetObjectItem(sig_json, "documentation");
+    if (cJSON_IsString(doc)) {
+      strncpy(sig->documentation, doc->valuestring, MESSAGE_LENGTH - 1);
+    }
+    else if (cJSON_IsObject(doc)) {
+      strncpy(sig->documentation, cJSON_GetStringValue(cJSON_GetObjectItem(doc, "value")), MESSAGE_LENGTH - 1);
+    }
+
+    cJSON* params_json = cJSON_GetObjectItem(sig_json, "parameters");
+    sig->parameters_size = cJSON_GetArraySize(params_json);
+    sig->parameters = malloc(sizeof(LSP_ParameterInformation) * sig->parameters_size);
+
+    for (int j = 0; j < sig->parameters_size; j++) {
+      cJSON* param_json = cJSON_GetArrayItem(params_json, j);
+      LSP_ParameterInformation* param = &sig->parameters[j];
+      param->label[0] = '\0';
+      param->documentation[0] = '\0';
+      param->start = -1;
+      param->end = -1;
+
+      cJSON* p_label = cJSON_GetObjectItem(param_json, "label");
+      if (cJSON_IsString(p_label)) {
+        strncpy(param->label, p_label->valuestring, MESSAGE_LENGTH - 1);
+      }
+      else if (cJSON_IsArray(p_label) && cJSON_GetArraySize(p_label) == 2) {
+        param->start = (int)cJSON_GetNumberValue(cJSON_GetArrayItem(p_label, 0));
+        param->end = (int)cJSON_GetNumberValue(cJSON_GetArrayItem(p_label, 1));
+
+        // If offsets are provided, we can extract the label from the signature label
+        if (param->start >= 0 && param->end > param->start && param->end <= (int)strlen(sig->label)) {
+          int len = param->end - param->start;
+          if (len >= MESSAGE_LENGTH) len = MESSAGE_LENGTH - 1;
+          strncpy(param->label, sig->label + param->start, len);
+          param->label[len] = '\0';
+        }
+      }
+
+      cJSON* p_doc = cJSON_GetObjectItem(param_json, "documentation");
+      if (cJSON_IsString(p_doc)) {
+        strncpy(param->documentation, p_doc->valuestring, MESSAGE_LENGTH - 1);
+      }
+      else if (cJSON_IsObject(p_doc)) {
+        strncpy(param->documentation, cJSON_GetStringValue(cJSON_GetObjectItem(p_doc, "value")), MESSAGE_LENGTH - 1);
+      }
+    }
+
+    cJSON* active_param = cJSON_GetObjectItem(sig_json, "activeParameter");
+    if (active_param) {
+      sig->activeParameter = (int)cJSON_GetNumberValue(active_param);
+    }
+    else {
+      sig->activeParameter = -1;
+    }
+  }
+}
+
+void LSP_destroySignatureHelp(LSP_SignatureHelp* help) {
+  if (!help) {
+    return;
+  }
+  for (int i = 0; i < help->signatures_size; i++) {
+    free(help->signatures[i].parameters);
+  }
+  free(help->signatures);
+  help->signatures = NULL;
+  help->signatures_size = 0;
+}
+
 
 //// -------- Receive Functions --------
 
@@ -1304,4 +1422,13 @@ void LSP_requestOnTypeFormatting(LSP_Server* lsp, char* file_name, LSP_Position 
   LSP_addResponseContext(lsp, id, "textDocument/onTypeFormatting", file_name, NULL);
 
   cJSON_Delete(request_content);
+}
+
+void LSP_requestSignatureHelp(LSP_Server* lsp, char* file_name, LSP_Position pos) {
+  char* method = "textDocument/signatureHelp";
+  cJSON* params = LSP_getJSONTextDocumentPositionParams(file_name, pos);
+
+  LSP_PacketID id = LSP_sendPacketWithJSON(lsp, method, params, LSP_REQUEST);
+  LSP_addResponseContext(lsp, id, method, file_name, NULL);
+  cJSON_Delete(params);
 }
