@@ -13,18 +13,19 @@ void LSP_highlightCurrentFile(LSP_Data* lsp_datas, Cursor cursor, WindowHighligh
     return;
   }
   assert(lsp_datas->computed != NULL);
-  for (int i = 0; i < lsp_datas->computed->diagnostics_size; i++) {
+  for (int i = 0; i < lsp_datas->computed->diagnostics.size; i++) {
+    LSP_Diagnostic* d = &lsp_datas->computed->diagnostics.items[i];
     Cursor begin_cursor =
-      tryToReachAbsPosition(cursor, LSP_0_row_to_1_row(lsp_datas->computed->diagnostics[i].range.pos1.row),
-                            lsp_datas->computed->diagnostics[i].range.pos1.column + 1);
-    Cursor end_cursor = LSP_tryToReachCursorForLSPPosition(cursor, lsp_datas->computed->diagnostics[i].range.pos2);
+      tryToReachAbsPosition(cursor, LSP_0_row_to_1_row(d->range.pos1.row),
+                            d->range.pos1.column + 1);
+    Cursor end_cursor = LSP_tryToReachCursorForLSPPosition(cursor, d->range.pos2);
 
     attr_t attr = A_UNDERLINE;
     NCURSES_PAIRS_T color = COLOR_RED;
 
     whd_insertDescriptor(highlight_descriptor, begin_cursor, end_cursor, color, attr, 0, false,
-                         (LineMarker)lsp_datas->computed->diagnostics[i].severity,
-                         lsp_datas->computed->diagnostics + i);
+                         (LineMarker)d->severity,
+                         d);
   }
 
   // lsp_datas->computed->hover.

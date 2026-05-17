@@ -56,42 +56,30 @@ void executeLSPCompletion(Cursor* cursor, LSP_CompletionItem* item, History** hi
     item->is_text_edit = true;
   }
 
-  bool main_text_edit_done = false;
-  CursorDescriptor position_after_insert;
-  position_after_insert.row = -1;
-  position_after_insert.column = -1;
+  // Combine main text_edit and additionalTextEdits into a single array for applyTextEditsArray
+  int total_edits_count = 1 + item->additionalTextEditsSize;
+  LSP_TextEdit* all_edits = malloc(sizeof(LSP_TextEdit) * total_edits_count);
+  
+  all_edits[0] = item->text_edit;
+  for (int i = 0; i < item->additionalTextEditsSize; i++) {
+    all_edits[i + 1] = item->additionalTextEdits[i];
+  }
 
-  // TODO may check if it check well using multiple additionalTextEdit
-  qsort(item->additionalTextEdits, item->additionalTextEditsSize, sizeof(LSP_TextEdit), compareTextEdit);
+  // Use the robust generic application tool
+  applyTextEditsArray(cursor, all_edits, total_edits_count, history_p, payload_state_change);
 
-  int i = 0;
-  while (i < item->additionalTextEditsSize) {
-    if (!main_text_edit_done && compareTextEdit(&item->text_edit, item->additionalTextEdits + i) != 1) {
-      main_text_edit_done = true;
-      applyTextEdit(cursor, &item->text_edit, history_p, payload_state_change);
-      position_after_insert = cursor_to_desc(*cursor);
-    }
-    else {
-      *cursor = tryToReachAbsPosition(*cursor, item->additionalTextEdits[i].range.pos1.row + 1,
-                                      item->additionalTextEdits[i].range.pos1.column);
-      CursorDescriptor tmp = cursor_to_desc(*cursor);
-      applyTextEdit(cursor, item->additionalTextEdits + i, history_p, payload_state_change);
-      i++;
-      // if the end position of the cursor is already setted we have to follow the new add in the file to follow lines.
-      // !! ISSUE !! we don't manage the follow if some column are added before in the same line.
-      // We don't manage if the additionnal text edit is removing a lot of line.
-      if (position_after_insert.row != -1) {
-        position_after_insert.row += cursor->file_id.absolute_row - tmp.row;
-      }
+  free(all_edits);
+}
+
+
+static bool checkLineHasDiagnostics(LSP_ComputedData* computed, int row) {
+  for (int i = 0; i < computed->diagnostics.size; i++) {
+    if (computed->diagnostics.items[i].range.pos1.row <= row &&
+        computed->diagnostics.items[i].range.pos2.row >= row) {
+      return true;
     }
   }
-
-  if (!main_text_edit_done) {
-    applyTextEdit(cursor, &item->text_edit, history_p, payload_state_change);
-  }
-  else if (position_after_insert.row != -1) {
-    *cursor = tryToReachAbsPosition(*cursor, position_after_insert.row, position_after_insert.column);
-  }
+  return false;
 }
 
 
@@ -121,28 +109,11 @@ void askCompletion(GUIContext* gui_context, FileContainer* fc, bool reset, bool 
 
     if (reset) {
       LSP_destroyCompletionList(&fc->lsp_datas.computed->completions);
-      // TODO clean the following code
-      // Clean previous actions too
-      for (int i = 0; i < fc->lsp_datas.computed->code_actions_size; i++) {
-        LSP_destroyCodeAction(fc->lsp_datas.computed->code_actions + i);
-      }
-      free(fc->lsp_datas.computed->code_actions);
-      fc->lsp_datas.computed->code_actions = NULL;
-      fc->lsp_datas.computed->code_actions_size = 0;
+      LSP_destroyCodeActionList(&fc->lsp_datas.computed->code_actions);
     }
 
-    // TODO extract the following code to an independant method we shouldn't have logic like this in this function.
-    // Smart Assist: Also request Code Actions if there are diagnostics on this line
-    LSP_ComputedData* computed = fc->lsp_datas.computed;
-    int lsp_row = cursor_row(fc->cursor) - 1;
-    bool has_diag = false;
-    for (int i = 0; i < computed->diagnostics_size; i++) {
-      if (computed->diagnostics[i].range.pos1.row <= lsp_row && computed->diagnostics[i].range.pos2.row >= lsp_row) {
-        has_diag = true;
-        break;
-      }
-    }
-    if (has_diag) {
+    // If a line have a diagnostic so we ask for code action.
+    if (checkLineHasDiagnostics(fc->lsp_datas.computed, cursor_row(fc->cursor) - 1)) {
       askCodeAction(fc, &fc->cursor);
     }
 
@@ -163,7 +134,8 @@ void receiveCompletionData(cJSON* packet, FileContainer* file, ViewPort* view_po
   LSP_getCompletionListFromJSON(LSP_getPacketResult(packet), &file->lsp_datas.computed->completions);
 
   // if there is no data we close the popup
-  if (file->lsp_datas.computed->completions.completions.size == 0 && file->lsp_datas.computed->code_actions_size == 0) {
+  if (file->lsp_datas.computed->completions.completions.size == 0 &&
+      file->lsp_datas.computed->code_actions.size == 0) {
     if (view_port->gui->edw_context.pow_owner == COMPLETION) {
       gui_closePopup(view_port->gui);
     }

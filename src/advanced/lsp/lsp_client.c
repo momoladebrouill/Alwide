@@ -910,6 +910,38 @@ void LSP_destroyCodeAction(LSP_CodeAction* code_action) {
   }
 }
 
+void LSP_initDiagnosticList(LSP_DiagnosticList* list) {
+  list->items = NULL;
+  list->size = 0;
+}
+
+void LSP_destroyDiagnosticList(LSP_DiagnosticList* list) {
+  if (list->items) {
+    for (int i = 0; i < list->size; i++) {
+      LSP_destroyDiagnostic(list->items + i);
+    }
+    free(list->items);
+    list->items = NULL;
+  }
+  list->size = 0;
+}
+
+void LSP_initCodeActionList(LSP_CodeActionList* list) {
+  list->items = NULL;
+  list->size = 0;
+}
+
+void LSP_destroyCodeActionList(LSP_CodeActionList* list) {
+  if (list->items) {
+    for (int i = 0; i < list->size; i++) {
+      LSP_destroyCodeAction(list->items + i);
+    }
+    free(list->items);
+    list->items = NULL;
+  }
+  list->size = 0;
+}
+
 void LSP_sendResponse(LSP_Server* server, LSP_PacketID id, cJSON* result) {
   cJSON* response = cJSON_CreateObject();
   cJSON_AddStringToObject(response, "jsonrpc", "2.0");

@@ -8,13 +8,11 @@
 
 
 typedef struct {
-  LSP_Diagnostic* diagnostics;
-  int diagnostics_size;
+  LSP_DiagnosticList diagnostics;
   LSP_CompletionList completions;
   LSP_Hover hover;
   LSP_SignatureHelp signature_help;
-  LSP_CodeAction* code_actions;
-  int code_actions_size;
+  LSP_CodeActionList code_actions;
   // used by the TUI when multiple choice happens to let choose the user.
   LSP_LocationArray gotos;
   LSP_GOTO_TYPE goto_type;

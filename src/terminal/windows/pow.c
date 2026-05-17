@@ -4,6 +4,7 @@
 #include <libgen.h>
 #include <string.h>
 
+#include "../../advanced/lsp/lsp-features/lsp_code_action.h"
 #include "../../advanced/lsp/lsp-features/lsp_completion.h"
 #include "../../advanced/lsp/lsp-features/lsp_goto.h"
 #include "../../io-management/viewport_history.h"
@@ -141,7 +142,6 @@ void gui_showDiagnostic(GUIContext* gui_context, int y, int x, LSP_Diagnostic* d
   printToWindow(gui_context->edw_context.pow, diagnostic->message, ch_length, 1, 1, max_width, 0);
 }
 
-#include "../../advanced/lsp/lsp-features/lsp_code_action.h"
 
 void gui_printCompletionPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* lsp_data) {
   if (lsp_data == NULL) {
@@ -151,7 +151,7 @@ void gui_printCompletionPopup(EDW_GUIContext* context, Cursor* cursor, LSP_Compu
   int width = getmaxx(context->pow), height = getmaxy(context->pow);
   werase(context->pow);
 
-  int ca_size = lsp_data->code_actions_size;
+  int ca_size = lsp_data->code_actions.size;
   int comp_size = lsp_data->completions.completions.size;
   int total_size = ca_size + comp_size;
 
@@ -172,7 +172,7 @@ void gui_printCompletionPopup(EDW_GUIContext* context, Cursor* cursor, LSP_Compu
 
     if (index < ca_size) {
       // Render Code Action
-      LSP_CodeAction* action = &lsp_data->code_actions[index];
+      LSP_CodeAction* action = &lsp_data->code_actions.items[index];
       char line[width + 10];
       snprintf(line, sizeof(line), "%s %s", action->isPreferred ? "★" : "💡", action->title);
       printToWindow(context->pow, line, -1, 0, i, width, 1);
@@ -389,7 +389,7 @@ bool gui_handleCompletionInput(GUIContext* context, FileContainer* fc, int c_has
   History** history_p = &fc->history_frame;
   int height = getmaxy(context->edw_context.pow);
 
-  int ca_size = lsp_data->code_actions_size;
+  int ca_size = lsp_data->code_actions.size;
   int comp_size = lsp_data->completions.completions.size;
   int total_size = ca_size + comp_size;
 
@@ -419,7 +419,7 @@ bool gui_handleCompletionInput(GUIContext* context, FileContainer* fc, int c_has
       int clicked_item = context->edw_context.item_select_offset_y + (m_event->y - getbegy(context->edw_context.pow));
       if (clicked_item >= 0 && clicked_item < total_size) {
         if (clicked_item < ca_size) {
-          executeCodeAction(fc, cursor, &lsp_data->code_actions[clicked_item], payload);
+          executeCodeAction(fc, cursor, &lsp_data->code_actions.items[clicked_item], payload);
         }
         else {
           executeLSPCompletion(cursor, lsp_data->completions.completions.items + (clicked_item - ca_size), history_p,
@@ -457,7 +457,7 @@ bool gui_handleCompletionInput(GUIContext* context, FileContainer* fc, int c_has
     case KEY_TAB:
       if (context->edw_context.item_selected < total_size) {
         if (context->edw_context.item_selected < ca_size) {
-          executeCodeAction(fc, cursor, &lsp_data->code_actions[context->edw_context.item_selected], payload);
+          executeCodeAction(fc, cursor, &lsp_data->code_actions.items[context->edw_context.item_selected], payload);
         }
         else {
           executeLSPCompletion(cursor,

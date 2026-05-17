@@ -34,17 +34,10 @@ void destroyLspDatas(LSP_Data* lsp_datas) {
 }
 
 void LSP_destroyComputedData(LSP_ComputedData* lsp_payload) {
-  if (!lsp_payload) {
-    return;
-  }
-
   // free diagnostics
-  for (int i = 0; i < lsp_payload->diagnostics_size; i++) {
-    LSP_destroyDiagnostic(lsp_payload->diagnostics + i);
-  }
-  free(lsp_payload->diagnostics);
+  LSP_destroyDiagnosticList(&lsp_payload->diagnostics);
 
-  // free completionList
+  // free completions
   LSP_destroyCompletionList(&lsp_payload->completions);
 
   // free hoverlist
@@ -54,10 +47,7 @@ void LSP_destroyComputedData(LSP_ComputedData* lsp_payload) {
   LSP_destroySignatureHelp(&lsp_payload->signature_help);
 
   // free code actions
-  for (int i = 0; i < lsp_payload->code_actions_size; i++) {
-    LSP_destroyCodeAction(lsp_payload->code_actions + i);
-  }
-  free(lsp_payload->code_actions);
+  LSP_destroyCodeActionList(&lsp_payload->code_actions);
 
   // free definition-like lists
   LSP_destroyLocationArray(&lsp_payload->gotos);
@@ -67,8 +57,7 @@ void LSP_initComputedData(LSP_ComputedData* payload) {
   // TODO create LSP_init***** to avoid initializing every fields of every fields...
 
   // init diagnostics
-  payload->diagnostics = NULL;
-  payload->diagnostics_size = 0;
+  LSP_initDiagnosticList(&payload->diagnostics);
 
   // init completions
   payload->completions.completions.items = NULL;
@@ -76,8 +65,7 @@ void LSP_initComputedData(LSP_ComputedData* payload) {
   payload->completions.isIncomplete = false;
 
   // init code actions
-  payload->code_actions = NULL;
-  payload->code_actions_size = 0;
+  LSP_initCodeActionList(&payload->code_actions);
 
   // init hover
   payload->hover.size = 0;

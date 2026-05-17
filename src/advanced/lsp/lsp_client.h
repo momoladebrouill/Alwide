@@ -279,6 +279,22 @@ cJSON* LSP_getJSONDiagnostic(LSP_Range range);
 LSP_Diagnostic LSP_getDiagnosticFromJSON(cJSON* json);
 void LSP_destroyDiagnostic(LSP_Diagnostic* diagnostic);
 
+typedef struct {
+  LSP_Diagnostic* items;
+  int size;
+} LSP_DiagnosticList;
+
+void LSP_initDiagnosticList(LSP_DiagnosticList* list);
+void LSP_destroyDiagnosticList(LSP_DiagnosticList* list);
+
+typedef struct {
+  LSP_CodeAction* items;
+  int size;
+} LSP_CodeActionList;
+
+void LSP_initCodeActionList(LSP_CodeActionList* list);
+void LSP_destroyCodeActionList(LSP_CodeActionList* list);
+
 
 typedef enum {
   dt_PLAIN_TEXT,

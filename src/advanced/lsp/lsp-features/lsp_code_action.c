@@ -16,15 +16,12 @@ void receiveCodeActionData(cJSON* packet, FileContainer* file, ModuleContext* da
   LSP_ComputedData* computed = file->lsp_datas.computed;
 
   // Clean up old code actions before storing new ones
-  for (int i = 0; i < computed->code_actions_size; i++) {
-    LSP_destroyCodeAction(computed->code_actions + i);
-  }
-  free(computed->code_actions);
+  LSP_destroyCodeActionList(&computed->code_actions);
 
   // Parse new actions from JSON
-  computed->code_actions_size = cJSON_GetArraySize(result);
-  if (computed->code_actions_size == 0) {
-    computed->code_actions = NULL;
+  computed->code_actions.size = cJSON_GetArraySize(result);
+  if (computed->code_actions.size == 0) {
+    computed->code_actions.items = NULL;
     // if there is no data we close the popup
     if (computed->completions.completions.size == 0) {
       if (data->view_port.gui->edw_context.pow_owner == COMPLETION) {
@@ -34,20 +31,19 @@ void receiveCodeActionData(cJSON* packet, FileContainer* file, ModuleContext* da
     return;
   }
 
-  computed->code_actions = malloc(sizeof(LSP_CodeAction) * computed->code_actions_size);
-  for (int i = 0; i < computed->code_actions_size; i++) {
-    computed->code_actions[i] = LSP_getCodeActionFromJSON(cJSON_GetArrayItem(result, i));
+  computed->code_actions.items = malloc(sizeof(LSP_CodeAction) * computed->code_actions.size);
+  for (int i = 0; i < computed->code_actions.size; i++) {
+    computed->code_actions.items[i] = LSP_getCodeActionFromJSON(cJSON_GetArrayItem(result, i));
   }
 
   // Update UI if COMPLETION popup is active, or open it if it's a direct code action request
   if (data->view_port.gui->edw_context.pow_owner == COMPLETION && data->view_port.gui->edw_context.show_pow) {
-    gui_updateEDW(data->view_port.gui);
-  }
-  else {
-    ViewPort view_port = viewPortOf(data->view_port.gui, &file->screen_x, &file->screen_y);
-    // We use COMPLETION owner for the unified list
-    gui_showGenericPopupWithTextAnchor(&view_port, data->cursor, computed->code_actions_size + 2, 45, COMPLETION);
-    gui_updateEDW(data->view_port.gui);
+      gui_updateEDW(data->view_port.gui);
+  } else {
+      ViewPort view_port = viewPortOf(data->view_port.gui, &file->screen_x, &file->screen_y);
+      // We use COMPLETION owner for the unified list
+      gui_showGenericPopupWithTextAnchor(&view_port, data->cursor, computed->code_actions.size + 2, 45, COMPLETION);
+      gui_updateEDW(data->view_port.gui);
   }
 }
 
@@ -69,8 +65,8 @@ void askCodeAction(FileContainer* file, Cursor* cursor) {
   LSP_Diagnostic context_diags[10];
   int diags_count = 0;
 
-  for (int i = 0; i < computed->diagnostics_size && diags_count < 10; i++) {
-    LSP_Diagnostic* d = &computed->diagnostics[i];
+  for (int i = 0; i < computed->diagnostics.size && diags_count < 10; i++) {
+    LSP_Diagnostic* d = &computed->diagnostics.items[i];
     if (d->range.pos1.row <= lsp_row && d->range.pos2.row >= lsp_row) {
       context_diags[diags_count++] = *d;
     }
