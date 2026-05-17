@@ -13,6 +13,7 @@
 #include "windows/edw.h"
 #include "windows/few.h"
 #include "windows/pow.h"
+#include "../advanced/lsp/lsp-features/lsp_code_action.h"
 
 
 bool isClickInsideWindow(WINDOW* w, MEVENT* m_event) {
@@ -189,8 +190,12 @@ void handleEditorClick(GUIContext* gui_context, Cursor* cursor, Cursor* select_c
 
     if ((marker == LSP_ERROR || marker == LSP_HINT || marker == LSP_INFORMATION || marker == LSP_WARNING) &&
         diagnostic != NULL) {
-      gui_showDiagnostic(gui_context, m_event->y - getbegy(gui_context->edw_context.lnw) + 1,
+      if (m_event->bstate & BUTTON1_DOUBLE_CLICKED) {
+          askCodeAction(file, cursor);
+      } else {
+          gui_showDiagnostic(gui_context, m_event->y - getbegy(gui_context->edw_context.lnw) + 1,
                          getbegy(gui_context->edw_context.ftw), diagnostic);
+      }
     }
   }
   else if (isClickInsideWindow(gui_context->edw_context.ftw, m_event)) {

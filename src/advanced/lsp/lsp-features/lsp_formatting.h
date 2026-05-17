@@ -10,7 +10,4 @@ void askFormatting(FileContainer* file);
 
 void askOnTypeFormatting(FileContainer* file, char* ch, ModuleContext* data);
 
-void executeLspFormatting(Cursor* cursor, LSP_TextEdit* edits, int edits_size, History** history_p,
-                            PayloadStateChange payload_state_change);
-
 #endif // LSP_FORMATTING_H

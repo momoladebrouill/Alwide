@@ -53,6 +53,12 @@ void LSP_destroyComputedData(LSP_ComputedData* lsp_payload) {
   // free signature help
   LSP_destroySignatureHelp(&lsp_payload->signature_help);
 
+  // free code actions
+  for (int i = 0; i < lsp_payload->code_actions_size; i++) {
+    LSP_destroyCodeAction(lsp_payload->code_actions + i);
+  }
+  free(lsp_payload->code_actions);
+
   // free definition-like lists
   LSP_destroyLocationArray(&lsp_payload->gotos);
 }
@@ -68,6 +74,10 @@ void LSP_initComputedData(LSP_ComputedData* payload) {
   payload->completions.completions.items = NULL;
   payload->completions.completions.size = 0;
   payload->completions.isIncomplete = false;
+
+  // init code actions
+  payload->code_actions = NULL;
+  payload->code_actions_size = 0;
 
   // init hover
   payload->hover.size = 0;

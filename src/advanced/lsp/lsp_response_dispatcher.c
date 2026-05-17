@@ -11,6 +11,7 @@
 #include "lsp-features/lsp_goto.h"
 #include "lsp-features/lsp_hover.h"
 #include "lsp-features/lsp_signature_help.h"
+#include "lsp-features/lsp_code_action.h"
 
 
 void responseDispatcher(cJSON* packet, LSP_Server* lsp, ModuleContext* data) {
@@ -53,6 +54,15 @@ void responseDispatcher(cJSON* packet, LSP_Server* lsp, ModuleContext* data) {
   }
   else if (strcmp(context.method, "textDocument/signatureHelp") == 0) {
     receiveSignatureHelpData(packet, file, data->view_port.gui, data->cursor);
+  }
+  else if (strcmp(context.method, "textDocument/codeAction") == 0) {
+    receiveCodeActionData(packet, file, data);
+  }
+  else if (strcmp(context.method, "workspace/executeCommand") == 0) {
+    // Command execution response received. 
+    // Usually, the server sends a workspace/applyEdit request separately.
+    // We just acknowledge the response here.
+    fprintf(stderr, "LSP : Command executed successfully.\n");
   }
   else if (strcmp(context.method, "textDocument/definition") == 0 ||
            strcmp(context.method, "textDocument/declaration") == 0 ||

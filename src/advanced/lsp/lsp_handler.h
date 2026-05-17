@@ -13,6 +13,8 @@ typedef struct {
   LSP_CompletionList completions;
   LSP_Hover hover;
   LSP_SignatureHelp signature_help;
+  LSP_CodeAction* code_actions;
+  int code_actions_size;
   // used by the TUI when multiple choice happens to let choose the user.
   LSP_LocationArray gotos;
   LSP_GOTO_TYPE goto_type;

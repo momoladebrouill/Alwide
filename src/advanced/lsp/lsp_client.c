@@ -246,20 +246,30 @@ cJSON* LSP_readPacketAsJSON(LSP_Server* server, bool block) {
 
 static int _LSP_sendPacketInternal(LSP_Server* server, char* method, char* params, LSP_PACKET_TYPE type,
                                    LSP_PacketID id) {
-  if (params == NULL) {
-    params = "{}";
+  char* content_str;
+  cJSON* json_request_obj = NULL;
+
+  if (type == LSP_RESPONSE) {
+    // For responses, params already contains the full JSON string
+    content_str = strdup(params);
   }
-  cJSON* json_request_obj = cJSON_CreateObject();
-  cJSON_AddStringToObject(json_request_obj, "jsonrpc", "2.0");
-  cJSON_AddStringToObject(json_request_obj, "method", method);
-  cJSON_AddRawToObject(json_request_obj, "params", params);
-  if (type == LSP_REQUEST) {
-    cJSON_AddNumberToObject(json_request_obj, "id", id);
+  else {
+    if (params == NULL) {
+      params = "{}";
+    }
+    json_request_obj = cJSON_CreateObject();
+    cJSON_AddStringToObject(json_request_obj, "jsonrpc", "2.0");
+    if (method) {
+      cJSON_AddStringToObject(json_request_obj, "method", method);
+    }
+    cJSON_AddRawToObject(json_request_obj, "params", params);
+    if (type == LSP_REQUEST) {
+      cJSON_AddNumberToObject(json_request_obj, "id", id);
+    }
+    content_str = cJSON_PrintUnformatted(json_request_obj);
   }
 
-  char* content_str = cJSON_PrintUnformatted(json_request_obj);
   int content_length = strlen(content_str);
-
   char atSend[content_length + 200];
 
   snprintf(atSend, sizeof(atSend), "Content-Length: %d\r\n\r\n%s", content_length, content_str);
@@ -267,21 +277,29 @@ static int _LSP_sendPacketInternal(LSP_Server* server, char* method, char* param
 
   write(server->outpipefd[1], atSend, head_length + content_length);
 
-  // fwrite(atSend, 1, head_length + content_length, stdout);
-  // printf("\n");
-
-  // TODO remove
-  fprintf(stderr, "\n\n ================ %s ================>>> \n",
-          cJSON_GetStringValue(cJSON_GetObjectItem(json_request_obj, "method")));
-  cJSON* params_2 = cJSON_Parse(params);
-  char* text = cJSON_Print(params_2);
-  fprintf(stderr, "%s\n", text);
-  free(text);
-  cJSON_Delete(params_2);
-  // TODO end remove
+  // Logging
+  if (type == LSP_RESPONSE) {
+    fprintf(stderr, "\n\n ================ RESPONSE ================>>> \n");
+  } else {
+    fprintf(stderr, "\n\n ================ %s ================>>> \n", method ? method : "NOTIFICATION");
+  }
+  
+  if (params) {
+    cJSON* params_2 = cJSON_Parse(params);
+    if (params_2) {
+      char* text = cJSON_Print(params_2);
+      fprintf(stderr, "%s\n", text);
+      free(text);
+      cJSON_Delete(params_2);
+    } else {
+      fprintf(stderr, "%s\n", params);
+    }
+  }
 
   free(content_str);
-  cJSON_Delete(json_request_obj);
+  if (json_request_obj) {
+    cJSON_Delete(json_request_obj);
+  }
 
   if (type == LSP_REQUEST) {
     return id;
@@ -292,17 +310,12 @@ static int _LSP_sendPacketInternal(LSP_Server* server, char* method, char* param
 int LSP_sendPacket(LSP_Server* server, char* method, char* params, LSP_PACKET_TYPE type) {
   // We have to take care about not sending a paquet until the init packet from the lsp has been received.
   // We let the initialize packet be sended to the server.
-  // LSP_sendPacket() is not a blocking function. If we have to wait for the init we build the packet to JSON (so all
-  // data are copied).
-  // Then the init packet from the server is received we send all the buffered packet.
-  // If the init packet is already received, this function we send the packet to the lsp process (it may be block a bit
-  // until the lsp server read his stdin buffer).
-  if (strcmp(method, "initialize") != 0) {
+  if (method != NULL && strcmp(method, "initialize") != 0) {
     if (pthread_mutex_trylock(&server->initDone) != 0) {
       // Buffer packet
       pthread_mutex_lock(&server->pending_lock);
       LSP_PendingPacket* new_packet = malloc(sizeof(LSP_PendingPacket));
-      new_packet->method = strdup(method);
+      new_packet->method = method ? strdup(method) : NULL;
       new_packet->params = strdup(params ? params : "{}");
       new_packet->type = type;
       new_packet->id = 0;
@@ -329,6 +342,34 @@ int LSP_sendPacket(LSP_Server* server, char* method, char* params, LSP_PACKET_TY
     else {
       pthread_mutex_unlock(&server->initDone);
     }
+  }
+  
+  // Responses don't need to check for initialize but might need buffering if init not done?
+  // Actually, if method is NULL and we aren't done with init, we should probably buffer.
+  if (method == NULL && pthread_mutex_trylock(&server->initDone) != 0) {
+      // Buffer packet (same logic as above)
+      pthread_mutex_lock(&server->pending_lock);
+      LSP_PendingPacket* new_packet = malloc(sizeof(LSP_PendingPacket));
+      new_packet->method = NULL;
+      new_packet->params = strdup(params ? params : "{}");
+      new_packet->type = type;
+      new_packet->id = 0;
+      new_packet->next = NULL;
+
+      if (server->pending_packets == NULL) {
+        server->pending_packets = new_packet;
+      }
+      else {
+        LSP_PendingPacket* curr = server->pending_packets;
+        while (curr->next != NULL) {
+          curr = curr->next;
+        }
+        curr->next = new_packet;
+      }
+      pthread_mutex_unlock(&server->pending_lock);
+      return 0;
+  } else if (method == NULL) {
+      pthread_mutex_unlock(&server->initDone);
   }
 
   LSP_PacketID packet_id = 0;
@@ -459,7 +500,22 @@ static cJSON* buildInitPacket(LSP_Server* lsp, char* client_name, char* client_v
   cJSON_AddBoolToObject(signatureHelp, "dynamicRegistration", true);
   cJSON* signatureInformation = cJSON_AddObjectToObject(signatureHelp, "signatureInformation");
   cJSON* parameterInformation = cJSON_AddObjectToObject(signatureInformation, "parameterInformation");
-  cJSON_AddBoolToObject(parameterInformation, "labelOffsetSupport", false);
+  cJSON_AddBoolToObject(parameterInformation, "labelOffsetSupport", true);
+
+  cJSON* codeAction = cJSON_AddObjectToObject(textDocument, "codeAction");
+  cJSON_AddBoolToObject(codeAction, "dynamicRegistration", true);
+  cJSON* codeActionLiteralSupport = cJSON_AddObjectToObject(codeAction, "codeActionLiteralSupport");
+  cJSON* codeActionKind = cJSON_AddObjectToObject(codeActionLiteralSupport, "codeActionKind");
+  cJSON* valueSet = cJSON_AddArrayToObject(codeActionKind, "valueSet");
+  cJSON_AddItemToArray(valueSet, cJSON_CreateString("quickfix"));
+  cJSON_AddItemToArray(valueSet, cJSON_CreateString("refactor"));
+  cJSON_AddBoolToObject(codeAction, "isPreferredSupport", true);
+
+
+  cJSON* workspace_cap = cJSON_AddObjectToObject(capabilities, "workspace");
+  cJSON_AddBoolToObject(workspace_cap, "applyEdit", true);
+  cJSON* executeCommand = cJSON_AddObjectToObject(workspace_cap, "executeCommand");
+  cJSON_AddBoolToObject(executeCommand, "dynamicRegistration", true);
 
   cJSON* workspace_array = cJSON_AddArrayToObject(init_params, "workspaceFolders");
 
@@ -675,7 +731,9 @@ cJSON* LSP_getJSONTextDocumentIdentifierVersionned(char* file_name, int version)
 }
 
 LSP_TextDocumentIdentifier LSP_getTextDocumentIdentifierFromJSON(cJSON* json) {
-  return LSP_getTextDocumentIdentifierOf(cJSON_GetStringValue(cJSON_GetObjectItem(json, "uri")));
+  char path[PATH_MAX];
+  decodeURI(cJSON_GetStringValue(cJSON_GetObjectItem(json, "uri")), path, PATH_MAX);
+  return LSP_getTextDocumentIdentifierOf(path);
 }
 
 void LSP_destroyTextDocumentIdentifier(LSP_TextDocumentIdentifier* text_document_identifier) {}
@@ -737,31 +795,148 @@ LSP_TextEdit LSP_getTextEditFromJSON(cJSON* json) {
 
 void LSP_destroyTextEdit(LSP_TextEdit text_edit) { free(text_edit.new_text); }
 
-LSP_TextDocumentEdit LSP_getTextDocumentEditOf(char* file_name, LSP_Range range, char* new_text) {
-  LSP_TextDocumentEdit text_document_edit;
-  text_document_edit.file_name = LSP_getTextDocumentIdentifierOf(file_name);
-  text_document_edit.edits[0] = LSP_getTextEditOf(range, new_text);
-  return text_document_edit;
-}
-
-
-cJSON* LSP_getJSONTextDocumentEdit(char* file_name, LSP_Range range, char* new_text) {
-  cJSON* text_document_edit = cJSON_CreateObject();
-
-  cJSON* text_document_id = LSP_getJSONTextDocumentIdentifier(file_name);
-  cJSON_AddItemToObject(text_document_edit, "textDocument", text_document_id);
-
-  cJSON* edits = cJSON_AddArrayToObject(text_document_edit, "edits");
-  cJSON* edit = LSP_getJSONTextEdit(range, new_text);
-  cJSON_AddItemToArray(edits, edit);
-
-  return text_document_edit;
-}
-
 LSP_TextDocumentEdit LSP_getTextDocumentEditFromJSON(cJSON* json) {
-  LSP_TextEdit text_edit = LSP_getTextEditFromJSON(cJSON_GetArrayItem(cJSON_GetObjectItem(json, "edits"), 0));
-  LSP_TextDocumentIdentifier text_id = LSP_getTextDocumentIdentifierFromJSON(cJSON_GetObjectItem(json, "textDocument"));
-  return LSP_getTextDocumentEditOf(text_id.file_name, text_edit.range, text_edit.new_text);
+  LSP_TextDocumentEdit text_document_edit;
+  cJSON* text_document = cJSON_GetObjectItem(json, "textDocument");
+  cJSON* edits = cJSON_GetObjectItem(json, "edits");
+
+  text_document_edit.text_document = LSP_getTextDocumentIdentifierFromJSON(text_document);
+  text_document_edit.edits_count = cJSON_GetArraySize(edits);
+  text_document_edit.edits = malloc(sizeof(LSP_TextEdit) * text_document_edit.edits_count);
+
+  for (int i = 0; i < text_document_edit.edits_count; i++) {
+    text_document_edit.edits[i] = LSP_getTextEditFromJSON(cJSON_GetArrayItem(edits, i));
+  }
+
+  return text_document_edit;
+}
+
+void LSP_destroyTextDocumentEdit(LSP_TextDocumentEdit* text_document_edit) {
+  LSP_destroyTextDocumentIdentifier(&text_document_edit->text_document);
+  for (int i = 0; i < text_document_edit->edits_count; i++) {
+    LSP_destroyTextEdit(text_document_edit->edits[i]);
+  }
+  free(text_document_edit->edits);
+}
+
+LSP_WorkspaceEdit LSP_getWorkspaceEditFromJSON(cJSON* json) {
+  LSP_WorkspaceEdit workspace_edit = {0};
+  if (!json || cJSON_IsNull(json)) return workspace_edit;
+
+  // LSP 3.17 uses 'documentChanges' or 'changes'
+  cJSON* document_changes = cJSON_GetObjectItem(json, "documentChanges");
+  if (cJSON_IsArray(document_changes)) {
+    workspace_edit.document_changes_count = cJSON_GetArraySize(document_changes);
+    workspace_edit.document_changes = malloc(sizeof(LSP_TextDocumentEdit) * workspace_edit.document_changes_count);
+    for (int i = 0; i < workspace_edit.document_changes_count; i++) {
+      workspace_edit.document_changes[i] = LSP_getTextDocumentEditFromJSON(cJSON_GetArrayItem(document_changes, i));
+    }
+  } else {
+    cJSON* changes = cJSON_GetObjectItem(json, "changes");
+    if (cJSON_IsObject(changes)) {
+      workspace_edit.document_changes_count = cJSON_GetArraySize(changes);
+      workspace_edit.document_changes = malloc(sizeof(LSP_TextDocumentEdit) * workspace_edit.document_changes_count);
+      int i = 0;
+      cJSON* file_edits = NULL;
+      cJSON_ArrayForEach(file_edits, changes) {
+        char path[PATH_MAX];
+        decodeURI(file_edits->string, path, PATH_MAX);
+        workspace_edit.document_changes[i].text_document = LSP_getTextDocumentIdentifierOf(path);
+        workspace_edit.document_changes[i].edits_count = cJSON_GetArraySize(file_edits);
+        workspace_edit.document_changes[i].edits = malloc(sizeof(LSP_TextEdit) * workspace_edit.document_changes[i].edits_count);
+        for (int j = 0; j < workspace_edit.document_changes[i].edits_count; j++) {
+          workspace_edit.document_changes[i].edits[j] = LSP_getTextEditFromJSON(cJSON_GetArrayItem(file_edits, j));
+        }
+        i++;
+      }
+    }
+  }
+  return workspace_edit;
+}
+
+void LSP_destroyWorkspaceEdit(LSP_WorkspaceEdit* workspace_edit) {
+  if (!workspace_edit) return;
+  for (int i = 0; i < workspace_edit->document_changes_count; i++) {
+    LSP_destroyTextDocumentEdit(&workspace_edit->document_changes[i]);
+  }
+  free(workspace_edit->document_changes);
+  workspace_edit->document_changes = NULL;
+  workspace_edit->document_changes_count = 0;
+}
+
+LSP_CodeAction LSP_getCodeActionFromJSON(cJSON* json) {
+  LSP_CodeAction code_action = {0};
+  cJSON* title_item = cJSON_GetObjectItem(json, "title");
+  cJSON* kind_item = cJSON_GetObjectItem(json, "kind");
+  cJSON* isPreferred_item = cJSON_GetObjectItem(json, "isPreferred");
+  cJSON* edit_item = cJSON_GetObjectItem(json, "edit");
+  cJSON* command_item = cJSON_GetObjectItem(json, "command");
+
+  if (cJSON_IsString(title_item)) strlcpy(code_action.title, title_item->valuestring, 200);
+  if (cJSON_IsString(kind_item)) strlcpy(code_action.kind, kind_item->valuestring, 50);
+  code_action.isPreferred = cJSON_IsTrue(isPreferred_item);
+  
+  if (edit_item && !cJSON_IsNull(edit_item)) {
+    code_action.edit = LSP_getWorkspaceEditFromJSON(edit_item);
+    code_action.has_edit = true;
+  }
+  
+  if (command_item && !cJSON_IsNull(command_item)) {
+    cJSON* cmd_str = cJSON_GetObjectItem(command_item, "command");
+    cJSON* cmd_args = cJSON_GetObjectItem(command_item, "arguments");
+    if (cmd_str && cJSON_IsString(cmd_str)) {
+      strlcpy(code_action.command.command, cmd_str->valuestring, 100);
+      if (cmd_args) {
+          code_action.command.arguments = cJSON_Duplicate(cmd_args, true);
+      }
+      code_action.has_command = true;
+      // If title is missing at root, try to get it from command
+      if (code_action.title[0] == '\0') {
+          cJSON* cmd_title = cJSON_GetObjectItem(command_item, "title");
+          if (cJSON_IsString(cmd_title)) strlcpy(code_action.title, cmd_title->valuestring, 200);
+      }
+    }
+  }
+
+  return code_action;
+}
+
+void LSP_destroyCodeAction(LSP_CodeAction* code_action) {
+  if (!code_action) return;
+  LSP_destroyWorkspaceEdit(&code_action->edit);
+  if (code_action->command.arguments) {
+      cJSON_Delete(code_action->command.arguments);
+      code_action->command.arguments = NULL;
+  }
+}
+
+void LSP_sendResponse(LSP_Server* server, LSP_PacketID id, cJSON* result) {
+  cJSON* response = cJSON_CreateObject();
+  cJSON_AddStringToObject(response, "jsonrpc", "2.0");
+  cJSON_AddNumberToObject(response, "id", id);
+  if (result) {
+      cJSON_AddItemToObject(response, "result", result);
+  } else {
+      cJSON_AddNullToObject(response, "result");
+  }
+
+  char* text = cJSON_PrintUnformatted(response);
+  LSP_sendPacket(server, NULL, text, LSP_RESPONSE);
+  free(text);
+  cJSON_Delete(response);
+}
+
+void LSP_requestExecuteCommand(LSP_Server* lsp, char* file_name, LSP_Command* command) {
+  cJSON* request_content = cJSON_CreateObject();
+  cJSON_AddStringToObject(request_content, "command", command->command);
+  if (command->arguments) {
+      cJSON_AddItemToObject(request_content, "arguments", cJSON_Duplicate(command->arguments, true));
+  }
+
+  LSP_PacketID id = LSP_sendPacketWithJSON(lsp, "workspace/executeCommand", request_content, LSP_REQUEST);
+  LSP_addResponseContext(lsp, id, "workspace/executeCommand", file_name, NULL);
+
+  cJSON_Delete(request_content);
 }
 
 LSP_Location LSP_getLocationOf(char* file_name, LSP_Range range) {
@@ -1429,6 +1604,36 @@ void LSP_requestSignatureHelp(LSP_Server* lsp, char* file_name, LSP_Position pos
   cJSON* params = LSP_getJSONTextDocumentPositionParams(file_name, pos);
 
   LSP_PacketID id = LSP_sendPacketWithJSON(lsp, method, params, LSP_REQUEST);
+
   LSP_addResponseContext(lsp, id, method, file_name, NULL);
+
   cJSON_Delete(params);
 }
+
+cJSON* LSP_getJSONDiagnosticFull(LSP_Diagnostic* diag) {
+  cJSON* diagnostic = cJSON_CreateObject();
+  cJSON_AddItemToObject(diagnostic, "range", LSP_getJSONRange(diag->range));
+  cJSON_AddNumberToObject(diagnostic, "severity", diag->severity);
+  if (diag->code[0]) cJSON_AddStringToObject(diagnostic, "code", diag->code);
+  if (diag->source[0]) cJSON_AddStringToObject(diagnostic, "source", diag->source);
+  cJSON_AddStringToObject(diagnostic, "message", diag->message);
+  return diagnostic;
+}
+
+void LSP_requestCodeAction(LSP_Server* lsp, char* file_name, LSP_Range range, LSP_Diagnostic* diagnostics, int diagnostics_count) {
+  cJSON* request_content = cJSON_CreateObject();
+  cJSON_AddItemToObject(request_content, "textDocument", LSP_getJSONTextDocumentIdentifier(file_name));
+  cJSON_AddItemToObject(request_content, "range", LSP_getJSONRange(range));
+
+  cJSON* context = cJSON_AddObjectToObject(request_content, "context");
+  cJSON* diags_array = cJSON_AddArrayToObject(context, "diagnostics");
+  for (int i = 0; i < diagnostics_count; i++) {
+    cJSON_AddItemToArray(diags_array, LSP_getJSONDiagnosticFull(&diagnostics[i]));
+  }
+
+  LSP_PacketID id = LSP_sendPacketWithJSON(lsp, "textDocument/codeAction", request_content, LSP_REQUEST);
+  LSP_addResponseContext(lsp, id, "textDocument/codeAction", file_name, NULL);
+
+  cJSON_Delete(request_content);
+}
+

@@ -185,14 +185,44 @@ LSP_TextEdit LSP_getTextEditFromJSON(cJSON* json);
 void LSP_destroyTextEdit(LSP_TextEdit text_edit);
 
 typedef struct {
-  LSP_TextDocumentIdentifier file_name;
-  LSP_TextEdit edits[1];
+  LSP_TextDocumentIdentifier text_document;
+  LSP_TextEdit* edits;
+  int edits_count;
 } LSP_TextDocumentEdit;
 
-LSP_TextDocumentEdit LSP_getTextDocumentEditOf(char* file_name, LSP_Range range, char* new_text);
-cJSON* LSP_getJSONTextDocumentEdit(char* file_name, LSP_Range range, char* new_text);
 LSP_TextDocumentEdit LSP_getTextDocumentEditFromJSON(cJSON* json);
-void LSP_destroyTextDocumentEdit(LSP_TextDocumentEdit text_document_edit);
+void LSP_destroyTextDocumentEdit(LSP_TextDocumentEdit* text_document_edit);
+
+typedef struct {
+  LSP_TextDocumentEdit* document_changes;
+  int document_changes_count;
+} LSP_WorkspaceEdit;
+
+LSP_WorkspaceEdit LSP_getWorkspaceEditFromJSON(cJSON* json);
+void LSP_destroyWorkspaceEdit(LSP_WorkspaceEdit* workspace_edit);
+
+typedef struct {
+  char title[200];
+  char command[100];
+  cJSON* arguments; 
+} LSP_Command;
+
+typedef struct {
+  char title[200];
+  char kind[50];
+  bool isPreferred;
+  LSP_WorkspaceEdit edit;
+  LSP_Command command;
+  bool has_edit;
+  bool has_command;
+} LSP_CodeAction;
+
+LSP_CodeAction LSP_getCodeActionFromJSON(cJSON* json);
+void LSP_destroyCodeAction(LSP_CodeAction* code_action);
+
+void LSP_sendResponse(LSP_Server* server, LSP_PacketID id, cJSON* result);
+
+void LSP_requestExecuteCommand(LSP_Server* lsp, char* file_name, LSP_Command* command);
 
 typedef struct {
   LSP_TextDocumentIdentifier file_name;
@@ -395,5 +425,7 @@ void LSP_requestOnTypeFormatting(LSP_Server* lsp, char* file_name, LSP_Position 
                                  LSP_FormattingOptions options);
 void LSP_requestSignatureHelp(LSP_Server* lsp, char* file_name, LSP_Position pos);
 
+void LSP_requestCodeAction(LSP_Server* lsp, char* file_name, LSP_Range range, LSP_Diagnostic* diagnostics, int diagnostics_count);
 
 #endif // CLIENT_H
+

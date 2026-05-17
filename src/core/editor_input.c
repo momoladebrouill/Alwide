@@ -9,6 +9,7 @@
 #include <time.h>
 
 #include "../advanced/lsp/lsp-features/lsp_completion.h"
+#include "../advanced/lsp/lsp-features/lsp_code_action.h"
 #include "../advanced/lsp/lsp-features/lsp_formatting.h"
 #include "../advanced/lsp/lsp-features/lsp_signature_help.h"
 #include "../advanced/lsp/lsp_dispatcher.h"
@@ -188,6 +189,10 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
     case CTRL('R'):
       askFormatting(fc);
       break;
+    case CTRL('f'):
+      askCodeAction(fc, cursor);
+      break;
+
     case H_KEY_BEGIN:
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_LEFT);
       *cursor = goToBegin(*cursor);

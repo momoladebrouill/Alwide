@@ -341,6 +341,34 @@ void gui_printSignatureHelpPopup(EDW_GUIContext* context, Cursor* cursor, LSP_Co
 }
 
 
+void gui_printCodeActionPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* lsp_data) {
+  if (lsp_data == NULL) return;
+  int width = getmaxx(context->pow), height = getmaxy(context->pow);
+  werase(context->pow);
+  box(context->pow, 0, 0);
+
+  for (int i = 0; i < height - 2; i++) {
+    int index = context->item_select_offset_y + i;
+    if (index >= lsp_data->code_actions_size) break;
+
+    LSP_CodeAction* action = &lsp_data->code_actions[index];
+    if (context->item_selected == index) {
+      wattr_set(context->pow, A_BOLD, INFO_COLOR_HOVER_PAIR, NULL);
+    } else if (action->isPreferred) {
+      wattr_set(context->pow, A_BOLD, INFO_COLOR_PAIR, NULL);
+    } else {
+      wattr_set(context->pow, A_NORMAL, INFO_COLOR_PAIR, NULL);
+    }
+
+    // Prefix with indicator
+    mvwprintw(context->pow, i + 1, 1, action->isPreferred ? "* " : "  ");
+    printToWindow(context->pow, action->title, strlen(action->title), 3, i + 1, width - 4, 0);
+
+    wattr_set(context->pow, A_NORMAL, INFO_COLOR_PAIR, NULL);
+  }
+}
+
+
 void gui_printPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* lsp_data) {
   switch (context->pow_owner) {
     case COMPLETION:
@@ -354,6 +382,9 @@ void gui_printPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* l
       break;
     case SIGNATURE_HELP:
       gui_printSignatureHelpPopup(context, cursor, lsp_data);
+      break;
+    case CODE_ACTION:
+      gui_printCodeActionPopup(context, cursor, lsp_data);
       break;
     default:
       break;
@@ -520,6 +551,73 @@ bool gui_handleGotoChoiceInput(GUIContext* context, FileContainer* fc, int c_has
   return false;
 }
 
+#include "../../advanced/lsp/lsp-features/lsp_code_action.h"
+
+bool gui_handleCodeActionInput(GUIContext* context, FileContainer* fc, int c_hash, int c_raw,
+                               PayloadStateChange payload_state_change, ModuleContext* payload, MEVENT* m_event) {
+  LSP_ComputedData* lsp_data = fc->lsp_datas.computed;
+  int height = getmaxy(context->edw_context.pow) - 2;
+
+  if (c_hash == KEY_MOUSE && m_event != NULL) {
+    int item_count = lsp_data->code_actions_size;
+    if (m_event->bstate & BUTTON4_PRESSED) {
+      if (context->edw_context.item_select_offset_y > 0) {
+        context->edw_context.item_select_offset_y--;
+        gui_updateEDW(context);
+      }
+    } else if (m_event->bstate & BUTTON5_PRESSED) {
+      if (context->edw_context.item_select_offset_y + height < item_count) {
+        context->edw_context.item_select_offset_y++;
+        gui_updateEDW(context);
+      }
+    } else if (m_event->bstate & (BUTTON1_PRESSED | BUTTON1_CLICKED)) {
+      int clicked_item = context->edw_context.item_select_offset_y + (m_event->y - getbegy(context->edw_context.pow) - 1);
+      if (clicked_item >= 0 && clicked_item < item_count) {
+        context->edw_context.item_selected = clicked_item;
+        gui_updateEDW(context);
+      }
+    }
+
+    if (m_event->bstate & BUTTON1_DOUBLE_CLICKED) {
+      int clicked_item = context->edw_context.item_select_offset_y + (m_event->y - getbegy(context->edw_context.pow) - 1);
+      if (clicked_item >= 0 && clicked_item < item_count) {
+        executeCodeAction(fc, &fc->cursor, &lsp_data->code_actions[clicked_item], payload);
+        gui_closePopup(context);
+      }
+    }
+    return true;
+  }
+
+  switch (c_hash) {
+    case H_KEY_UP:
+      if (context->edw_context.item_selected > 0) {
+        context->edw_context.item_selected--;
+        if (context->edw_context.item_selected < context->edw_context.item_select_offset_y) {
+          context->edw_context.item_select_offset_y = context->edw_context.item_selected;
+        }
+        gui_updateEDW(context);
+      }
+      return true;
+    case H_KEY_DOWN:
+      if (context->edw_context.item_selected < lsp_data->code_actions_size - 1) {
+        context->edw_context.item_selected++;
+        if (context->edw_context.item_selected >= context->edw_context.item_select_offset_y + height) {
+          context->edw_context.item_select_offset_y = context->edw_context.item_selected - height + 1;
+        }
+        gui_updateEDW(context);
+      }
+      return true;
+    case '\n':
+    case KEY_ENTER:
+      if (context->edw_context.item_selected < lsp_data->code_actions_size) {
+        executeCodeAction(fc, &fc->cursor, &lsp_data->code_actions[context->edw_context.item_selected], payload);
+        gui_closePopup(context);
+      }
+      return true;
+  }
+  return false;
+}
+
 bool gui_handlePopupInput(GUIContext* context, FileContainer* fc, int c_raw, int c_hash,
                           PayloadStateChange payload_state_change, ModuleContext* payload, MEVENT* m_event) {
   if (context->edw_context.show_pow == false || context->edw_context.pow == NULL) {
@@ -537,6 +635,8 @@ bool gui_handlePopupInput(GUIContext* context, FileContainer* fc, int c_raw, int
       return gui_handleGotoChoiceInput(context, fc, c_hash, c_raw, payload_state_change, payload, m_event);
     case SIGNATURE_HELP:
       return false; // Let the editor handle typing, which will trigger updates
+    case CODE_ACTION:
+      return gui_handleCodeActionInput(context, fc, c_hash, c_raw, payload_state_change, payload, m_event);
     default:
       break;
   }
