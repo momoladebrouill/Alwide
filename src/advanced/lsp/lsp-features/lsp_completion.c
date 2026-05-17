@@ -7,8 +7,8 @@
 #include "../../../io-management/viewport_history.h"
 #include "../../../terminal/windows/edw.h"
 #include "../../../terminal/windows/pow.h"
-#include "lsp_signature_help.h"
 #include "lsp_code_action.h"
+#include "lsp_signature_help.h"
 #include "lsp_tools.h"
 
 
@@ -97,26 +97,31 @@ void executeLSPCompletion(Cursor* cursor, LSP_CompletionItem* item, History** hi
 
 void askCompletion(GUIContext* gui_context, FileContainer* fc, bool reset, bool force) {
   if (fc->lsp_datas.is_enable) {
+
+    // check if the askCompletion have to be replaced by a askSignature.
     if (hasElementBeforeLine(fc->cursor.line_id)) {
       Char_U8 u8 = getCharAtCursor(skipLeftInvisibleChar(fc->cursor));
-
-      if (areChar_U8Equals(u8, readChar_U8FromCharArray("(")) ||
-        areChar_U8Equals(u8, readChar_U8FromCharArray(","))) {
+      if (areChar_U8Equals(u8, readChar_U8FromCharArray("(")) || areChar_U8Equals(u8, readChar_U8FromCharArray(","))) {
         askSignatureHelp(fc, &fc->cursor);
         return;
       }
-
     }
+
+    // Don't override signature help for non forced trigger.
     if (!force && gui_context->edw_context.pow_owner == SIGNATURE_HELP) {
       return;
     }
+
+    // if it's not a force don't auto trigger if it's not before a word.
     if (!force && !isAfterAWord(&fc->cursor)) {
       LSP_destroyCompletionList(&fc->lsp_datas.computed->completions);
       gui_closePopup(gui_context);
       return;
     }
+
     if (reset) {
       LSP_destroyCompletionList(&fc->lsp_datas.computed->completions);
+      // TODO clean the following code
       // Clean previous actions too
       for (int i = 0; i < fc->lsp_datas.computed->code_actions_size; i++) {
         LSP_destroyCodeAction(fc->lsp_datas.computed->code_actions + i);
@@ -126,19 +131,19 @@ void askCompletion(GUIContext* gui_context, FileContainer* fc, bool reset, bool 
       fc->lsp_datas.computed->code_actions_size = 0;
     }
 
+    // TODO extract the following code to an independant method we shouldn't have logic like this in this function.
     // Smart Assist: Also request Code Actions if there are diagnostics on this line
     LSP_ComputedData* computed = fc->lsp_datas.computed;
     int lsp_row = cursor_row(fc->cursor) - 1;
     bool has_diag = false;
     for (int i = 0; i < computed->diagnostics_size; i++) {
-        if (computed->diagnostics[i].range.pos1.row <= lsp_row && 
-            computed->diagnostics[i].range.pos2.row >= lsp_row) {
-            has_diag = true;
-            break;
-        }
+      if (computed->diagnostics[i].range.pos1.row <= lsp_row && computed->diagnostics[i].range.pos2.row >= lsp_row) {
+        has_diag = true;
+        break;
+      }
     }
     if (has_diag) {
-        askCodeAction(fc, &fc->cursor);
+      askCodeAction(fc, &fc->cursor);
     }
 
     LSP_requestCompletion(getLSPServerForLanguage(&lsp_servers, fc->lsp_datas.lang_id), fc->lsp_datas.path_abs,
@@ -158,8 +163,7 @@ void receiveCompletionData(cJSON* packet, FileContainer* file, ViewPort* view_po
   LSP_getCompletionListFromJSON(LSP_getPacketResult(packet), &file->lsp_datas.computed->completions);
 
   // if there is no data we close the popup
-  if (file->lsp_datas.computed->completions.completions.size == 0 &&
-      file->lsp_datas.computed->code_actions_size == 0) {
+  if (file->lsp_datas.computed->completions.completions.size == 0 && file->lsp_datas.computed->code_actions_size == 0) {
     if (view_port->gui->edw_context.pow_owner == COMPLETION) {
       gui_closePopup(view_port->gui);
     }

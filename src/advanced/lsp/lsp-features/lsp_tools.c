@@ -61,7 +61,7 @@ void applyWorkspaceEdit(FileContainer* fc, Cursor* cursor, LSP_WorkspaceEdit* ws
     LSP_TextDocumentEdit* doc_edit = &ws_edit->document_changes[i];
     
     // For now, we only apply edits if they match the current file.
-    // In the future, we could find the FileContainer by text_document.file_name URI.
+    // TODO In the future, we could find the FileContainer by text_document.file_name URI. !! REALLY important !!
     if (strcmp(doc_edit->text_document.file_name, fc->io_file.path_abs) == 0) {
       applyTextEditsArray(cursor, doc_edit->edits, doc_edit->edits_count, &fc->history_frame, payload_state_change);
     }

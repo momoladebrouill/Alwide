@@ -7,10 +7,6 @@
 #include "../../../terminal/windows/pow.h"
 #include "lsp_tools.h"
 
-/**
- * Processes the response from 'textDocument/codeAction'.
- * Parses the available actions and opens the TUI selection popup.
- */
 void receiveCodeActionData(cJSON* packet, FileContainer* file, ModuleContext* data) {
   cJSON* result = cJSON_GetObjectItem(packet, "result");
   if (result == NULL || cJSON_IsNull(result)) {
@@ -18,14 +14,14 @@ void receiveCodeActionData(cJSON* packet, FileContainer* file, ModuleContext* da
   }
 
   LSP_ComputedData* computed = file->lsp_datas.computed;
-  
-  // 1. Clean up old code actions before storing new ones
+
+  // Clean up old code actions before storing new ones
   for (int i = 0; i < computed->code_actions_size; i++) {
     LSP_destroyCodeAction(computed->code_actions + i);
   }
   free(computed->code_actions);
 
-  // 2. Parse new actions from JSON
+  // Parse new actions from JSON
   computed->code_actions_size = cJSON_GetArraySize(result);
   if (computed->code_actions_size == 0) {
     computed->code_actions = NULL;
@@ -43,30 +39,31 @@ void receiveCodeActionData(cJSON* packet, FileContainer* file, ModuleContext* da
     computed->code_actions[i] = LSP_getCodeActionFromJSON(cJSON_GetArrayItem(result, i));
   }
 
-  // 3. Update UI if COMPLETION popup is active, or open it if it's a direct code action request
+  // Update UI if COMPLETION popup is active, or open it if it's a direct code action request
   if (data->view_port.gui->edw_context.pow_owner == COMPLETION && data->view_port.gui->edw_context.show_pow) {
-      gui_updateEDW(data->view_port.gui);
-  } else {
-      ViewPort view_port = viewPortOf(data->view_port.gui, &file->screen_x, &file->screen_y);
-      // We use COMPLETION owner for the unified list
-      gui_showGenericPopupWithTextAnchor(&view_port, data->cursor, computed->code_actions_size + 2, 45, COMPLETION);
-      gui_updateEDW(data->view_port.gui);
+    gui_updateEDW(data->view_port.gui);
+  }
+  else {
+    ViewPort view_port = viewPortOf(data->view_port.gui, &file->screen_x, &file->screen_y);
+    // We use COMPLETION owner for the unified list
+    gui_showGenericPopupWithTextAnchor(&view_port, data->cursor, computed->code_actions_size + 2, 45, COMPLETION);
+    gui_updateEDW(data->view_port.gui);
   }
 }
 
-/**
- * Initiates a code action request.
- * Gathers diagnostics on the current line to provide context to the LSP server.
- */
 void askCodeAction(FileContainer* file, Cursor* cursor) {
-  if (!file->lsp_datas.is_enable) return;
+  if (!file->lsp_datas.is_enable) {
+    return;
+  }
 
   LSP_Server* lsp = getLSPServerForLanguage(&lsp_servers, file->lsp_datas.lang_id);
-  if (lsp == NULL) return;
+  if (lsp == NULL) {
+    return;
+  }
 
   LSP_ComputedData* computed = file->lsp_datas.computed;
   int lsp_row = cursor_row(*cursor) - 1;
-  
+
   // Gathers up to 10 diagnostics overlapping the current line to help the server
   // find relevant quick-fixes.
   LSP_Diagnostic context_diags[10];
@@ -85,23 +82,21 @@ void askCodeAction(FileContainer* file, Cursor* cursor) {
   LSP_requestCodeAction(lsp, file->io_file.path_abs, range, context_diags, diags_count);
 }
 
-/**
- * Finalizes the code action by applying its WorkspaceEdit.
- * delegates actual text manipulation to lsp_tools.c.
- */
 void executeCodeAction(FileContainer* fc, Cursor* cursor, LSP_CodeAction* action, ModuleContext* data) {
-  if (!action) return;
+  if (!action) {
+    return;
+  }
 
   if (action->has_edit) {
-      // Apply the WorkspaceEdit (handled in lsp_tools.c to support multi-edit/multi-file shifts)
-      applyWorkspaceEdit(fc, cursor, &action->edit, data->payload_state_change);
+    // Apply the WorkspaceEdit
+    applyWorkspaceEdit(fc, cursor, &action->edit, data->payload_state_change);
   }
-  
+
   if (action->has_command) {
-      LSP_Server* lsp = getLSPServerForLanguage(&lsp_servers, fc->lsp_datas.lang_id);
-      if (lsp) {
-          LSP_requestExecuteCommand(lsp, fc->io_file.path_abs, &action->command);
-      }
+    LSP_Server* lsp = getLSPServerForLanguage(&lsp_servers, fc->lsp_datas.lang_id);
+    if (lsp) {
+      LSP_requestExecuteCommand(lsp, fc->io_file.path_abs, &action->command);
+    }
   }
 
   gui_updateEDW(data->view_port.gui);
