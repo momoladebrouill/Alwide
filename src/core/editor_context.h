@@ -35,4 +35,7 @@ typedef struct {
   clock_t t_clock;
 } EditorContext;
 
+FileContainer* getActiveFile(EditorContext* ctx);
+
+
 #endif // WISHWIM_EDITOR_CONTEXT_H

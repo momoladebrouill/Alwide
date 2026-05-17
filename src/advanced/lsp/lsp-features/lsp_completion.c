@@ -97,11 +97,14 @@ void executeLSPCompletion(Cursor* cursor, LSP_CompletionItem* item, History** hi
 void askCompletion(GUIContext* gui_context, FileContainer* fc, bool reset, bool force) {
   if (fc->lsp_datas.is_enable) {
     if (hasElementBeforeLine(fc->cursor.line_id)) {
-      Char_U8 u8 = getCharAtCursor(fc->cursor);
-      if (areChar_U8Equals(u8, readChar_U8FromCharArray("("))) {
+      Char_U8 u8 = getCharAtCursor(skipLeftInvisibleChar(fc->cursor));
+
+      if (areChar_U8Equals(u8, readChar_U8FromCharArray("(")) ||
+        areChar_U8Equals(u8, readChar_U8FromCharArray(","))) {
         askSignatureHelp(fc, &fc->cursor);
         return;
       }
+
     }
     if (!force && gui_context->edw_context.pow_owner == SIGNATURE_HELP) {
       return;

@@ -62,6 +62,14 @@ void readNextInput(EditorContext* ctx, int* out_c, int* out_hash) {
   *out_hash = hash;
 }
 
+void askOnCharTypeInfo(EditorContext* ctx, int c, FileContainer* fc, Cursor* cursor) {
+  bool hasAsked = askSignatureHelpOnChar(ctx, c, fc, cursor); // priority 1
+  if (hasAsked) {
+    return;
+  }
+  askCompletion(&ctx->gui_context, fc, false, false); // priority 2
+}
+
 EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
   FileContainer* fc = &ctx->files[ctx->current_file_index];
 
@@ -270,11 +278,17 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       break;
     case H_KEY_CTRL_DELETE:
     case CTRL('H'):
-      setSelectCursorOn(*cursor, select_cursor);
-      *cursor = moveToPreviousWord(*cursor);
-      deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
-      setDesiredColumn(*cursor, desired_column);
-      askCompletion(&ctx->gui_context, fc, false, false);
+      {
+        setSelectCursorOn(*cursor, select_cursor);
+        *cursor = moveToPreviousWord(*cursor);
+        bool need_reask_signature = adaptSignatureHelpOnDelete(*cursor, *select_cursor, lsp_data, ctx);
+        deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
+        setDesiredColumn(*cursor, desired_column);
+        if (need_reask_signature) {
+          askSignatureHelp(getActiveFile(ctx), cursor);
+        }
+        askCompletion(&ctx->gui_context, fc, false, false);
+      }
       break;
     case '\n':
     case KEY_ENTER:
@@ -287,13 +301,18 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       askOnTypeFormatting(fc, "\n", &lsp_ctx);
       break;
     case H_KEY_DELETE:
-      if (cursor_is_disabled(*select_cursor)) {
-        *select_cursor = moveLeft(*cursor);
-        adaptSignatureHelp(cursor, lsp_data);
+      {
+        if (cursor_is_disabled(*select_cursor)) {
+          *select_cursor = moveLeft(*cursor);
+        }
+        bool need_reask_signature = adaptSignatureHelpOnDelete(*cursor, *select_cursor, lsp_data, ctx);
+        deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
+        setDesiredColumn(*cursor, desired_column);
+        if (need_reask_signature) {
+          askSignatureHelp(getActiveFile(ctx), cursor);
+        }
+        askCompletion(&ctx->gui_context, fc, false, false);
       }
-      deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
-      setDesiredColumn(*cursor, desired_column);
-      askCompletion(&ctx->gui_context, fc, false, false);
       break;
     case H_KEY_SUPPR:
       if (cursor_is_disabled(*select_cursor)) {
@@ -365,14 +384,8 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
         if (ctx->gui_context.edw_context.pow_owner == DIAGNOSTICS) {
           gui_closePopup(&ctx->gui_context);
         }
-        askCompletion(&ctx->gui_context, fc, false, false);
         askOnTypeFormatting(fc, u8.t, &lsp_ctx);
-        if (c == '(' || c == ',') {
-          askSignatureHelp(fc, cursor);
-        }
-        else if (c == ')' && ctx->gui_context.edw_context.pow_owner == SIGNATURE_HELP) {
-          gui_closePopup(&ctx->gui_context);
-        }
+        askOnCharTypeInfo(ctx, c, fc, cursor);
       }
       break;
   }

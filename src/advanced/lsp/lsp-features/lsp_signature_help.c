@@ -113,11 +113,54 @@ void askSignatureHelp(FileContainer* file, Cursor* cursor) {
 }
 
 
-void adaptSignatureHelp(Cursor* cursor, LSP_Data* lsp_data) {
-  if (lsp_data->is_enable && cursor_col(*cursor) != 0) {
-    Char_U8 u8 = getCharAtCursor(*cursor);
-    if (areChar_U8Equals(u8, readChar_U8FromCharArray(",")) && lsp_data->computed->signature_help.activeParameter > 0) {
-      lsp_data->computed->signature_help.activeParameter--;
+bool adaptSignatureHelpOnDelete(Cursor cursor, Cursor select_cursor, LSP_Data* lsp_data, EditorContext* ctx) {
+  if (!lsp_data->is_enable) {
+    return false;
+  }
+
+  if (ctx->gui_context.edw_context.pow_owner != SIGNATURE_HELP) {
+    return false;
+  }
+
+  if (!cursor_le(select_cursor, cursor)) {
+    Cursor tmp = select_cursor;
+    select_cursor = cursor;
+    cursor = tmp;
+  }
+
+  // DELETE_ONE Action
+  if (cursor_eq(select_cursor, moveLeft(cursor))) {
+
+    // assert that we have a char under the cursor.
+    if (cursor_col(cursor) != 0) {
+      Char_U8 u8 = getCharAtCursor(cursor);
+
+      if (areChar_U8Equals(u8, readChar_U8FromCharArray(",")) &&
+          lsp_data->computed->signature_help.activeParameter > 0) {
+        // We detect that it
+        lsp_data->computed->signature_help.activeParameter--;
+        return true;
+      }
+
+      if (areChar_U8Equals(u8, readChar_U8FromCharArray("("))) {
+        gui_closePopup(&ctx->gui_context);
+      }
+
     }
   }
+
+  return false;
+}
+
+bool askSignatureHelpOnChar(EditorContext* ctx, int c, FileContainer* fc, Cursor* cursor) {
+  if (c == '(' || c == ',') {
+    askSignatureHelp(fc, cursor);
+    return true;
+  }
+
+  if (c == ')' && ctx->gui_context.edw_context.pow_owner == SIGNATURE_HELP) {
+    gui_closePopup(&ctx->gui_context);
+  }
+
+  return false;
 }

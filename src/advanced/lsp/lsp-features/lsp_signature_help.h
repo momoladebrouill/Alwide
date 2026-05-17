@@ -8,7 +8,8 @@ void receiveSignatureHelpData(cJSON* packet, FileContainer* file, GUIContext* gu
 
 void askSignatureHelp(FileContainer* file, Cursor* cursor);
 
-void adaptSignatureHelp(Cursor* cursor, LSP_Data* lsp_data);
+bool adaptSignatureHelpOnDelete(Cursor cursor, Cursor select_cursor, LSP_Data* lsp_data, EditorContext* ctx);
 
+bool askSignatureHelpOnChar(EditorContext* ctx, int c, FileContainer* fc, Cursor* cursor);
 
 #endif // LSP_SIGNATURE_HELP_H
