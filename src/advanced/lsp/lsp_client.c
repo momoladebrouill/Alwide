@@ -933,6 +933,9 @@ void LSP_initDiagnosticList(LSP_DiagnosticList* list) {
 }
 
 void LSP_destroyDiagnosticList(LSP_DiagnosticList* list) {
+  if (!list) {
+    return;
+  }
   if (list->items) {
     for (int i = 0; i < list->size; i++) {
       LSP_destroyDiagnostic(list->items + i);
@@ -949,6 +952,9 @@ void LSP_initCodeActionList(LSP_CodeActionList* list) {
 }
 
 void LSP_destroyCodeActionList(LSP_CodeActionList* list) {
+  if (!list) {
+    return;
+  }
   if (list->items) {
     for (int i = 0; i < list->size; i++) {
       LSP_destroyCodeAction(list->items + i);
@@ -1284,6 +1290,9 @@ void LSP_destroyCompletionItem(LSP_CompletionItem* item) {
 
 
 void LSP_destroyCompletionList(LSP_CompletionList* completion_list) {
+  if (!completion_list) {
+    return;
+  }
   for (int i = 0; i < completion_list->completions.size; i++) {
     LSP_destroyCompletionItem(completion_list->completions.items + i);
   }
@@ -1369,6 +1378,9 @@ void LSP_getMarkedStringFromJSON(cJSON* json, LSP_MarkedString* item) {
 }
 
 void LSP_destroyHover(LSP_Hover* hover_list) {
+  if (!hover_list) {
+    return;
+  }
   if (hover_list->contents) {
     free(hover_list->contents);
     hover_list->contents = NULL;

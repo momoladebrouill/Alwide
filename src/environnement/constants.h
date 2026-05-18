@@ -1,5 +1,5 @@
-#ifndef CONTANTS_H
-#define CONTANTS_H
+#ifndef CONSTANTS_H
+#define CONSTANTS_H
 
 #define SHOW_ERROR true
 
@@ -44,4 +44,4 @@
 extern int color_index;
 extern int color_pair;
 
-#endif // CONTANTS_H
+#endif

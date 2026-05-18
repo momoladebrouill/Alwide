@@ -34,6 +34,9 @@ void destroyLspDatas(LSP_Data* lsp_datas) {
 }
 
 void LSP_destroyComputedData(LSP_ComputedData* lsp_payload) {
+  if (!lsp_payload) {
+    return;
+  }
   // free diagnostics
   LSP_destroyDiagnosticList(&lsp_payload->diagnostics);
 
