@@ -189,9 +189,9 @@ void testUnitUtf8Extractor() {
 }
 
 
-int charPrintSize(Char_U8 ch) {
+int charPrintSize(Char_U8 ch, int tab_size) {
   if (ch.t[0] == '\t') {
-    return TAB_SIZE;
+    return tab_size;
   }
 
   if (sizeChar_U8(ch) == 1) // If char is ascii avoid convert and call wcwidth we can instant return size 1. Will not

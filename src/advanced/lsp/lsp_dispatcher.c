@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <libgen.h>
 
 #include "../../utils/tools.h"
 #include "../../terminal/term_handler.h"
@@ -85,6 +86,24 @@ int getIndexFileContainerForUri(ModuleContext* payload, cJSON* params) {
 
   char decoded_path[PATH_MAX];
   decodeURI(uri, decoded_path, PATH_MAX);
+
+  char canonical_path[PATH_MAX];
+  if (realpath(decoded_path, canonical_path) != NULL) {
+    return getIndexFileContainerForName(payload, canonical_path);
+  }
+
+  // If realpath fails (e.g. file doesn't exist), try to canonicalize the directory
+  char path_copy[PATH_MAX];
+  strncpy(path_copy, decoded_path, PATH_MAX);
+  char* dname = dirname(path_copy);
+  char dir_abs[PATH_MAX];
+  if (realpath(dname, dir_abs) != NULL) {
+    char bname_copy[PATH_MAX];
+    strncpy(bname_copy, decoded_path, PATH_MAX);
+    char* bname = basename(bname_copy);
+    snprintf(canonical_path, PATH_MAX, "%s/%s", dir_abs, bname);
+    return getIndexFileContainerForName(payload, canonical_path);
+  }
 
   return getIndexFileContainerForName(payload, decoded_path);
 }

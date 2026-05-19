@@ -10,7 +10,7 @@ void gui_initEDWContext(EDW_GUIContext* context);
 void gui_resizeEDW(GUIContext* gui_context, int lnw_new_width);
 
 void gui_repaintEDW(EDW_GUIContext* context, Cursor cursor, Cursor select_cursor, int screen_x, int screen_y,
-                    WindowHighlightDescriptor* highlight_descriptor, LSP_ComputedData* lsp_data);
+                    WindowHighlightDescriptor* highlight_descriptor, LSP_ComputedData* lsp_data, int tab_size);
 
 int getEDW_LengthLineNumber(GUIContext* gui_context);
 

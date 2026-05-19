@@ -10,6 +10,8 @@
 
 #include "../advanced/lsp/lsp-features/lsp_code_action.h"
 #include "../advanced/lsp/lsp-features/lsp_completion.h"
+#include "../advanced/intelligence/auto_pairs.h"
+#include "../advanced/intelligence/comments.h"
 #include "../advanced/lsp/lsp-features/lsp_formatting.h"
 #include "../advanced/lsp/lsp-features/lsp_signature_help.h"
 #include "../advanced/lsp/lsp_dispatcher.h"
@@ -26,10 +28,11 @@
 #include "editor_lsp.h"
 
 
-bool handlePopupInput(EditorContext* ctx, int c, int hash, ModuleContext* payload) {
+bool handlePopupInput(EditorContext* ctx, int c, int hash) {
+  ModuleContext payload = buildModuleContext(ctx);
   FileContainer* fc = &ctx->files[ctx->current_file_index];
   MEVENT* mouse_event = (hash == KEY_MOUSE) ? &ctx->m_event : NULL;
-  return gui_handlePopupInput(&ctx->gui_context, fc, c, hash, ctx->payload_state_change, payload, mouse_event);
+  return gui_handlePopupInput(&ctx->gui_context, fc, c, hash, ctx->payload_state_change, &payload, mouse_event);
 }
 
 void readNextInput(EditorContext* ctx, int* out_c, int* out_hash) {
@@ -219,7 +222,8 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       break;
     case CTRL('z'):
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_LEFT);
-      *cursor = undo(history_frame, *cursor, globalOnStageChange, (long*)&ctx->payload_state_change);
+      *cursor = undo(history_frame, *cursor, globalOnStageChange, (long*)&ctx->payload_state_change,
+                    fc->feature->tabulation.size, fc->feature->tabulation.use_space);
       ctx->old_history_frame = NULL;
       setDesiredColumn(*cursor, desired_column);
       gui_updateEDW(&ctx->gui_context);
@@ -227,7 +231,8 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       break;
     case CTRL('y'):
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_LEFT);
-      *cursor = redo(history_frame, *cursor, globalOnStageChange, (long*)&ctx->payload_state_change);
+      *cursor = redo(history_frame, *cursor, globalOnStageChange, (long*)&ctx->payload_state_change,
+                    fc->feature->tabulation.size, fc->feature->tabulation.use_space);
       ctx->old_history_frame = NULL;
       setDesiredColumn(*cursor, desired_column);
       gui_updateEDW(&ctx->gui_context);
@@ -249,10 +254,14 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
     case CTRL('v'):
       deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
       tmp = cursor_to_desc(*cursor);
-      *cursor = loadFromClipBoard(*cursor);
+      *cursor = loadFromClipBoard(fc);
       saveAction(history_frame, createInsertAction(*cursor, tmp), globalOnStageChange, cursor,
                  (long*)&ctx->payload_state_change);
       setDesiredColumn(*cursor, desired_column);
+      break;
+    case 0x1F: // CTRL('/') or CTRL('_')
+      ft_toggleComments(fc, history_frame, &ctx->payload_state_change);
+      gui_updateEDW(&ctx->gui_context);
       break;
     case CTRL('q'):
       return EVENT_QUIT;
@@ -333,11 +342,11 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
     case KEY_TAB:
       deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
       tmp = cursor_to_desc(*cursor);
-      if (TAB_CHAR_USE) {
+      if (!fc->feature->tabulation.use_space) {
         *cursor = insertCharInLineC(*cursor, readChar_U8FromInput('\t'));
       }
       else {
-        for (int i = 0; i < TAB_SIZE; i++) {
+        for (int i = 0; i < fc->feature->tabulation.size; i++) {
           *cursor = insertCharInLineC(*cursor, readChar_U8FromInput(' '));
         }
       }
@@ -376,10 +385,17 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
         deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
         tmp = cursor_to_desc(*cursor);
         Char_U8 u8 = readChar_U8FromInput(c);
-        *cursor = insertCharInLineC(*cursor, u8);
-        setDesiredColumn(*cursor, desired_column);
-        saveAction(history_frame, createInsertAction(*cursor, tmp), globalOnStageChange, cursor,
-                   (long*)&ctx->payload_state_change);
+        
+        if (!ft_handleAutoPairs(fc, u8, history_frame, ctx->payload_state_change)) {
+          *cursor = insertCharInLineC(*cursor, u8);
+          setDesiredColumn(*cursor, desired_column);
+          saveAction(history_frame, createInsertAction(*cursor, tmp), globalOnStageChange, cursor,
+                     (long*)&ctx->payload_state_change);
+        }
+        else {
+          setDesiredColumn(*cursor, desired_column);
+        }
+
         if (ctx->gui_context.edw_context.pow_owner == DIAGNOSTICS) {
           gui_closePopup(&ctx->gui_context);
         }

@@ -45,6 +45,7 @@ bool LSP_openLSPServer(char* name, char* command_args, char* language, LSP_Serve
   server->request_id = 0;
   server->response_contexts = NULL;
   server->pending_packets = NULL;
+  server->is_init_done = false;
   pthread_mutex_init(&server->initDone, NULL);
   pthread_mutex_lock(&server->initDone);
   pthread_mutex_init(&server->pending_lock, NULL);
@@ -230,7 +231,14 @@ cJSON* LSP_readPacketAsJSON(LSP_Server* server, bool block) {
     return NULL;
   }
   char* content_str = LSP_readPacket(server);
+  if (content_str == NULL) {
+    return NULL;
+  }
   cJSON* at_return = cJSON_Parse(content_str);
+  if (at_return == NULL) {
+    free(content_str);
+    return NULL;
+  }
   if (LSP_getPacketType(at_return) != LSP_RESPONSE) {
     if (strcmp("window/logMessage", LSP_getPacketMethod(at_return)) == 0) {
       cJSON* message_obj = cJSON_GetObjectItem(LSP_getNotificationParams(at_return), "message");
@@ -589,6 +597,7 @@ void LSP_initializeServer(LSP_Server* lsp, char* client_name, char* client_versi
   free(init_text);
 
   cJSON_Delete(content);
+  lsp->is_init_done = true;
   pthread_mutex_unlock(&lsp->initDone);
 
   // Flush pending packet to send
@@ -1487,7 +1496,7 @@ void LSP_destroySignatureHelp(LSP_SignatureHelp* help) {
 
 bool LSP_dispatchOnReceive(LSP_Server* lsp, void (*dispatcher)(cJSON* packet, LSP_Server* lsp, void* payload),
                            void* payload) {
-  if (lsp == NULL) {
+  if (lsp == NULL || !lsp->is_init_done) {
     return false;
   }
 

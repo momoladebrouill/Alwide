@@ -57,6 +57,7 @@ typedef struct {
 
   // Internal wait
   pthread_mutex_t initDone;
+  bool is_init_done;
   LSP_PendingPacket* pending_packets;
   pthread_mutex_t pending_lock;
 

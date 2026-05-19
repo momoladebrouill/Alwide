@@ -5,6 +5,7 @@
 #include "advanced/lsp/lsp_dispatcher.h"
 #include "advanced/tree-sitter/tree_manager.h"
 #include "config/config.h"
+#include "config/language_feature.h"
 #include "data-management/file_management.h"
 #include "environnement/global_variables.h"
 #include "io-management/workspace_settings.h"
@@ -41,6 +42,8 @@ int main(int file_count, char** args) {
   /// --- Init global vars ---
   // Load config
   config = loadConfig();
+  // Load language features
+  ft_loadLanguageFeatures();
   // Parser Datas
   initParserList(&parsers);
   // LSP Datas
@@ -81,11 +84,8 @@ int main(int file_count, char** args) {
 
     //// ---- BEGIN background / delayed operations BLOCK ----
 
-    // build module context from editor ctx
-    ModuleContext module_ctx = buildModuleContext(&ctx);
-
     // handle lsp servers
-    handleLspServers(&module_ctx, &c, &hash);
+    handleLspServers(&ctx, &c, &hash);
 
     // if lsp ask to refresh local_vars we have to execute post processing
     if (ctx.refresh_local_vars) {
@@ -113,7 +113,7 @@ int main(int file_count, char** args) {
     EventLoopAction loopEnd = EVENT_READ_INPUT;
 
     // first dispatch input to popup.
-    bool has_popup_handle_input = handlePopupInput(&ctx, c, hash, &module_ctx);
+    bool has_popup_handle_input = handlePopupInput(&ctx, c, hash);
 
     // if popup hasn't consumed the input execute global key handling
     if (!has_popup_handle_input) {

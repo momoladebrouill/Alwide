@@ -9,8 +9,9 @@
 #include "../../shared.h"
 #include "../lsp_client.h"
 
+// TODO prefer pass the ft_Tabulation pointer instead of attributes
 void executeLSPCompletion(Cursor* cursor, LSP_CompletionItem* item, History** history_p,
-                          PayloadStateChange payload_state_change);
+                          PayloadStateChange payload_state_change, int tab_size, bool use_space);
 
 
 void askCompletion(GUIContext* gui_context, FileContainer* fc, bool reset, bool force);

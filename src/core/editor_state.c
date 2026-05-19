@@ -24,7 +24,8 @@ void runPostProcessing(EditorContext* ctx) {
       }
     }
     fc->old_cur = fc->cursor;
-    moveScreenToMatchCursor(&ctx->gui_context, fc->cursor, &fc->screen_x, &fc->screen_y);
+    moveScreenToMatchCursor(&ctx->gui_context, fc->cursor, &fc->screen_x, &fc->screen_y,
+                            fc->feature->tabulation.size);
     gui_updateEDW(&ctx->gui_context);
   }
 

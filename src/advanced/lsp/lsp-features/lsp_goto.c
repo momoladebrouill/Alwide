@@ -16,7 +16,8 @@ void jumpToLocation(ModuleContext* data, LSP_Location location) {
   // LSP columns are 0-based, WishWim columns are 0-based.
   current->cursor = tryToReachAbsPosition(current->cursor, LSP_0_row_to_1_row(location.range.pos1.row), location.range.pos1.column);
 
-  moveScreenToMatchCursor(data->view_port.gui, current->cursor, &current->screen_x, &current->screen_y);
+  moveScreenToMatchCursor(data->view_port.gui, current->cursor, &current->screen_x, &current->screen_y,
+                          current->feature->tabulation.size);
 }
 
 bool LSP_isPositionInRange(LSP_Position lsp_pos, LSP_Range lsp_range) {
@@ -84,6 +85,6 @@ void receiveGotoData(cJSON* packet, LSP_Server* lsp, FileContainer* file, Module
     jumpToLocation(data, location_array->items[0]);
   }
   else {
-    gui_resumeGotoChoice(&data->view_port, data->cursor);
+    gui_resumeGotoChoice(&data->view_port, data->cursor, file->feature->tabulation.size);
   }
 }

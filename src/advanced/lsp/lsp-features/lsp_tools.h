@@ -7,17 +7,19 @@
 #include "../../shared.h"
 #include "../lsp_client.h"
 
-
+// TODO prefer pass the ft_Tabulation pointer instead of attributes
 void applyTextEdit(Cursor* cursor, LSP_TextEdit* text_edit, History** history_p,
-                   PayloadStateChange payload_state_change);
+                   PayloadStateChange payload_state_change, int tab_size, bool use_space);
 
+
+// TODO prefer pass the ft_Tabulation pointer instead of attributes
 /**
  * Applies an array of text edits to the current cursor/file.
  * Edits are sorted bottom-to-top to ensure offsets remain valid during application.
  * The cursor position is tracked and updated based on the shifts.
  */
 void applyTextEditsArray(Cursor* cursor, LSP_TextEdit* edits, int edits_size, History** history_p,
-                         PayloadStateChange payload_state_change);
+                         PayloadStateChange payload_state_change, int tab_size, bool use_space);
 
 /**
  * Applies a full WorkspaceEdit.

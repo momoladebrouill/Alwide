@@ -42,17 +42,17 @@ bool gui_doesGUINeedRepaint(GUIContext* gui_context);
 
 ////// -------------- UTILS FUNCTIONS --------------
 
-void moveScreenToMatchCursor(GUIContext* context, Cursor cursor, int* screen_x, int* screen_y);
+void moveScreenToMatchCursor(GUIContext* context, Cursor cursor, int* screen_x, int* screen_y, int tab_size);
 
-void centerCursorOnScreen(GUIContext* context, Cursor cursor, int* screen_x, int* screen_y);
+void centerCursorOnScreen(GUIContext* context, Cursor cursor, int* screen_x, int* screen_y, int tab_size);
 
-int getScreenXForCursor(Cursor cursor, int screen_x);
+int getScreenXForCursor(Cursor cursor, int screen_x, int tab_size);
 
-LineIdentifier getLineIdForScreenX(LineIdentifier line_id, int screen_x, int x_click);
+LineIdentifier getLineIdForScreenX(LineIdentifier line_id, int screen_x, int x_click, int tab_size);
 
 void setDesiredColumn(Cursor cursor, int* desired_column);
 
-void printToWindow(WINDOW* w, char* ch, int length, int offset_x, int offset_y, int line_length, int max_line_number);
+void printToWindow(WINDOW* w, char* ch, int length, int offset_x, int offset_y, int line_length, int max_line_number, int tab_size);
 
 
 #endif // NCURSES_HANDLER_H

@@ -44,8 +44,9 @@ LSP_Range getReplaceRange(Cursor* cursor, char insertText[METHOD_MAX_LENGTH]) {
                                cursor->line_id.absolute_column);
 }
 
+// TODO prefer pass the ft_Tabulation pointer instead of attributes
 void executeLSPCompletion(Cursor* cursor, LSP_CompletionItem* item, History** history_p,
-                          PayloadStateChange payload_state_change) {
+                          PayloadStateChange payload_state_change, int tab_size, bool use_space) {
   if (!item->is_text_edit) {
     // copy the text to the edit.
     item->text_edit.new_text = malloc(sizeof(char) * METHOD_MAX_LENGTH);
@@ -66,7 +67,7 @@ void executeLSPCompletion(Cursor* cursor, LSP_CompletionItem* item, History** hi
   }
 
   // Use the robust generic application tool
-  applyTextEditsArray(cursor, all_edits, total_edits_count, history_p, payload_state_change);
+  applyTextEditsArray(cursor, all_edits, total_edits_count, history_p, payload_state_change, tab_size, use_space);
 
   free(all_edits);
 }
@@ -123,7 +124,7 @@ void askCompletion(GUIContext* gui_context, FileContainer* fc, bool reset, bool 
     }
     else {
       ViewPort view_port = viewPortOf(gui_context, &fc->screen_x, &fc->screen_y);
-      gui_showGenericPopupWithTextAnchor(&view_port, &fc->cursor, 7, 50, COMPLETION);
+      gui_showGenericPopupWithTextAnchor(&view_port, &fc->cursor, 7, 50, COMPLETION, fc->feature->tabulation.size);
     }
   }
 }
@@ -140,5 +141,5 @@ void receiveCompletionData(cJSON* packet, FileContainer* file, ViewPort* view_po
     return;
   }
 
-  gui_resumeCompletionTextAnchor(view_port, cursor);
+  gui_resumeCompletionTextAnchor(view_port, cursor, file->feature->tabulation.size);
 }

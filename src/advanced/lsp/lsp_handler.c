@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-
+#include "../../config/language_feature.h"
 #include "../../environnement/global_variables.h"
 #include "../../utils/tools.h"
 
@@ -116,76 +116,13 @@ void addLSPServerCellToLSPServerList(LSPServerLinkedList* list, LSPServerLinkedL
 }
 
 bool getProgName(char* language, char* prog_name, char* args) {
-  // LSP_TOGGLE
-  // return false;
-
-  if (strcmp(language, "bash") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "bash-language-server");
-    snprintf(args, LANGUAGE_ID_LENGTH, "start");
-  }
-  else if (strcmp(language, "c") == 0 || strcmp(language, "cpp") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "clangd");
-    snprintf(args, LANGUAGE_ID_LENGTH, "");
-  }
-  else if (strcmp(language, "python") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "pylsp");
-    snprintf(args, LANGUAGE_ID_LENGTH, "-v");
-  }
-  else if (strcmp(language, "markdown") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "marksman");
-    snprintf(args, LANGUAGE_ID_LENGTH, "");
-  }
-  else if (strcmp(language, "go") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "gopls");
-    snprintf(args, LANGUAGE_ID_LENGTH, "");
-  }
-  else if (strcmp(language, "javascript") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "typescript-language-server");
-    snprintf(args, LANGUAGE_ID_LENGTH, "--stdio");
-  }
-  else if (strcmp(language, "json") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "json-languageserver");
-    snprintf(args, LANGUAGE_ID_LENGTH, "--stdio");
-  }
-  else if (strcmp(language, "css") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "css-languageserver");
-    snprintf(args, LANGUAGE_ID_LENGTH, "--stdio");
-  }
-  else if (strcmp(language, "html") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "html-languageserver");
-    snprintf(args, LANGUAGE_ID_LENGTH, "--stdio");
-  }
-  else if (strcmp(language, "lua") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "lua-language-server");
-    snprintf(args, LANGUAGE_ID_LENGTH, "");
-  }
-  else if (strcmp(language, "java") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "jdtls");
-    snprintf(args, LANGUAGE_ID_LENGTH, "");
-  }
-  else if (strcmp(language, "c-sharp") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "omnisharp");
-    snprintf(args, LANGUAGE_ID_LENGTH, "-lsp");
-  }
-  else if (strcmp(language, "dart") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "dart");
-    snprintf(args, LANGUAGE_ID_LENGTH, "language-server");
-  }
-  else if (strcmp(language, "vhdl") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "vhdl-ls");
-    snprintf(args, LANGUAGE_ID_LENGTH, "");
-  }
-  else if (strcmp(language, "asm") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "asm-lsp");
-    snprintf(args, LANGUAGE_ID_LENGTH, "");
-  }
-  else if (strcmp(language, "make") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "makefile-language-server");
-    snprintf(args, LANGUAGE_ID_LENGTH, "");
-  }
-  else {
+  ft_LanguageFeature* feature = ft_getFeatureById(language);
+  if (!feature || strlen(feature->lsp.exe) == 0) {
     return false;
   }
+
+  snprintf(prog_name, LANGUAGE_ID_LENGTH, "%s", feature->lsp.exe);
+  snprintf(args, LANGUAGE_ID_LENGTH, "%s", feature->lsp.arguments);
   return true;
 }
 

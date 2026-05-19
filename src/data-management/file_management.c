@@ -1,4 +1,5 @@
 #include "file_management.h"
+#include "../config/language_feature.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -6,7 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../environnement/constants.h"
 #include "../environnement/global_variables.h"
 #include "../io-management/viewport_history.h"
 #include "../terminal/term_handler.h"
@@ -84,9 +84,10 @@ void closeFile(FileContainer** files, int* file_count, int* current_file, bool* 
   *refresh_local_vars = true;
 }
 
-Cursor createRoot(IO_FileID file) {
+// TODO prefer pass the ft_Tabulation pointer instead of attributes
+Cursor createRoot(IO_FileID file, int tab_size, bool use_space) {
   if (file.status == EXIST) {
-    return initWrittableFileFromFile(file.path_abs);
+    return initWrittableFileFromFile(file.path_abs, tab_size, use_space);
   }
   return initNewWrittableFile();
 }
@@ -100,7 +101,15 @@ void setupFileContainer(char* path, FileContainer* container) {
   container->history_root = malloc(sizeof(History));
   container->history_frame = container->history_root;
 
-  container->cursor = createRoot(container->io_file);
+  container->feature = ft_getFeatureById(container->lsp_datas.lang_id);
+
+  // TODO use container->feature in both following function instead of re-checking already done detection.
+  setFileHighlightDatas(&container->highlight_data, container->io_file);
+  setLspDatas(&container->lsp_datas, container->io_file);
+
+  // TODO prefer pass the ft_Tabulation pointer instead of attributes
+  container->cursor =
+    createRoot(container->io_file, container->feature->tabulation.size, container->feature->tabulation.use_space);
   container->select_cursor = cursor_disable(container->cursor);
   setDesiredColumn(container->cursor, &container->desired_column);
 
@@ -109,16 +118,13 @@ void setupFileContainer(char* path, FileContainer* container) {
   fetchSavedCursorPosition(container->io_file, &container->cursor, &container->screen_x, &container->screen_y);
   container->old_cur = container->cursor; // set the old_cursor after
   loadCurrentStateControl(container->history_root, &container->history_frame, container->io_file);
-
-  setFileHighlightDatas(&container->highlight_data, container->io_file);
-  setLspDatas(&container->lsp_datas, container->io_file);
 }
 
 
 void setupLocalVars(FileContainer* files, int current_file, IO_FileID** io_file, FileNode*** root, Cursor** cursor,
                     Cursor** select_cursor, Cursor** old_cur, int** desired_column, int** screen_x, int** screen_y,
                     int** old_screen_x, int** old_screen_y, History*** history_root, History*** history_frame,
-                    TS_Data** highlight_data, LSP_Data** lsp_datas) {
+                    TS_Data** highlight_data, LSP_Data** lsp_datas, ft_LanguageFeature** feature) {
   *io_file = &files[current_file].io_file;               // Describe the IO file on OS
   *root = &files[current_file].root;                     // The root of the File object
   *cursor = &files[current_file].cursor;                 // The current cursor for the root File
@@ -127,13 +133,14 @@ void setupLocalVars(FileContainer* files, int current_file, IO_FileID** io_file,
   *desired_column = &files[current_file].desired_column; // Used on line change to try to reach column
   *screen_x = &files[current_file].screen_x; // The x coord of the top left corner of the current viewport of the file
   *screen_y = &files[current_file].screen_y; // The y coord of the top left corner of the current viewport of the file
-  *old_screen_x = &files[current_file].old_screen_x;   // old screen_x used to flag screen_x changes
-  *old_screen_y = &files[current_file].old_screen_y;   // old screen_y used to flag screen_y changes
-  *history_root = &files[current_file].history_root;   // Root of History object for the current File
-  *history_frame = &files[current_file].history_frame; // Current node of the History. Before -> Undo, After -> Redo.
-  *highlight_data = &files[current_file].highlight_data;
-  **old_screen_y = -1;
-  *lsp_datas = &files[current_file].lsp_datas;
+  *old_screen_x = &files[current_file].old_screen_x;     // old screen_x used to flag screen_x changes
+  *old_screen_y = &files[current_file].old_screen_y;     // old screen_y used to flag screen_y changes
+  *history_root = &files[current_file].history_root;     // Root of History object for the current File
+  *history_frame = &files[current_file].history_frame;   // Current node of the History. Before -> Undo, After -> Redo.
+  *highlight_data = &files[current_file].highlight_data; // TODO comment
+  **old_screen_y = -1;                                   // TODO comment
+  *lsp_datas = &files[current_file].lsp_datas;           // TODO comment
+  *feature = files[current_file].feature;                // TODO comment
 }
 
 
@@ -339,7 +346,8 @@ Cursor moveToPreviousWord(Cursor cursor) {
   return cursor;
 }
 
-Cursor insertCharArrayAtCursor(Cursor cursor, char* chs) {
+// TODO prefer pass the ft_Tabulation pointer instead of attributes
+Cursor insertCharArrayAtCursor(Cursor cursor, char* chs, int tab_size, bool use_space) {
   // Duplicated search in project DUP_SCAN.
 
   int index = 0;
@@ -361,13 +369,13 @@ Cursor insertCharArrayAtCursor(Cursor cursor, char* chs) {
         // printf("Tab\r\n");
 #endif
         Char_U8 ch;
-        if (TAB_CHAR_USE) {
+        if (!use_space) {
           ch.t[0] = '\t';
           cursor = insertCharInLineC(cursor, ch);
         }
         else {
           ch.t[0] = ' ';
-          for (int i = 0; i < TAB_SIZE; i++) {
+          for (int i = 0; i < tab_size; i++) {
             cursor = insertCharInLineC(cursor, ch);
           }
         }
@@ -394,10 +402,11 @@ Cursor insertCharArrayAtCursor(Cursor cursor, char* chs) {
   return cursor;
 }
 
+// TODO use feature pointer instead of attributes.
 Cursor insertCharArrayAtCursorWithHist(History** history_p, Cursor cursor, char* chs,
-                                       PayloadStateChange payload_state_change) {
+                                       PayloadStateChange payload_state_change, int tab_size, bool use_space) {
   Cursor tmp = cursor;
-  cursor = insertCharArrayAtCursor(cursor, chs);
+  cursor = insertCharArrayAtCursor(cursor, chs, tab_size, use_space);
   saveAction(history_p, createInsertAction(tmp, cursor_to_desc(cursor)), globalOnStageChange, &cursor,
              &payload_state_change);
 

@@ -52,17 +52,21 @@ typedef struct History_ History;
 
 void initHistory(History* history);
 
+// TODO prefer pass the ft_Tabulation pointer instead of attributes
 Cursor undo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, Cursor* cursor, void* payload),
-            void* payload);
+            void* payload, int tab_size, bool use_space);
 
+// TODO prefer pass the ft_Tabulation pointer instead of attributes
 Cursor redo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, Cursor* cursor, void* payload),
-            void* payload);
+            void* payload, int tab_size, bool use_space);
 
 void saveAction(History** history_p, Action action,
                 void (*onEachStateChange)(Action action, Cursor* cursor, void* payload), Cursor* cursor, void* payload);
 
+// TODO prefer pass the ft_Tabulation pointer instead of attributes
 Cursor doReverseAction(Action* action_p, Cursor cursor,
-                       void (*onEachStateChange)(Action action, Cursor* cursor, void* payload), void* payload);
+                       void (*onEachStateChange)(Action action, Cursor* cursor, void* payload), void* payload,
+                       int tab_size, bool use_space);
 
 Action createDeleteAction(Cursor cur1, CursorDescriptor cur2);
 

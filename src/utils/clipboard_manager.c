@@ -125,7 +125,8 @@ bool saveToClipBoard(Cursor begin, Cursor end) {
   return true;
 }
 
-Cursor loadFromClipBoard(Cursor cursor) {
+Cursor loadFromClipBoard(FileContainer* fc) {
+  Cursor cursor = fc->cursor;
   updateWlPasteVars();
   updateXClipVars();
 
@@ -242,13 +243,13 @@ Cursor loadFromClipBoard(Cursor cursor) {
         // printf("Tab\r\n");
 #endif
         Char_U8 ch;
-        if (TAB_CHAR_USE) {
+        if (!fc->feature->tabulation.use_space) {
           ch.t[0] = '\t';
           cursor = insertCharInLineC(cursor, ch);
         }
         else {
           ch.t[0] = ' ';
-          for (int i = 0; i < TAB_SIZE; i++) {
+          for (int i = 0; i < fc->feature->tabulation.size; i++) {
             cursor = insertCharInLineC(cursor, ch);
           }
         }

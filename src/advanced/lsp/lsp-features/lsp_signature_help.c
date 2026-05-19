@@ -35,7 +35,7 @@ void receiveSignatureHelpData(cJSON* packet, FileContainer* file, GUIContext* gu
   int label_rows = 0;
   int label_curr_col = 0;
   int label_max_w = max_popup_width;
-  countStringFrame(sig->label, strlen(sig->label), &label_rows, &label_curr_col, &label_max_w);
+  countStringFrame(sig->label, strlen(sig->label), &label_rows, &label_curr_col, &label_max_w, 2);
   total_height += (label_rows + 1);
   global_max_width = label_max_w;
 
@@ -45,7 +45,7 @@ void receiveSignatureHelpData(cJSON* packet, FileContainer* file, GUIContext* gu
     int doc_rows = 0;
     int doc_curr_col = 0;
     int doc_max_w = max_popup_width;
-    countStringFrame(sig->documentation, strlen(sig->documentation), &doc_rows, &doc_curr_col, &doc_max_w);
+    countStringFrame(sig->documentation, strlen(sig->documentation), &doc_rows, &doc_curr_col, &doc_max_w, 2);
     total_height += (doc_rows + 1);
     if (doc_max_w > global_max_width) {
       global_max_width = doc_max_w;
@@ -85,12 +85,12 @@ void receiveSignatureHelpData(cJSON* packet, FileContainer* file, GUIContext* gu
   if (paren_col != -1) {
     Cursor paren_cursor = *cursor;
     paren_cursor.line_id.absolute_column = paren_col;
-    int paren_screen_x = getScreenXForCursor(paren_cursor, *view_port.screen_x);
+    int paren_screen_x = getScreenXForCursor(paren_cursor, *view_port.screen_x, file->feature->tabulation.size);
     popup_x = paren_screen_x - paren_offset_in_sig - 1;
   }
   else {
     // Fallback if no '(' found (shouldn't happen for signature help)
-    int cursor_screen_x = getScreenXForCursor(*cursor, *view_port.screen_x);
+    int cursor_screen_x = getScreenXForCursor(*cursor, *view_port.screen_x, file->feature->tabulation.size);
     popup_x = cursor_screen_x - 1 - paren_offset_in_sig;
   }
 
