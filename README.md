@@ -2,7 +2,7 @@
 
 > A terminal-based code editor and IDE written in C, built around speed, simplicity, and real IDE capabilities — without the weight of Electron or JVM runtimes.
 
-<img width="1315" height="900" alt="image" src="https://github.com/user-attachments/assets/f73b961f-0fc2-4c0a-81b6-3e391a96031b" />
+<img width="500"  alt="image" src="https://github.com/user-attachments/assets/f73b961f-0fc2-4c0a-81b6-3e391a96031b" />
 
 ---
 
