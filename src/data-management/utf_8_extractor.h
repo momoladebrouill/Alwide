@@ -63,7 +63,7 @@ void printChar_U8ToBits(FILE* f, Char_U8 ch);
  */
 void testUnitUtf8Extractor();
 
-int charPrintSize(Char_U8 ch);
+int charPrintSize(Char_U8 ch, int tab_size);
 
 bool isBetween(Char_U8 ch, char begin, char end);
 

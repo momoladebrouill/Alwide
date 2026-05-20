@@ -97,7 +97,7 @@ void printEditor_printLineNumber(EDW_GUIContext* context, Cursor cursor, int scr
 
 void printEditor_printFileContent(EDW_GUIContext* context, Cursor cursor, Cursor select_cursor, int screen_x,
                                   WindowHighlightDescriptor* highlight_descriptor, FileIdentifier file_cur,
-                                  const int column_count, int* whd_offset) {
+                                  const int column_count, int* whd_offset, int tab_size) {
   LineIdentifier begin_screen_line_cur =
     tryToReachAbsColumn(moduloLineIdentifierR(getLineForFileIdentifier(file_cur), 0), screen_x);
   LineIdentifier end_screen_line_cur = tryToReachAbsColumn(begin_screen_line_cur, screen_x + column_count - 3);
@@ -109,7 +109,7 @@ void printEditor_printFileContent(EDW_GUIContext* context, Cursor cursor, Cursor
     Char_U8 ch = getCharForLineIdentifier(begin_screen_line_cur);
     Cursor ch_cursor = cursorOf(file_cur, begin_screen_line_cur);
 
-    int size = charPrintSize(ch);
+    int size = charPrintSize(ch, tab_size);
     // If the char is detected as not printable char.
     if (size <= 0) {
       ch = readChar_U8FromCharArray("�");
@@ -150,7 +150,7 @@ void printEditor_printFileContent(EDW_GUIContext* context, Cursor cursor, Cursor
 
     if (ch.t[0] == '\t') {
       Char_U8 space = readChar_U8FromInput(' ');
-      for (int i = 0; i < TAB_SIZE; i++) {
+      for (int i = 0; i < tab_size; i++) {
         gui_printChar_U8ToNcurses(context->ftw, space);
       }
     }
@@ -189,11 +189,11 @@ void printEditor_printFileContent(EDW_GUIContext* context, Cursor cursor, Cursor
 
 void printEditor_printCursor(EDW_GUIContext* context, Cursor cursor, int screen_x, int screen_y,
                              WindowHighlightDescriptor* highlight_descriptor, const int line_count,
-                             const int column_count) {
+                             const int column_count, int tab_size) {
   // Check if cursor is in the screen and print it if needed.
   if (cursor.file_id.absolute_row >= screen_y && cursor.file_id.absolute_row < screen_y + line_count &&
       cursor.line_id.absolute_column >= screen_x - 1 && cursor.line_id.absolute_column <= screen_x + column_count - 3) {
-    int x = getScreenXForCursor(cursor, screen_x);
+    int x = getScreenXForCursor(cursor, screen_x, tab_size);
     wmove(context->ftw, cursor.file_id.absolute_row - screen_y, x);
 
     TextPartHighlightDescriptor* current_highlight = NULL;
@@ -202,7 +202,7 @@ void printEditor_printCursor(EDW_GUIContext* context, Cursor cursor, int screen_
     if (hasElementAfterLine(cursor.line_id) == true) {
       // Check the size of the the char which is under cursor.
       Cursor tmp = moveRight(cursor);
-      size = charPrintSize(getCharForLineIdentifier(tmp.line_id));
+      size = charPrintSize(getCharForLineIdentifier(tmp.line_id), tab_size);
       int unused = 0;
       current_highlight = whd_tphd_forCursorWithOffsetIndex(highlight_descriptor, tmp, &unused);
     }
@@ -226,8 +226,8 @@ void printEditor_printCursor(EDW_GUIContext* context, Cursor cursor, int screen_
 
 
 void move_physical_cursor(EDW_GUIContext* context, Cursor cursor, int screen_x, int screen_y, const int line_count,
-                          const int column_count) {
-  int ftw_x = getScreenXForCursor(cursor, screen_x);
+                          const int column_count, int tab_size) {
+  int ftw_x = getScreenXForCursor(cursor, screen_x, tab_size);
   if (cursor.file_id.absolute_row >= screen_y && cursor.file_id.absolute_row < screen_y + line_count && ftw_x >= 0 &&
       ftw_x <= getmaxx(context->ftw) - 3) {
     curs_set(1);
@@ -242,7 +242,7 @@ void move_physical_cursor(EDW_GUIContext* context, Cursor cursor, int screen_x, 
 
 
 void gui_repaintEDW(EDW_GUIContext* context, Cursor cursor, Cursor select_cursor, int screen_x, int screen_y,
-                    WindowHighlightDescriptor* highlight_descriptor, LSP_ComputedData* lsp_data) {
+                    WindowHighlightDescriptor* highlight_descriptor, LSP_ComputedData* lsp_data, int tab_size) {
   if (!context->refresh_edw) {
     return;
   }
@@ -281,14 +281,14 @@ void gui_repaintEDW(EDW_GUIContext* context, Cursor cursor, Cursor select_cursor
     // ===============  Print File Content  ===============
 
     printEditor_printFileContent(context, cursor, select_cursor, screen_x, highlight_descriptor, file_cur, column_count,
-                                 &whd_offset);
+                                 &whd_offset, tab_size);
   }
 
   // ===============  Print Cursor  ===============
 #ifdef SIMULATED_CURSOR
-  printEditor_printCursor(context, cursor, screen_x, screen_y, highlight_descriptor, line_count, column_count);
+  printEditor_printCursor(context, cursor, screen_x, screen_y, highlight_descriptor, line_count, column_count, tab_size);
 #else
-  move_physical_cursor(context, cursor, screen_x, screen_y, line_count, column_count);
+  move_physical_cursor(context, cursor, screen_x, screen_y, line_count, column_count, tab_size);
 #endif
 
   wnoutrefresh(context->lnw);
@@ -296,7 +296,7 @@ void gui_repaintEDW(EDW_GUIContext* context, Cursor cursor, Cursor select_cursor
 
   if (context->show_pow) {
     assert(context->pow != NULL);
-    gui_printPopup(context, &cursor, lsp_data);
+    gui_printPopup(context, &cursor, lsp_data, tab_size);
     wnoutrefresh(context->pow);
   }
 

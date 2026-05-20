@@ -82,6 +82,7 @@ void executeInjectionHighlightQuery(Cursor cursor, WindowHighlightDescriptor* hi
   executeHighlightQuery(injected_parser->queries, injected_qcursor, &injected_parser->regex_map,
                         injected_parser->theme_list, cursor, highlight_descriptor, injection_depth + 1);
 
+  ts_query_cursor_delete(injected_qcursor);
   ts_tree_delete(injected_tree);
 }
 

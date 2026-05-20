@@ -7,9 +7,9 @@
 #include "../../shared.h"
 #include "../lsp_client.h"
 
-
 void applyTextEdit(Cursor* cursor, LSP_TextEdit* text_edit, History** history_p,
-                   PayloadStateChange payload_state_change);
+                   PayloadStateChange payload_state_change, ft_Tabulation* tab);
+
 
 /**
  * Applies an array of text edits to the current cursor/file.
@@ -17,7 +17,7 @@ void applyTextEdit(Cursor* cursor, LSP_TextEdit* text_edit, History** history_p,
  * The cursor position is tracked and updated based on the shifts.
  */
 void applyTextEditsArray(Cursor* cursor, LSP_TextEdit* edits, int edits_size, History** history_p,
-                         PayloadStateChange payload_state_change);
+                         PayloadStateChange payload_state_change, ft_Tabulation* tab);
 
 /**
  * Applies a full WorkspaceEdit.

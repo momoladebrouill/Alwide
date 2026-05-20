@@ -5,7 +5,7 @@
 #include "editor_context.h"
 
 ModuleContext buildModuleContext(EditorContext* ctx);
-void handleLspServers(ModuleContext* payload, int* c, int* hash);
+void handleLspServers(EditorContext* ctx, int* c, int* hash);
 void waitForLspResponse(EditorContext* ctx, int timeout_ms);
 void askOnCharTypeLspInfos(EditorContext* ctx, int c, FileContainer* fc, Cursor* cursor);
 

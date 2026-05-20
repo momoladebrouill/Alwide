@@ -1,4 +1,5 @@
 #include "tools.h"
+#include "../config/language_feature.h"
 
 #include <asm-generic/errno-base.h>
 #include <assert.h>
@@ -149,131 +150,6 @@ bool isDir(char* path) {
   return S_ISDIR(file_info.st_mode);
 }
 
-bool getLanguageStringIDForFile(char* lang_id, IO_FileID io_file) {
-  /// ---- FILE NAME ----
-
-  if (io_file.status == NONE) {
-    return false;
-  }
-
-  // Make
-  if (strcmp(basename(io_file.path_abs), "Makefile") == 0) {
-    strcpy(lang_id, "make");
-    return true;
-  }
-
-  // Bash
-  if (strcmp(basename(io_file.path_abs), "config") == 0 || strcmp(basename(io_file.path_abs), ".bashrc") == 0) {
-    strcpy(lang_id, "bash");
-    return true;
-  }
-
-  /// ---- FILE EXTENSION ----
-
-  // extracting extension
-  char* dot = strrchr(io_file.path_args, '.');
-  if (dot != NULL) {
-    strncpy(lang_id, dot + 1, 99);
-    lang_id[99] = '\0';
-  }
-
-  // ADD_NEW_LANGUAGE
-
-  // c
-  if (strcmp(lang_id, "h") == 0 || strcmp(lang_id, "c") == 0) {
-    snprintf(lang_id, 100, "c");
-    return true;
-  }
-  // python
-  if (strcmp(lang_id, "py") == 0) {
-    snprintf(lang_id, 100, "python");
-    return true;
-  }
-  // markdown
-  if (strcmp(lang_id, "md") == 0) {
-    snprintf(lang_id, 100, "markdown");
-    return true;
-  }
-  // markdown_inline
-  if (strcmp(lang_id, "markdown_inline") == 0) {
-    snprintf(lang_id, 100, "markdown_inline");
-    return true;
-  }
-  // java
-  if (strcmp(lang_id, "java") == 0) {
-    snprintf(lang_id, 100, "java");
-    return true;
-  }
-  // c++
-  if (strcmp(lang_id, "cpp") == 0 || strcmp(lang_id, "cc") == 0) {
-    snprintf(lang_id, 100, "cpp");
-    return true;
-  }
-  // c#
-  if (strcmp(lang_id, "cs") == 0) {
-    strcpy(lang_id, "c-sharp");
-    return true;
-  }
-  // css / scss
-  if (strcmp(lang_id, "css") == 0 || strcmp(lang_id, "scss") == 0) {
-    strcpy(lang_id, "css");
-    return true;
-  }
-  // dart
-  if (strcmp(lang_id, "dart") == 0) {
-    strcpy(lang_id, "dart");
-    return true;
-  }
-  // go-lang
-  if (strcmp(lang_id, "go") == 0) {
-    strcpy(lang_id, "go");
-    return true;
-  }
-  // java-script
-  if (strcmp(lang_id, "js") == 0) {
-    strcpy(lang_id, "javascript");
-    return true;
-  }
-  // json
-  if (strcmp(lang_id, "json") == 0) {
-    strcpy(lang_id, "json");
-    return true;
-  }
-  // bash/shell
-  if (strcmp(lang_id, "sh") == 0 || strcmp(lang_id, "conf") == 0) {
-    strcpy(lang_id, "bash");
-    return true;
-  }
-  // scheme implementation
-  if (strcmp(lang_id, "scm") == 0) {
-    strcpy(lang_id, "query");
-    return true;
-  }
-  // vhdl
-  if (strcmp(lang_id, "vhd") == 0) {
-    strcpy(lang_id, "vhdl");
-    return true;
-  }
-  // lua
-  if (strcmp(lang_id, "lua") == 0) {
-    strcpy(lang_id, "lua");
-    return true;
-  }
-  // asm
-  if (strcmp(lang_id, "s") == 0) {
-    strcpy(lang_id, "asm");
-    return true;
-  }
-  // html
-  if (strcmp(lang_id, "html") == 0) {
-    strcpy(lang_id, "html");
-    return true;
-  }
-
-  return false;
-}
-
-
 // copy from http://www.cse.yorku.ca/~oz/hash.html
 int hashString(unsigned char* str) {
   unsigned long hash = 5381;
@@ -288,6 +164,9 @@ int hashString(unsigned char* str) {
 
 char* loadFullFile(const char* path, long* length) {
   FILE* f = fopen(path, "rb");
+  if (!f) {
+    return NULL;
+  }
   fseek(f, 0, SEEK_END);
   *length = ftell(f);
   fseek(f, 0, SEEK_SET); /* same as rewind(f); */
@@ -330,7 +209,7 @@ int mkdir_p(const char* path, mode_t mode) {
   return 0;
 }
 
-void countStringFrame(char* ch, int length, int* current_row, int* current_column, int* screen_max_width) {
+void countStringFrame(char* ch, int length, int* current_row, int* current_column, int* screen_max_width, int tab_size) {
   assert(current_row != NULL);
   assert(current_column != NULL);
 
@@ -340,9 +219,6 @@ void countStringFrame(char* ch, int length, int* current_row, int* current_colum
   int current_line_length = 0;
   int max_line = 0;
   while (current_ch_index < length) {
-    if (TAB_CHAR_USE == false) {
-      assert(ch[current_ch_index] != '\t');
-    }
     if (ch[current_ch_index] == '\n') {
       (*current_row)++;
       *current_column = 0;
@@ -355,14 +231,14 @@ void countStringFrame(char* ch, int length, int* current_row, int* current_colum
       Char_U8 tmp_ch = readChar_U8FromCharArray(ch + current_ch_index);
       current_ch_index += sizeChar_U8(tmp_ch) - 1;
       (*current_column)++;
-      if (current_line_length + charPrintSize(tmp_ch) > line_length) {
+      if (current_line_length + charPrintSize(tmp_ch, tab_size) > line_length) {
         if (current_line_length > max_line) {
           max_line = current_line_length;
         }
         current_line_length = 0;
         (*current_row)++;
       }
-      current_line_length += charPrintSize(tmp_ch);
+      current_line_length += charPrintSize(tmp_ch, tab_size);
     }
     current_ch_index++;
   }

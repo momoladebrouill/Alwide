@@ -43,7 +43,7 @@ void receiveCodeActionData(cJSON* packet, FileContainer* file, ModuleContext* da
   else {
     ViewPort view_port = viewPortOf(data->view_port.gui, &file->screen_x, &file->screen_y);
     // We use COMPLETION owner for the unified list
-    gui_showGenericPopupWithTextAnchor(&view_port, data->cursor, computed->code_actions.size + 2, 45, COMPLETION);
+    gui_showGenericPopupWithTextAnchor(&view_port, data->cursor, computed->code_actions.size + 2, 45, COMPLETION, ft_tab_size(file->feature));
     gui_updateEDW(data->view_port.gui);
   }
 }

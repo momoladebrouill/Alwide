@@ -5,18 +5,19 @@
 #include "../../../environnement/global_variables.h"
 
 void applyTextEdit(Cursor* cursor, LSP_TextEdit* text_edit, History** history_p,
-                   PayloadStateChange payload_state_change) {
+                   PayloadStateChange payload_state_change, ft_Tabulation* tab) {
   // As a text edit can represent a "replacement" we have to handle this deleting old text and inserting new text after.
   // Delete part
   *cursor = LSP_tryToReachCursorForLSPPosition(*cursor, text_edit->range.pos1);
   Cursor end = LSP_tryToReachCursorForLSPPosition(*cursor, text_edit->range.pos2);
   deleteSelectionWithState(history_p, cursor, &end, payload_state_change);
   // insert part
-  *cursor = insertCharArrayAtCursorWithHist(history_p, *cursor, text_edit->new_text, payload_state_change);
+  *cursor = insertCharArrayAtCursorWithHist(history_p, *cursor, text_edit->new_text, payload_state_change,
+                                            tab);
 }
 
 void applyTextEditsArray(Cursor* cursor, LSP_TextEdit* edits, int edits_size, History** history_p,
-                         PayloadStateChange payload_state_change) {
+                         PayloadStateChange payload_state_change, ft_Tabulation* tab) {
   if (edits_size <= 0) {
     return;
   }
@@ -33,7 +34,7 @@ void applyTextEditsArray(Cursor* cursor, LSP_TextEdit* edits, int edits_size, Hi
     LSP_Position new_text_end = calculateEndPos(edit_start, edits[i].new_text);
 
     // Apply the edit
-    applyTextEdit(cursor, &edits[i], history_p, payload_state_change);
+    applyTextEdit(cursor, &edits[i], history_p, payload_state_change, tab);
 
     // Track the cursor shift
     if (compareLSPPos(tracker, edit_end) >= 0) {
@@ -68,7 +69,8 @@ void applyWorkspaceEdit(FileContainer* fc, Cursor* cursor, LSP_WorkspaceEdit* ws
     // !! REALLY important when using WorkspaceEdit !! TODO In the future, we could find the FileContainer by
     // text_document.file_name URI.
     if (strcmp(doc_edit->text_document.file_name, fc->io_file.path_abs) == 0) {
-      applyTextEditsArray(cursor, doc_edit->edits, doc_edit->edits_count, &fc->history_frame, payload_state_change);
+      applyTextEditsArray(cursor, doc_edit->edits, doc_edit->edits_count, &fc->history_frame, payload_state_change,
+                          ft_tab(fc->feature));
     }
   }
 }

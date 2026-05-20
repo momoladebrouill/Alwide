@@ -1,58 +1,298 @@
-# Alwide - A Light Weight IDE
+# Alwide — A Lightweight IDE
 
+> A terminal-based code editor and IDE written in C, built around speed, simplicity, and real IDE capabilities — without the weight of Electron or JVM runtimes.
 
-# Submodules
+![Alwide screenshot](https://github.com/user-attachments/assets/3f2de19a-f6e1-4cec-95f4-be5137e6bd1c)
 
-This project is based on many "lib" as submodule, you have to execute at the root folder to checkout submodules :
-- `git submodule update --init --recursive`
+---
 
-# How to compile
+## Philosophy
 
-## Dependencies :
+Most modern editors are powerful but **heavy**. Alwide is built on a different premise:
 
-### Ubuntu/Debian :
+- **Speed over abstraction** — The editor is written in C and speaks directly to the terminal via `ncursesw`. No frameworks, no garbage collectors, no virtual machines.
+- **Real IDE, not just a text editor** — Alwide integrates Tree-Sitter for accurate syntax highlighting and speaks LSP to provide completions, diagnostics, hover docs, goto definition, and formatting — the same protocol used by VS Code.
+- **Lightweight by design** — A single binary, a small config folder, no daemon required. It starts instantly and stays out of your way.
+- **Hackable and auditable** — The codebase is kept deliberately small and modular. If you want to understand how an editor works at the systems level, Alwide is a good place to start.
 
- - `apt install make gcc`
+---
 
-### Clang version 18
+## Features
 
- - `wget https://apt.llvm.org/llvm.sh`
- - `chmod +x llvm.sh`
- - `sudo ./llvm.sh 18` (check result you may be asked to add some dependencies).
+| Feature | Details |
+| :--- | :--- |
+| **Syntax Highlighting** | Powered by [Tree-Sitter](https://tree-sitter.github.io/tree-sitter/) — accurate, incremental, and fast |
+| **LSP Integration** | Completions, hover, goto definition, formatting, diagnostics, signature help, code actions |
+| **File Explorer** | Sidebar tree view of your project directory |
+| **Multi-buffer** | Open multiple files as tabs, switch instantly |
+| **Selection & Clipboard** | Full text selection with shift+arrows, system clipboard integration |
+| **Undo / Redo** | Coalescing history with persistent session state |
+| **Auto-pairs** | Auto-closes brackets, quotes, and braces per language |
+| **Comment Toggling** | `Ctrl+/` comments/uncomments line or block selection |
+| **Mouse Support** | Click, drag-select, double-click to open files |
+| **Popup UI** | Floating windows for completions, hover, signatures, diagnostics |
 
-### Install tree-sitter api.h
+### Supported Languages
 
- - Be in the root folder
- - `make -C lib/tree-sitter/ install`
+| Language | Highlighting | LSP Server |
+| :--- | :---: | :--- |
+| C / C++ | ✅ | `clangd` |
+| Python | ✅ | `pylsp` |
+| Java | ✅ | `jdtls` |
+| C# | ✅ | `omnisharp` |
+| JavaScript | ✅ | `typescript-language-server` |
+| Go | ✅ | `gopls` |
+| Dart | ✅ | `dart language-server` |
+| Lua | ✅ | `lua-language-server` |
+| Bash / Shell | ✅ | `bash-language-server` |
+| HTML | ✅ | `html-languageserver` |
+| CSS / SCSS | ✅ | `css-languageserver` |
+| JSON | ✅ | `json-languageserver` |
+| Markdown | ✅ | `marksman` |
+| VHDL | ✅ | `vhdl-ls` |
+| Assembly | ✅ | `asm-lsp` |
+| Makefile | ✅ | `makefile-language-server` |
+| Tree-Sitter Query | ✅ | — |
 
-### Install rust/rustup/cargo packages
+> LSP servers are optional. The editor works without them — you just won't get code intelligence for that language. Each server must be installed separately.
 
- - `rustc --version`
+---
 
-It's really important to be up to date ! You will be in most cases not up to date.
+## Getting Started
 
-Ubuntu :
- - `apt install rustup`
- - `rustup update stable`
+### 1. Clone the Repository
 
-Others distro may not have rustup package. Check for your personnal distro.
-You might find this useful : https://rustup.rs/
+```bash
+git clone https://github.com/arnauda-gh/Alwide.git
+cd Alwide
+git submodule update --init --recursive
+```
 
-### Compile :
+The `--recursive` flag is **required** — Alwide depends on several submodules for language parsers and the Tree-Sitter runtime.
 
-In the root folder :
-  - `make`
+### 2. Install Build Dependencies
 
+#### Ubuntu / Debian
 
-### To install and generate the config use :
- - do not use sudo, the generation of the config need to be in user mode.
- - you will be prompted for sudo in the make install it-self.
- - check by yourself the use of sudo (used to cp al /bin/al).
- - `make install`
+```bash
+sudo apt install make clang libncursesw5-dev
+```
 
+#### Clang ≥ 18 (required)
 
+The project requires Clang 18 or newer. Check your version:
 
-It should compile fine.
+```bash
+clang --version
+```
 
+If it's older than 18, install it from LLVM's official script:
 
-![image](https://github.com/user-attachments/assets/3f2de19a-f6e1-4cec-95f4-be5137e6bd1c)
+```bash
+wget https://apt.llvm.org/llvm.sh
+chmod +x llvm.sh
+sudo ./llvm.sh 18
+```
+
+#### Rust toolchain (required for grammar parsers)
+
+Tree-Sitter language grammars are compiled from Rust crates. You need an up-to-date Rust toolchain:
+
+```bash
+# Ubuntu
+sudo apt install rustup
+rustup update stable
+
+# Or via rustup.rs (all distros)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+#### Tree-Sitter C API
+
+Install the Tree-Sitter C headers (run from the repo root):
+
+```bash
+sudo make -C lib/tree-sitter/ install
+```
+
+### 3. Build
+
+```bash
+make
+```
+
+This compiles all Rust grammar crates, the C library modules, and links the final `al` binary.
+
+### 4. Install
+
+```bash
+make install
+```
+
+> ⚠️ **Do not run `make install` with `sudo`.** The install script generates your user config (`~/.config/al/`) under your home directory and will prompt for `sudo` only to copy the binary to `/bin/al`.
+
+After installation, launch the editor with:
+
+```bash
+al path/to/file.c
+# or open multiple files
+al src/main.c src/utils.c
+```
+
+---
+
+## Configuration
+
+User configuration lives in `~/.config/al/`. It is generated by `make install`.
+
+- **`config`** — Global editor preferences (theme, tab defaults, LSP overrides)
+- **`languages-features.json`** — Per-language settings: LSP server command, tab style, auto-pairs, comment characters, file extensions
+
+You can edit `languages-features.json` directly to add new LSP servers or change tab sizes for specific languages.
+
+---
+
+## Keyboard Shortcuts
+
+| Key | Action |
+| :--- | :--- |
+| `Ctrl+S` | Save file (auto-formats if LSP is active) |
+| `Ctrl+Q` | Quit |
+| `Ctrl+W` | Close current tab |
+| `Ctrl+Z` | Undo |
+| `Ctrl+Y` | Redo |
+| `Ctrl+C` | Copy selection |
+| `Ctrl+X` | Cut selection |
+| `Ctrl+V` | Paste |
+| `Ctrl+A` | Select all |
+| `Ctrl+/` | Toggle line/block comment |
+| `Ctrl+R` | Format file (LSP) |
+| `Ctrl+D` | Delete line |
+| `Ctrl+←/→` | Jump word left/right |
+| `Ctrl+↑/↓` | Select word under cursor |
+| `Ctrl+Shift+↑/↓` | Switch between open tabs |
+| `Shift+Arrows` | Extend text selection |
+| `Home` | Jump to first non-whitespace character |
+| `End` | Jump to end of line |
+| `Tab` | Insert indent (spaces or tab, per language config) |
+
+---
+
+## Code Style
+
+Alwide is formatted using **clang-format**. The configuration is in [`.clang-format`](.clang-format) at the root of the project. Key rules:
+
+| Rule | Value |
+| :--- | :--- |
+| Base style | LLVM |
+| Column limit | 120 characters |
+| Indentation | 2 spaces |
+| Pointer alignment | Left (`int* p`) |
+| Brace style | Custom (K&R-like, no brace on new line for functions) |
+| Trailing comments | Aligned |
+| Max empty lines | 2 |
+
+**Before submitting a PR**, format your changes:
+
+```bash
+clang-format -i src/**/*.c src/**/*.h
+```
+
+Beyond formatting, keep these principles in mind:
+
+- **Keep functions short and focused.** If a function exceeds ~50 lines, consider splitting it.
+- **Avoid dynamic allocation in hot paths.** Prefer stack-allocated structs where possible.
+- **Name clearly.** Prefer `descriptiveVariableName` over abbreviations. Module-level functions are prefixed (e.g., `gui_`, `LSP_`, `ft_`).
+- **Comment intent, not mechanics.** Explain *why*, not *what*. The code shows the what.
+- **No global mutable state except the declared globals** in `main.c` (`config`, `parsers`, `lsp_servers`, etc.).
+
+---
+
+## Project Structure
+
+```
+Alwide/
+├── src/
+│   ├── core/           # Editor lifecycle: context, init, input dispatch, render, destroy
+│   ├── terminal/       # NCurses windows (EDW, FEW, OFW, POW), click handler, highlight
+│   ├── data-management/# Buffer (unrolled linked list), file ops, undo/redo history
+│   ├── advanced/
+│   │   ├── lsp/        # LSP client (JSON-RPC over Unix pipes), dispatcher, features
+│   │   ├── tree-sitter/# Parser integration, AST query engine, incremental highlighting
+│   │   └── intelligence/ # Auto-pairs, comment toggling
+│   ├── config/         # Language feature loading, config parsing
+│   ├── environnement/  # Constants, global variable declarations, setup
+│   └── utils/          # Key management, clipboard, general tools
+├── lib/                # Git submodules: tree-sitter runtime + language grammars, cJSON
+├── assets/             # Default config, language-features.json, highlight query files
+├── examples/           # Sample files for testing highlighting and editor behaviour
+└── Makefile
+```
+
+For a deeper dive, see the [technical documentation](doc/architecture.md).
+
+---
+
+## Contributing
+
+Contributions are welcome. Here's the workflow:
+
+### Branches
+
+| Branch | Purpose |
+| :--- | :--- |
+| `main` | Stable releases only |
+| `dev` | Active development — open PRs here |
+| `feature/*` | Feature branches, branched off `dev` |
+| `fix/*` | Bug fix branches, branched off `dev` |
+
+### Opening a Pull Request
+
+1. **Fork** the repository and create your branch from `dev`:
+   ```bash
+   git checkout dev
+   git pull origin dev
+   git checkout -b feature/my-feature
+   ```
+2. **Write your changes.** Keep commits focused — one logical change per commit.
+3. **Format your code** with `clang-format` (see Code Style above).
+4. **Make sure it compiles** — the CI will run `make` and `make install` on every PR.
+5. **Open a PR** targeting the `dev` branch with a clear description of what changed and why.
+
+### CI / GitHub Actions
+
+Every push and pull request triggers the [editor compilation workflow](.github/workflows/editor-compilation.yml), which:
+- Checks out the repo with all submodules
+- Installs the Tree-Sitter C API
+- Runs `make` (builds parsers, cJSON, and the `al` binary)
+- Runs `make install`
+
+A PR that fails CI will not be merged.
+
+### Bug Reports
+
+Open a GitHub Issue with:
+- Your OS and distribution
+- Clang version (`clang --version`)
+- Steps to reproduce
+- Any output from `.logs.txt` or `.lsp_logs.txt` at the project root (these are written at runtime)
+
+---
+
+## 📚 Technical Documentation
+
+For contributors and developers who want to understand the internals:
+
+| Document | Contents |
+| :--- | :--- |
+| [Architecture & Control Flow](doc/architecture.md) | System diagram, main event loop, module breakdown |
+| [Buffer Data Structures](doc/data_structures.md) | Unrolled linked list, cursor coordinates, undo/redo |
+| [Tree-Sitter Engine](doc/tree_sitter.md) | C/Rust parser bridge, query compilation, incremental parsing |
+| [LSP Client](doc/lsp_client.md) | Unix pipe IPC, JSON-RPC, capabilities, async dispatch |
+| [UI Windows & Features](doc/features.md) | Window layout, keybindings, auto-pairs, config |
+
+---
+
+## License
+
+See [LICENSE](LICENSE) for details.

@@ -5,18 +5,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-
+#include "../../config/language_feature.h"
 #include "../../environnement/global_variables.h"
 #include "../../utils/tools.h"
 
 
-void setLspDatas(LSP_Data* lsp_data, IO_FileID io_file) {
-  bool did_lang_was_found = getLanguageStringIDForFile(lsp_data->lang_id, io_file);
+void setLspDatas(LSP_Data* lsp_data, IO_FileID io_file, ft_LanguageFeature* feature) {
+  snprintf(lsp_data->lang_id, sizeof(lsp_data->lang_id), "%s", feature->id);
 
-  LSP_Server* lsp_server = NULL;
-  if (did_lang_was_found == true) {
-    lsp_server = getLSPServerForLanguage(&lsp_servers, lsp_data->lang_id);
-  }
+  LSP_Server* lsp_server = getLSPServerForLanguage(&lsp_servers, lsp_data->lang_id);
+
   lsp_data->is_enable = lsp_server != NULL;
   lsp_data->computed = NULL;
   strncpy(lsp_data->path_abs, io_file.path_abs, PATH_MAX - 1);
@@ -34,6 +32,9 @@ void destroyLspDatas(LSP_Data* lsp_datas) {
 }
 
 void LSP_destroyComputedData(LSP_ComputedData* lsp_payload) {
+  if (!lsp_payload) {
+    return;
+  }
   // free diagnostics
   LSP_destroyDiagnosticList(&lsp_payload->diagnostics);
 
@@ -113,32 +114,13 @@ void addLSPServerCellToLSPServerList(LSPServerLinkedList* list, LSPServerLinkedL
 }
 
 bool getProgName(char* language, char* prog_name, char* args) {
-  // LSP_TOGGLE
-  // return false;
-
-  if (strcmp(language, "bash") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "bash-language-server");
-    snprintf(args, LANGUAGE_ID_LENGTH, "start");
-  }
-  else if (strcmp(language, "c") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "clangd");
-    snprintf(args, LANGUAGE_ID_LENGTH, "");
-  }
-  else if (strcmp(language, "python") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "pylsp");
-    snprintf(args, LANGUAGE_ID_LENGTH, "-v");
-  }
-  else if (strcmp(language, "markdown") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "marksman");
-    snprintf(args, LANGUAGE_ID_LENGTH, "");
-  }
-  else if (strcmp(language, "cpp") == 0) {
-    snprintf(prog_name, LANGUAGE_ID_LENGTH, "clangd");
-    snprintf(args, LANGUAGE_ID_LENGTH, "");
-  }
-  else {
+  ft_LanguageFeature* feature = ft_getFeatureById(language);
+  if (!feature || strlen(feature->lsp.exe) == 0) {
     return false;
   }
+
+  snprintf(prog_name, LANGUAGE_ID_LENGTH, "%s", feature->lsp.exe);
+  snprintf(args, LANGUAGE_ID_LENGTH, "%s", feature->lsp.arguments);
   return true;
 }
 

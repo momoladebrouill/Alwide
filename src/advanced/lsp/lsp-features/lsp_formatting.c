@@ -24,8 +24,8 @@ void receiveFormattingData(cJSON* packet, FileContainer* file, ModuleContext* da
     edits[i] = LSP_getTextEditFromJSON(cJSON_GetArrayItem(result, i));
   }
 
-  applyTextEditsArray(data->cursor, edits, edits_size, &file->history_frame, data->payload_state_change);
-
+  applyTextEditsArray(data->cursor, edits, edits_size, &file->history_frame, data->payload_state_change,
+                      ft_tab(file->feature));
   for (int i = 0; i < edits_size; i++) {
     LSP_destroyTextEdit(edits[i]);
   }
@@ -40,8 +40,8 @@ void askFormatting(FileContainer* file) {
   }
 
   LSP_FormattingOptions options = {
-    .tabSize = TAB_SIZE,
-    .insertSpaces = !TAB_CHAR_USE,
+    .tabSize = ft_tab_size(file->feature),
+    .insertSpaces = ft_tab_use_space(file->feature),
     .trimTrailingWhitespace = true,
     .insertFinalNewline = true,
     .trimFinalNewlines = true,
@@ -74,8 +74,8 @@ void askOnTypeFormatting(FileContainer* file, char* ch, ModuleContext* data) {
 
   if (is_trigger) {
     LSP_FormattingOptions options = {
-      .tabSize = TAB_SIZE,
-      .insertSpaces = !TAB_CHAR_USE,
+      .tabSize = ft_tab_size(file->feature),
+      .insertSpaces = ft_tab_use_space(file->feature),
       .trimTrailingWhitespace = true,
       .insertFinalNewline = true,
       .trimFinalNewlines = true,

@@ -1,0 +1,527 @@
+[
+  {
+    "label": "C",
+    "id": "c",
+    "detect": {
+      "extensions": [".c", ".h"],
+      "file-name": [],
+      "shebang": []
+    },
+    "comments": {
+      "line": "//",
+      "block": ["/*", "*/"]
+    },
+    "tabulation": {
+      "size": 2,
+      "space": true
+    },
+    "pairs": [
+      ["(", ")"],
+      ["{", "}"],
+      ["[", "]"],
+      ["\"", "\""],
+      ["'", "'"]
+    ],
+    "lsp": {
+      "exe": "clangd",
+      "arguments": []
+    }
+  },
+  {
+    "label": "C++",
+    "id": "cpp",
+    "detect": {
+      "extensions": [".cpp", ".hpp", ".cc", ".hh", ".cxx", ".hxx"],
+      "file-name": [],
+      "shebang": []
+    },
+    "comments": {
+      "line": "//",
+      "block": ["/*", "*/"]
+    },
+    "tabulation": {
+      "size": 2,
+      "space": true
+    },
+    "pairs": [
+      ["(", ")"],
+      ["{", "}"],
+      ["[", "]"],
+      ["\"", "\""],
+      ["'", "'"]
+    ],
+    "lsp": {
+      "exe": "clangd",
+      "arguments": []
+    }
+  },
+  {
+    "label": "Python",
+    "id": "python",
+    "detect": {
+      "extensions": [".py"],
+      "file-name": [],
+      "shebang": ["python"]
+    },
+    "comments": {
+      "line": "#",
+      "block": ["\"\"\"", "\"\"\""]
+    },
+    "tabulation": {
+      "size": 4,
+      "space": true
+    },
+    "pairs": [
+      ["(", ")"],
+      ["{", "}"],
+      ["[", "]"],
+      ["\"", "\""],
+      ["'", "'"]
+    ],
+    "lsp": {
+      "exe": "pylsp",
+      "arguments": ["-v"]
+    }
+  },
+  {
+    "label": "Java",
+    "id": "java",
+    "detect": {
+      "extensions": [".java"],
+      "file-name": [],
+      "shebang": []
+    },
+    "comments": {
+      "line": "//",
+      "block": ["/*", "*/"]
+    },
+    "tabulation": {
+      "size": 4,
+      "space": true
+    },
+    "pairs": [
+      ["(", ")"],
+      ["{", "}"],
+      ["[", "]"],
+      ["\"", "\""],
+      ["'", "'"]
+    ],
+    "lsp": {
+      "exe": "jdtls",
+      "arguments": []
+    }
+  },
+  {
+    "label": "C#",
+    "id": "c-sharp",
+    "detect": {
+      "extensions": [".cs"],
+      "file-name": [],
+      "shebang": []
+    },
+    "comments": {
+      "line": "//",
+      "block": ["/*", "*/"]
+    },
+    "tabulation": {
+      "size": 4,
+      "space": true
+    },
+    "pairs": [
+      ["(", ")"],
+      ["{", "}"],
+      ["[", "]"],
+      ["\"", "\""],
+      ["'", "'"]
+    ],
+    "lsp": {
+      "exe": "omnisharp",
+      "arguments": ["-lsp"]
+    }
+  },
+  {
+    "label": "Makefile",
+    "id": "make",
+    "detect": {
+      "extensions": [".mk"],
+      "file-name": ["Makefile", "makefile"],
+      "shebang": []
+    },
+    "comments": {
+      "line": "#",
+      "block": []
+    },
+    "tabulation": {
+      "size": 4,
+      "space": false
+    },
+    "pairs": [
+      ["\"", "\""],
+      ["'", "'"]
+    ],
+    "lsp": {
+      "exe": "makefile-language-server",
+      "arguments": []
+    }
+  },
+  {
+    "label": "CSS",
+    "id": "css",
+    "detect": {
+      "extensions": [".css", ".scss"],
+      "file-name": [],
+      "shebang": []
+    },
+    "comments": {
+      "line": "",
+      "block": ["/*", "*/"]
+    },
+    "tabulation": {
+      "size": 2,
+      "space": true
+    },
+    "pairs": [
+      ["{", "}"],
+      ["[", "]"],
+      ["(", ")"],
+      ["\"", "\""],
+      ["'", "'"]
+    ],
+    "lsp": {
+      "exe": "css-languageserver",
+      "arguments": ["--stdio"]
+    }
+  },
+  {
+    "label": "Dart",
+    "id": "dart",
+    "detect": {
+      "extensions": [".dart"],
+      "file-name": [],
+      "shebang": []
+    },
+    "comments": {
+      "line": "//",
+      "block": ["/*", "*/"]
+    },
+    "tabulation": {
+      "size": 2,
+      "space": true
+    },
+    "pairs": [
+      ["(", ")"],
+      ["{", "}"],
+      ["[", "]"],
+      ["\"", "\""],
+      ["'", "'"]
+    ],
+    "lsp": {
+      "exe": "dart",
+      "arguments": ["language-server"]
+    }
+  },
+  {
+    "label": "Go",
+    "id": "go",
+    "detect": {
+      "extensions": [".go"],
+      "file-name": [],
+      "shebang": []
+    },
+    "comments": {
+      "line": "//",
+      "block": ["/*", "*/"]
+    },
+    "tabulation": {
+      "size": 4,
+      "space": false
+    },
+    "pairs": [
+      ["(", ")"],
+      ["{", "}"],
+      ["[", "]"],
+      ["\"", "\""],
+      ["'", "'"],
+      ["`", "`"]
+    ],
+    "lsp": {
+      "exe": "gopls",
+      "arguments": []
+    }
+  },
+  {
+    "label": "JavaScript",
+    "id": "javascript",
+    "detect": {
+      "extensions": [".js"],
+      "file-name": [],
+      "shebang": ["node"]
+    },
+    "comments": {
+      "line": "//",
+      "block": ["/*", "*/"]
+    },
+    "tabulation": {
+      "size": 2,
+      "space": true
+    },
+    "pairs": [
+      ["(", ")"],
+      ["{", "}"],
+      ["[", "]"],
+      ["\"", "\""],
+      ["'", "'"],
+      ["`", "`"]
+    ],
+    "lsp": {
+      "exe": "typescript-language-server",
+      "arguments": ["--stdio"]
+    }
+  },
+  {
+    "label": "JSON",
+    "id": "json",
+    "detect": {
+      "extensions": [".json"],
+      "file-name": [],
+      "shebang": []
+    },
+    "comments": {
+      "line": "//",
+      "block": ["/*", "*/"]
+    },
+    "tabulation": {
+      "size": 2,
+      "space": true
+    },
+    "pairs": [
+      ["{", "}"],
+      ["[", "]"],
+      ["\"", "\""]
+    ],
+    "lsp": {
+      "exe": "json-languageserver",
+      "arguments": ["--stdio"]
+    }
+  },
+  {
+    "label": "Bash",
+    "id": "bash",
+    "detect": {
+      "extensions": [".sh", ".bash", ".conf"],
+      "file-name": [".bashrc", "config"],
+      "shebang": ["bash", "sh"]
+    },
+    "comments": {
+      "line": "#",
+      "block": []
+    },
+    "tabulation": {
+      "size": 2,
+      "space": true
+    },
+    "pairs": [
+      ["(", ")"],
+      ["{", "}"],
+      ["[", "]"],
+      ["\"", "\""],
+      ["'", "'"],
+      ["`", "`"]
+    ],
+    "lsp": {
+      "exe": "bash-language-server",
+      "arguments": ["start"]
+    }
+  },
+  {
+    "label": "Markdown",
+    "id": "markdown",
+    "detect": {
+      "extensions": [".md", ".markdown"],
+      "file-name": [],
+      "shebang": []
+    },
+    "comments": {
+      "line": "",
+      "block": ["<!--", "-->"]
+    },
+    "tabulation": {
+      "size": 2,
+      "space": true
+    },
+    "pairs": [
+      ["[", "]"],
+      ["(", ")"],
+      ["{", "}"],
+      ["\"", "\""],
+      ["'", "'"],
+      ["`", "`"]
+    ],
+    "lsp": {
+      "exe": "marksman",
+      "arguments": []
+    }
+  },
+  {
+    "label": "Markdown Inline",
+    "id": "markdown_inline",
+    "detect": {
+      "extensions": [],
+      "file-name": [],
+      "shebang": []
+    },
+    "comments": {
+      "line": "",
+      "block": ["<!--", "-->"]
+    },
+    "tabulation": {
+      "size": 2,
+      "space": true
+    },
+    "pairs": [
+      ["[", "]"],
+      ["(", ")"],
+      ["{", "}"],
+      ["\"", "\""],
+      ["'", "'"],
+      ["`", "`"]
+    ],
+    "lsp": {
+      "exe": "",
+      "arguments": []
+    }
+  },
+  {
+    "label": "Tree-sitter Query",
+    "id": "query",
+    "detect": {
+      "extensions": [".scm"],
+      "file-name": [],
+      "shebang": []
+    },
+    "comments": {
+      "line": ";",
+      "block": []
+    },
+    "tabulation": {
+      "size": 2,
+      "space": true
+    },
+    "pairs": [
+      ["(", ")"],
+      ["[", "]"],
+      ["{", "}"],
+      ["\"", "\""]
+    ],
+    "lsp": {
+      "exe": "",
+      "arguments": []
+    }
+  },
+  {
+    "label": "VHDL",
+    "id": "vhdl",
+    "detect": {
+      "extensions": [".vhd", ".vhdl"],
+      "file-name": [],
+      "shebang": []
+    },
+    "comments": {
+      "line": "--",
+      "block": []
+    },
+    "tabulation": {
+      "size": 2,
+      "space": true
+    },
+    "pairs": [
+      ["(", ")"],
+      ["[", "]"],
+      ["\"", "\""],
+      ["'", "'"]
+    ],
+    "lsp": {
+      "exe": "vhdl-ls",
+      "arguments": []
+    }
+  },
+  {
+    "label": "Lua",
+    "id": "lua",
+    "detect": {
+      "extensions": [".lua"],
+      "file-name": [],
+      "shebang": []
+    },
+    "comments": {
+      "line": "--",
+      "block": ["--[[", "]]"]
+    },
+    "tabulation": {
+      "size": 2,
+      "space": true
+    },
+    "pairs": [
+      ["(", ")"],
+      ["{", "}"],
+      ["[", "]"],
+      ["\"", "\""],
+      ["'", "'"]
+    ],
+    "lsp": {
+      "exe": "lua-language-server",
+      "arguments": []
+    }
+  },
+  {
+    "label": "Assembly",
+    "id": "asm",
+    "detect": {
+      "extensions": [".s", ".S", ".asm"],
+      "file-name": [],
+      "shebang": []
+    },
+    "comments": {
+      "line": ";",
+      "block": []
+    },
+    "tabulation": {
+      "size": 8,
+      "space": false
+    },
+    "pairs": [
+      ["\"", "\""],
+      ["'", "'"]
+    ],
+    "lsp": {
+      "exe": "asm-lsp",
+      "arguments": []
+    }
+  },
+  {
+    "label": "HTML",
+    "id": "html",
+    "detect": {
+      "extensions": [".html", ".htm"],
+      "file-name": [],
+      "shebang": []
+    },
+    "comments": {
+      "line": "",
+      "block": ["<!--", "-->"]
+    },
+    "tabulation": {
+      "size": 2,
+      "space": true
+    },
+    "pairs": [
+      ["<", ">"],
+      ["\"", "\""],
+      ["'", "'"]
+    ],
+    "lsp": {
+      "exe": "html-languageserver",
+      "arguments": ["--stdio"]
+    }
+  }
+]

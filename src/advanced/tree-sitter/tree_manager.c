@@ -1,7 +1,6 @@
 #include "tree_manager.h"
 
 #include <assert.h>
-#include <bits/time.h>
 #include <linux/limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -183,13 +182,10 @@ bool loadNewParser(ParserContainer* container, char* language) {
 }
 
 
-void setFileHighlightDatas(TS_Data* data, IO_FileID io_file) {
-  bool did_lang_was_found = getLanguageStringIDForFile(data->lang_id, io_file);
+void setFileHighlightDatas(TS_Data* data, ft_LanguageFeature* feature) {
+  snprintf(data->lang_id, sizeof(data->lang_id), "%s", feature->id);
 
-  ParserContainer* parser = NULL;
-  if (did_lang_was_found == true) {
-    parser = getParserForLanguage(&parsers, data->lang_id);
-  }
+  ParserContainer* parser = getParserForLanguage(&parsers, data->lang_id);
 
   data->is_active = parser != NULL;
   data->tree = NULL;
@@ -301,9 +297,9 @@ char* getNodeContent(TSNode node, Cursor* cursor) {
 
 int fillWithNodeContent(TSNode node, Cursor* cursor, char* content, int length) {
   uint32_t content_length = ts_node_end_byte(node) - ts_node_start_byte(node);
-  length = min(length, content_length + 1);
+  int to_read = min(length - 1, content_length);
   TSPoint start_point = ts_node_start_point(node);
-  readNBytesAtPosition(cursor, start_point.row, start_point.column, content, length);
-  content[content_length] = '\0';
-  return length;
+  readNBytesAtPosition(cursor, start_point.row, start_point.column, content, to_read);
+  content[to_read] = '\0';
+  return to_read;
 }

@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include "../advanced/tree-sitter/tree_manager.h"
+#include "../config/language_feature.h"
 #include "../data-management/file_management.h"
 #include "../environnement/constants.h"
 #include "../environnement/global_variables.h"
@@ -59,6 +60,9 @@ static void finalizeGlobalSystems() {
   /// --- Teardown Global Systems ---
   // Delete global configuration
   cJSON_Delete(config);
+
+  // Free language features
+  destroyLanguageFeatureList(&language_features);
 
   // Destroy global parser list
   destroyParserList(&parsers);

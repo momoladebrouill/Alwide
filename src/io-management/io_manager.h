@@ -3,6 +3,7 @@
 #include <linux/limits.h>
 
 #include "../data-management/file_structure.h"
+#include "../config/language_feature.h"
 
 typedef enum {
   NONE,
@@ -17,9 +18,9 @@ typedef struct {
   char path_args[PATH_MAX];
 } IO_FileID;
 
-Cursor initWrittableFileFromFile(char* fileName);
+Cursor initWrittableFileFromFile(char* fileName, ft_Tabulation* tab);
 
-bool loadFile(Cursor cursor, char* fileName);
+bool loadFile(Cursor cursor, char* fileName, ft_Tabulation* tab);
 
 void saveFile(FileNode* root, IO_FileID* file);
 

@@ -85,7 +85,7 @@ void gui_repaintGUI(GUIContext* gui_context, WindowHighlightDescriptor* highligh
   wnoutrefresh(stdscr);
   gui_repaintEDW(&gui_context->edw_context, files[current_file].cursor, files[current_file].select_cursor,
                  files[current_file].screen_x, files[current_file].screen_y, highlight_descriptor,
-                 files[current_file].lsp_datas.computed);
+                 files[current_file].lsp_datas.computed, ft_tab_size(files[current_file].feature));
   gui_repaintFEW(&gui_context->few_context, explorer);
   gui_repaintOFW(&gui_context->ofw_context, files, file_count, current_file);
   doupdate();
@@ -146,7 +146,7 @@ bool gui_doesGUINeedRepaint(GUIContext* gui_context) {
 ////// -------------- UTILS FUNCTIONS --------------
 
 
-void moveScreenToMatchCursor(GUIContext* context, Cursor cursor, int* screen_x, int* screen_y) {
+void moveScreenToMatchCursor(GUIContext* context, Cursor cursor, int* screen_x, int* screen_y, int tab_size) {
   int current_lines = getmaxy(context->edw_context.ftw);
   int current_columns = getmaxx(context->edw_context.ftw);
 
@@ -161,7 +161,7 @@ void moveScreenToMatchCursor(GUIContext* context, Cursor cursor, int* screen_x, 
       *screen_y = 1;
   }
 
-  int screen_x_wide_char = getScreenXForCursor(cursor, *screen_x) + *screen_x;
+  int screen_x_wide_char = getScreenXForCursor(cursor, *screen_x, tab_size) + *screen_x;
   if (screen_x_wide_char - (*screen_x + current_columns - 8) >= 0) {
     *screen_x = screen_x_wide_char - current_columns + 8;
     if (*screen_x < 1)
@@ -175,7 +175,7 @@ void moveScreenToMatchCursor(GUIContext* context, Cursor cursor, int* screen_x, 
   }
 }
 
-void centerCursorOnScreen(GUIContext* context, Cursor cursor, int* screen_x, int* screen_y) {
+void centerCursorOnScreen(GUIContext* context, Cursor cursor, int* screen_x, int* screen_y, int tab_size) {
   // center for y, but right for x.
   *screen_x = cursor.line_id.absolute_column - (COLS /*/ 2*/);
   *screen_y = cursor.file_id.absolute_row - (LINES / 2);
@@ -186,18 +186,18 @@ void centerCursorOnScreen(GUIContext* context, Cursor cursor, int* screen_x, int
     *screen_y = 1;
 
   // To match right for x.
-  moveScreenToMatchCursor(context, cursor, screen_x, screen_y);
+  moveScreenToMatchCursor(context, cursor, screen_x, screen_y, tab_size);
 }
 
 
-int getScreenXForCursor(Cursor cursor, int screen_x) {
+int getScreenXForCursor(Cursor cursor, int screen_x, int tab_size) {
   Cursor initial = cursor;
   Cursor old_cursor = cursor;
   int atAdd = 0;
   int size;
 
 
-  if (cursor.line_id.absolute_column != 0 && (size = charPrintSize(getCharForLineIdentifier(cursor.line_id))) >= 2) {
+  if (cursor.line_id.absolute_column != 0 && (size = charPrintSize(getCharForLineIdentifier(cursor.line_id), tab_size)) >= 2) {
     atAdd += size - 1;
   }
   cursor = moveLeft(cursor);
@@ -207,7 +207,7 @@ int getScreenXForCursor(Cursor cursor, int screen_x) {
          cursor.file_id.absolute_row == old_cursor.file_id.absolute_row) {
     assert(cursor.line_id.absolute_column != 0);
     Char_U8 current_ch = getCharForLineIdentifier(cursor.line_id);
-    if ((size = charPrintSize(current_ch)) >= 2) {
+    if ((size = charPrintSize(current_ch, tab_size)) >= 2) {
       atAdd += size - 1;
     }
 
@@ -218,7 +218,7 @@ int getScreenXForCursor(Cursor cursor, int screen_x) {
   return initial.line_id.absolute_column - screen_x + 1 + atAdd;
 }
 
-LineIdentifier getLineIdForScreenX(LineIdentifier line_id, int screen_x, int x_click) {
+LineIdentifier getLineIdForScreenX(LineIdentifier line_id, int screen_x, int x_click, int tab_size) {
   line_id = tryToReachAbsColumn(line_id, screen_x - 1);
 
   int current_column = 0;
@@ -226,7 +226,7 @@ LineIdentifier getLineIdForScreenX(LineIdentifier line_id, int screen_x, int x_c
 
   while (hasElementAfterLine(line_id) == true && current_column <= x_click) {
     line_id = tryToReachAbsColumn(line_id, line_id.absolute_column + 1);
-    int size = charPrintSize(getCharForLineIdentifier(line_id));
+    int size = charPrintSize(getCharForLineIdentifier(line_id), tab_size);
     if (size <= 0)
       size = 1; // TODO handle non UTF_8 char.
     current_column += size;
@@ -243,7 +243,7 @@ LineIdentifier getLineIdForScreenX(LineIdentifier line_id, int screen_x, int x_c
 void setDesiredColumn(Cursor cursor, int* desired_column) { *desired_column = cursor.line_id.absolute_column; }
 
 
-void printToWindow(WINDOW* w, char* ch, int length, int offset_x, int offset_y, int line_length, int max_line_number) {
+void printToWindow(WINDOW* w, char* ch, int length, int offset_x, int offset_y, int line_length, int max_line_number, int tab_size) {
   if (length == -1) {
     length = strlen(ch);
   }
@@ -268,7 +268,7 @@ void printToWindow(WINDOW* w, char* ch, int length, int offset_x, int offset_y, 
       Char_U8 tmp_ch = readChar_U8FromCharArray(ch + current_ch_index);
       current_ch_index += sizeChar_U8(tmp_ch) - 1;
 
-      if (current_line_length + charPrintSize(tmp_ch) > line_length) {
+      if (current_line_length + charPrintSize(tmp_ch, tab_size) > line_length) {
         current_line_length = 0;
         current_row++;
         wmove(w, offset_y + current_row, offset_x);
@@ -277,13 +277,13 @@ void printToWindow(WINDOW* w, char* ch, int length, int offset_x, int offset_y, 
         }
       }
 
-      current_line_length += charPrintSize(tmp_ch);
+      current_line_length += charPrintSize(tmp_ch, tab_size);
 
       if (tmp_ch.t[0] != '\t') {
         gui_printChar_U8ToNcurses(w, tmp_ch);
       }
       else {
-        for (int i = 0; i < TAB_SIZE; i++) {
+        for (int i = 0; i < tab_size; i++) {
           gui_printChar_U8ToNcurses(w, space);
         }
       }

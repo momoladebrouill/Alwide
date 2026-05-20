@@ -195,6 +195,7 @@ bool arePredicatesMatching(Cursor* tmp, TSQuery* query, TSQueryMatch qmatch, con
 
   while (predicates_hasNext(&stream)) {
     if (executeCurrentPredicate(&payload) == false) {
+      cJSON_Delete(payload.predicate_result);
       return false;
     }
     predicates_consumeEND(&stream);

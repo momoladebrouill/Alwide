@@ -39,7 +39,7 @@ void receiveHoverData(cJSON* packet, FileContainer* file, ViewPort* view_port, C
 
   // We assert that every data going outfrom there has a range.
   assert(file->lsp_datas.computed->hover.is_range);
-  gui_resumeHoverInformation(cursor, view_port, &file->lsp_datas.computed->hover);
+  gui_resumeHoverInformation(cursor, view_port, &file->lsp_datas.computed->hover, ft_tab_size(file->feature));
 
   free(payload);
 }

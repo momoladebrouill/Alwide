@@ -8,7 +8,8 @@
 #include <sys/ttydefaults.h>
 #include <time.h>
 
-#include "../advanced/lsp/lsp-features/lsp_code_action.h"
+#include "../advanced/intelligence/auto_pairs.h"
+#include "../advanced/intelligence/comments.h"
 #include "../advanced/lsp/lsp-features/lsp_completion.h"
 #include "../advanced/lsp/lsp-features/lsp_formatting.h"
 #include "../advanced/lsp/lsp-features/lsp_signature_help.h"
@@ -26,10 +27,11 @@
 #include "editor_lsp.h"
 
 
-bool handlePopupInput(EditorContext* ctx, int c, int hash, ModuleContext* payload) {
+bool handlePopupInput(EditorContext* ctx, int c, int hash) {
+  ModuleContext payload = buildModuleContext(ctx);
   FileContainer* fc = &ctx->files[ctx->current_file_index];
   MEVENT* mouse_event = (hash == KEY_MOUSE) ? &ctx->m_event : NULL;
-  return gui_handlePopupInput(&ctx->gui_context, fc, c, hash, ctx->payload_state_change, payload, mouse_event);
+  return gui_handlePopupInput(&ctx->gui_context, fc, c, hash, ctx->payload_state_change, &payload, mouse_event);
 }
 
 void readNextInput(EditorContext* ctx, int* out_c, int* out_hash) {
@@ -63,6 +65,49 @@ void readNextInput(EditorContext* ctx, int* out_c, int* out_hash) {
   *out_hash = hash;
 }
 
+static void handleDefaultKeyInput(EditorContext* ctx, int c) {
+  FileContainer* fc = &ctx->files[ctx->current_file_index];
+
+  if (iscntrl(c)) {
+    printf("Unsupported touch %d", c);
+    return;
+  }
+
+  Cursor* cursor = &fc->cursor;
+  Cursor* select_cursor = &fc->select_cursor;
+  int* desired_column = &fc->desired_column;
+  History** history_frame = &fc->history_frame;
+
+  deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
+  CursorDescriptor tmp = cursor_to_desc(*cursor);
+  Char_U8 u8 = readChar_U8FromInput(c);
+
+  if (!ft_handleAutoPairs(fc, u8, history_frame, ctx->payload_state_change)) {
+    *cursor = insertCharInLineC(*cursor, u8);
+    saveAction(history_frame, createInsertAction(*cursor, tmp), globalOnStageChange, cursor,
+               (long*)&ctx->payload_state_change);
+  }
+  setDesiredColumn(*cursor, desired_column);
+
+  if (ctx->gui_context.edw_context.pow_owner == DIAGNOSTICS) {
+    gui_closePopup(&ctx->gui_context);
+  }
+  ModuleContext lsp_ctx = buildModuleContext(ctx);
+  askOnTypeFormatting(fc, u8.t, &lsp_ctx);
+  askOnCharTypeLspInfos(ctx, c, fc, cursor);
+}
+
+static void handleTabInsertion(FileContainer* fc, Cursor* cursor) {
+  if (!ft_tab_use_space(fc->feature)) {
+    *cursor = insertCharInLineC(*cursor, readChar_U8FromInput('\t'));
+  }
+  else {
+    int tab_size = ft_tab_size(fc->feature);
+    for (int i = 0; i < tab_size; i++) {
+      *cursor = insertCharInLineC(*cursor, readChar_U8FromInput(' '));
+    }
+  }
+}
 
 EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
   FileContainer* fc = &ctx->files[ctx->current_file_index];
@@ -219,7 +264,8 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       break;
     case CTRL('z'):
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_LEFT);
-      *cursor = undo(history_frame, *cursor, globalOnStageChange, (long*)&ctx->payload_state_change);
+      *cursor =
+        undo(history_frame, *cursor, globalOnStageChange, (long*)&ctx->payload_state_change, ft_tab(fc->feature));
       ctx->old_history_frame = NULL;
       setDesiredColumn(*cursor, desired_column);
       gui_updateEDW(&ctx->gui_context);
@@ -227,7 +273,8 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       break;
     case CTRL('y'):
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_LEFT);
-      *cursor = redo(history_frame, *cursor, globalOnStageChange, (long*)&ctx->payload_state_change);
+      *cursor =
+        redo(history_frame, *cursor, globalOnStageChange, (long*)&ctx->payload_state_change, ft_tab(fc->feature));
       ctx->old_history_frame = NULL;
       setDesiredColumn(*cursor, desired_column);
       gui_updateEDW(&ctx->gui_context);
@@ -249,10 +296,14 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
     case CTRL('v'):
       deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
       tmp = cursor_to_desc(*cursor);
-      *cursor = loadFromClipBoard(*cursor);
+      *cursor = loadFromClipBoard(fc);
       saveAction(history_frame, createInsertAction(*cursor, tmp), globalOnStageChange, cursor,
                  (long*)&ctx->payload_state_change);
       setDesiredColumn(*cursor, desired_column);
+      break;
+    case 0x1F: // CTRL('/') or CTRL('_')
+      ft_toggleComments(fc, history_frame, &ctx->payload_state_change);
+      gui_updateEDW(&ctx->gui_context);
       break;
     case CTRL('q'):
       return EVENT_QUIT;
@@ -333,14 +384,7 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
     case KEY_TAB:
       deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
       tmp = cursor_to_desc(*cursor);
-      if (TAB_CHAR_USE) {
-        *cursor = insertCharInLineC(*cursor, readChar_U8FromInput('\t'));
-      }
-      else {
-        for (int i = 0; i < TAB_SIZE; i++) {
-          *cursor = insertCharInLineC(*cursor, readChar_U8FromInput(' '));
-        }
-      }
+      handleTabInsertion(fc, cursor);
       saveAction(history_frame, createInsertAction(*cursor, tmp), globalOnStageChange, cursor,
                  (long*)&ctx->payload_state_change);
       setDesiredColumn(*cursor, desired_column);
@@ -369,23 +413,7 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       gui_closePopup(&ctx->gui_context);
       break;
     default:
-      if (iscntrl(c)) {
-        printf("Unsupported touch %d", c);
-      }
-      else {
-        deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
-        tmp = cursor_to_desc(*cursor);
-        Char_U8 u8 = readChar_U8FromInput(c);
-        *cursor = insertCharInLineC(*cursor, u8);
-        setDesiredColumn(*cursor, desired_column);
-        saveAction(history_frame, createInsertAction(*cursor, tmp), globalOnStageChange, cursor,
-                   (long*)&ctx->payload_state_change);
-        if (ctx->gui_context.edw_context.pow_owner == DIAGNOSTICS) {
-          gui_closePopup(&ctx->gui_context);
-        }
-        askOnTypeFormatting(fc, u8.t, &lsp_ctx);
-        askOnCharTypeLspInfos(ctx, c, fc, cursor);
-      }
+      handleDefaultKeyInput(ctx, c);
       break;
   }
   return EVENT_CONTINUE;

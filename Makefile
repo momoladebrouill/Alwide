@@ -40,6 +40,7 @@ SRC_MODULES= \
 	src/terminal/windows/ofw.c \
 	src/terminal/windows/pow.c \
 	src/config/config.c \
+	src/config/language_feature.c \
 	src/io-management/workspace_settings.c \
 	src/advanced/lsp/lsp_handler.c \
 	src/advanced/lsp/lsp_notification_dispatcher.c \
@@ -54,6 +55,8 @@ SRC_MODULES= \
 	src/advanced/lsp/lsp-features/lsp_tools.c \
 	src/advanced/lsp/lsp_dispatcher.c \
 	src/advanced/lsp/lsp_emitter.c \
+	src/advanced/intelligence/auto_pairs.c \
+	src/advanced/intelligence/comments.c \
 	src/core/editor_context.c \
 	src/core/editor_init.c \
 	src/core/editor_state.c \

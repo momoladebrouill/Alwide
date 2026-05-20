@@ -5,8 +5,9 @@
 #include "../../../lib/tree-sitter/lib/include/tree_sitter/api.h"
 #include "../../data-management/state_control.h"
 #include "../../environnement/constants.h"
-#include "../../io-management/io_manager.h"
 #include "../theme.h"
+#include "../../config/language_feature.h"
+
 
 #define CHAR_CHUNK_SIZE_TSINPUT 500
 
@@ -121,7 +122,7 @@ bool loadNewParser(ParserContainer* container, char* language);
 
 ////// ------------------- TREE UTILS -------------------
 
-void setFileHighlightDatas(TS_Data* data, IO_FileID io_file);
+void setFileHighlightDatas(TS_Data* data, ft_LanguageFeature* feature);
 
 void onStateChangeTS(Action action, TS_Data* data);
 

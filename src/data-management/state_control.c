@@ -16,9 +16,8 @@ void initHistory(History* history) {
   history->next = NULL;
 }
 
-
 Cursor undo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, Cursor* cursor, void* payload),
-            void* payload) {
+            void* payload, ft_Tabulation* tab) {
   History* history = *history_p;
 
   // If history is at root return and do nothing. Can't undo ;).
@@ -27,20 +26,20 @@ Cursor undo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action
   }
 
   time_val canceled_time_action = history->action.time;
-  cursor = doReverseAction(&history->action, cursor, onEachStateChange, payload);
+  cursor = doReverseAction(&history->action, cursor, onEachStateChange, payload, tab);
   history->action.time = canceled_time_action;
 
   *history_p = history->prev;
 
   if (diff2Time(history->action.time, history->prev->action.time) < TIME_CONSIDER_UNIQUE_UNDO) {
-    return undo(history_p, cursor, onEachStateChange, payload);
+    return undo(history_p, cursor, onEachStateChange, payload, tab);
   }
 
   return cursor;
 }
 
 Cursor redo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, Cursor* cursor, void* payload),
-            void* payload) {
+            void* payload, ft_Tabulation* tab) {
   History* history = *history_p;
 
   // If history is at the end return and do nothing. Cannot redo nothing ;).
@@ -53,12 +52,12 @@ Cursor redo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action
 
   time_val canceled_time_action = history->action.time;
 
-  cursor = doReverseAction(&history->action, cursor, onEachStateChange, payload);
+  cursor = doReverseAction(&history->action, cursor, onEachStateChange, payload, tab);
   history->action.time = canceled_time_action;
 
   if (history->next != NULL &&
       diff2Time(history->action.time, history->next->action.time) < TIME_CONSIDER_UNIQUE_UNDO) {
-    return redo(history_p, cursor, onEachStateChange, payload);
+    return redo(history_p, cursor, onEachStateChange, payload, tab);
   }
 
   return cursor;
@@ -95,7 +94,8 @@ void saveAction(History** history_p, Action action,
 }
 
 Cursor doReverseAction(Action* action_p, Cursor cursor,
-                       void (*onEachStateChange)(Action action, Cursor* cursor, void* payload), void* payload) {
+                       void (*onEachStateChange)(Action action, Cursor* cursor, void* payload), void* payload,
+                       ft_Tabulation* tabulation) {
   Action action = *action_p;
   Cursor tmp;
   Cursor tmp_end;
@@ -123,7 +123,7 @@ Cursor doReverseAction(Action* action_p, Cursor cursor,
     case DELETE:
       tmp.file_id = tryToReachAbsRow(cursor.file_id, action.cur.row);
       tmp.line_id = moduloLineIdentifierR(getLineForFileIdentifier(tmp.file_id), action.cur.column);
-      cursor = insertCharArrayAtCursor(tmp, action.ch);
+      cursor = insertCharArrayAtCursor(tmp, action.ch, tabulation);
       destroyAction(action);
       *action_p = createInsertAction(tmp, cursor_to_desc(cursor));
       if (onEachStateChange != NULL) {
@@ -536,7 +536,7 @@ ChangeDescriptor actionToChangeDescriptor(Action action) {
       int current_row = edit->start_point.row;
       int current_column = edit->start_point.column;
 
-      countStringFrame(ch, action.byte_end - action.byte_start, &current_row, &current_column, NULL);
+      countStringFrame(ch, action.byte_end - action.byte_start, &current_row, &current_column, NULL, 2);
 
       edit->old_end_point.row = current_row;
       edit->old_end_point.column = current_column;

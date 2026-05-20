@@ -1,5 +1,5 @@
-#ifndef CONTANTS_H
-#define CONTANTS_H
+#ifndef CONSTANTS_H
+#define CONSTANTS_H
 
 #define SHOW_ERROR true
 
@@ -15,8 +15,6 @@
 #define OPENED_FILE_WINDOW_HEIGHT 2 // 2 to enable 0 to disable
 
 // use make -B after changing the TAB_SIZE
-#define TAB_CHAR_USE true
-#define TAB_SIZE 2
 
 #define FILE_EXPLORER_WIDTH 30
 #define FILE_EXPLORER_TREE_OFFSET 1
@@ -44,4 +42,4 @@
 extern int color_index;
 extern int color_pair;
 
-#endif // CONTANTS_H
+#endif

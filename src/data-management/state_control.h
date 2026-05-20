@@ -50,19 +50,22 @@ struct History_ {
 
 typedef struct History_ History;
 
+#include "../config/language_feature.h"
+
 void initHistory(History* history);
 
 Cursor undo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, Cursor* cursor, void* payload),
-            void* payload);
+            void* payload, ft_Tabulation* tab);
 
 Cursor redo(History** history_p, Cursor cursor, void (*onEachStateChange)(Action action, Cursor* cursor, void* payload),
-            void* payload);
+            void* payload, ft_Tabulation* tab);
 
 void saveAction(History** history_p, Action action,
                 void (*onEachStateChange)(Action action, Cursor* cursor, void* payload), Cursor* cursor, void* payload);
 
 Cursor doReverseAction(Action* action_p, Cursor cursor,
-                       void (*onEachStateChange)(Action action, Cursor* cursor, void* payload), void* payload);
+                       void (*onEachStateChange)(Action action, Cursor* cursor, void* payload), void* payload,
+                       ft_Tabulation* tab);
 
 Action createDeleteAction(Cursor cur1, CursorDescriptor cur2);
 
