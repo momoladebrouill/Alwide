@@ -8,8 +8,8 @@ ifeq ($(shell expr $(CLANG_VERSION) \< $(MIN_CLANG_VERSION)), 1)
 $(error Clang version $(CLANG_VERSION) is too old. Please update to at least version $(MIN_CLANG_VERSION))
 endif
 
-#CFLAGS=-g -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600 -DNDEBUG -O3
-CFLAGS=-g -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600 -D_SHOW_ERROR -fsanitize=address
+CFLAGS=-g -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600 -DNDEBUG -O3
+#CFLAGS=-g -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600 -D_SHOW_ERROR -fsanitize=address
 
 BUILD_DIR=build
 executable=al # lsp_test test_line test_file
