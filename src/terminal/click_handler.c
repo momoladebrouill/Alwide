@@ -14,6 +14,7 @@
 #include "windows/edw.h"
 #include "windows/few.h"
 #include "windows/pow.h"
+#include "windows/tpw.h"
 
 
 bool isClickInsideWindow(WINDOW* w, MEVENT* m_event) {
@@ -72,6 +73,31 @@ mouse_read:;
 
   FileContainer* fc = &ctx->files[ctx->current_file_index];
 
+  // Intercept click inside any active, visible toplevel popup
+  gui_TPW* popup = ctx->gui_context.toplevel_popups;
+  while (popup != NULL) {
+
+    if (popup->visible && popup->tpw != NULL) {
+
+      if (popup->strong_focus) {
+        if (popup->on_input) {
+          popup->on_input(popup, KEY_MOUSE, KEY_MOUSE, popup->payload);
+        }
+        return;
+      }
+
+      if (isClickInsideWindow(popup->tpw, &ctx->m_event)) {
+        gui_setToplevelPopupFocus(&ctx->gui_context, popup);
+        if (popup->on_input) {
+          popup->on_input(popup, KEY_MOUSE, KEY_MOUSE, popup->payload);
+        }
+        return;
+      }
+
+    }
+    popup = popup->next;
+  }
+
   if ((ctx->m_event.x < getbegx(ctx->gui_context.edw_context.lnw) && ctx->gui_context.focus_w == NULL) ||
       (ctx->gui_context.few_context.few != NULL && ctx->gui_context.focus_w == ctx->gui_context.few_context.few)) {
     // Click in File Explorer Window
@@ -109,7 +135,7 @@ mouse_read:;
 ////// -------------- CLICK FUNCTIONS --------------
 
 
-void handleEditorClick(GUIContext* gui_context, Cursor* cursor, Cursor* select_cursor, int* desired_column,
+void handleEditorClick(gui_Context* gui_context, Cursor* cursor, Cursor* select_cursor, int* desired_column,
                        int* screen_x, int* screen_y, MEVENT* m_event, bool mouse_drag, FileContainer* file,
                        WindowHighlightDescriptor* highlight_descriptor) {
   int edws_offset_x = getbegx(gui_context->edw_context.ftw);
@@ -241,9 +267,9 @@ void handleEditorClick(GUIContext* gui_context, Cursor* cursor, Cursor* select_c
   }
 }
 
-int handleOpenedFileSelectClick(GUIContext* gui_context, FileContainer* files, int* file_count, int* current_file,
+int handleOpenedFileSelectClick(gui_Context* gui_context, FileContainer* files, int* file_count, int* current_file,
                                 MEVENT m_event) {
-  OFW_GUIContext* ofw_content = &gui_context->ofw_context;
+  gui_OFW* ofw_content = &gui_context->ofw_context;
 
   // Char offset for the window
   int current_char_offset = getbegx(ofw_content->ofw);
@@ -284,9 +310,9 @@ int handleOpenedFileSelectClick(GUIContext* gui_context, FileContainer* files, i
 }
 
 
-void handleOpenedFileClick(GUIContext* gui_context, FileContainer* files, int* file_count, int* current_file,
+void handleOpenedFileClick(gui_Context* gui_context, FileContainer* files, int* file_count, int* current_file,
                            MEVENT m_event, bool* refresh_local_vars, bool mouse_drag) {
-  OFW_GUIContext* ofw_context = &gui_context->ofw_context;
+  gui_OFW* ofw_context = &gui_context->ofw_context;
   if (m_event.bstate & BUTTON4_PRESSED && !(m_event.bstate & BUTTON_SHIFT)) {
     // Move Up
     (ofw_context->current_file_offset)--;
@@ -342,9 +368,9 @@ void handleOpenedFileClick(GUIContext* gui_context, FileContainer* files, int* f
   }
 }
 
-void handleFileExplorerClick(GUIContext* gui_context, FileContainer** files, int* file_count, int* current_file,
+void handleFileExplorerClick(gui_Context* gui_context, FileContainer** files, int* file_count, int* current_file,
                              ExplorerFolder* pwd, MEVENT m_event, bool* refresh_local_vars) {
-  FEW_GUIContext* few_context = &gui_context->few_context;
+  gui_FEW* few_context = &gui_context->few_context;
 
   // ---------- SCROLL ------------
   if (m_event.bstate & BUTTON4_PRESSED && !(m_event.bstate & BUTTON_SHIFT)) {

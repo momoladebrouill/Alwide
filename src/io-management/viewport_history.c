@@ -88,6 +88,6 @@ void fetchSavedCursorPosition(IO_FileID file, Cursor* cursor, int* screen_x, int
   }
 }
 
-ViewPort viewPortOf(GUIContext* context, int* screen_x, int* screen_y) {
+ViewPort viewPortOf(gui_Context* context, int* screen_x, int* screen_y) {
   return (ViewPort){.gui = context, .screen_x = screen_x, .screen_y = screen_y};
 }

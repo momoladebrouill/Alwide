@@ -8,7 +8,7 @@
 #include "lsp_handler.h"
 
 void LSP_highlightCurrentFile(LSP_Data* lsp_datas, Cursor cursor, WindowHighlightDescriptor* highlight_descriptor,
-                              GUIContext* context) {
+                              gui_Context* context) {
   if (!lsp_datas->is_enable) {
     return;
   }

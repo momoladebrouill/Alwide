@@ -9,7 +9,7 @@
 #include "ofw.h"
 
 
-void gui_initFEWContext(FEW_GUIContext* context) {
+void gui_initFEWContext(gui_FEW* context) {
   context->few = NULL;         // File Explorer Window
   context->refresh_few = true; // Need to reprint file explorer window
 
@@ -21,7 +21,7 @@ void gui_initFEWContext(FEW_GUIContext* context) {
 }
 
 
-void gui_resizeFEW(GUIContext* gui_context, int few_new_width) {
+void gui_resizeFEW(gui_Context* gui_context, int few_new_width) {
   if (few_new_width == -1) {
     few_new_width = gui_context->few_context.few_width;
   }
@@ -45,7 +45,7 @@ void gui_resizeFEW(GUIContext* gui_context, int few_new_width) {
   gui_context->few_context.refresh_few = true;
 }
 
-void switchFEW(GUIContext* gui_context) {
+void gui_switchFEW(gui_Context* gui_context) {
   if (gui_context->few_context.few == NULL) {
     // Open File Explorer Window
     gui_context->few_context.few_width = gui_context->few_context.saved_few_width;
@@ -149,7 +149,7 @@ void internalPrintExplorerRec(ExplorerFolder* folder, WINDOW* few, int* few_x_of
   }
 }
 
-void gui_repaintFEW(FEW_GUIContext* context, ExplorerFolder* pwd) {
+void gui_repaintFEW(gui_FEW* context, ExplorerFolder* pwd) {
   if (!(context->refresh_few == true && context->few_width != 0 && context->few != NULL)) {
     return;
   }

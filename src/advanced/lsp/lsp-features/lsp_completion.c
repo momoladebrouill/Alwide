@@ -82,7 +82,7 @@ static bool checkLineHasDiagnostics(LSP_ComputedData* computed, int row) {
 }
 
 
-void askCompletion(GUIContext* gui_context, FileContainer* fc, bool reset, bool force) {
+void askCompletion(gui_Context* gui_context, FileContainer* fc, bool reset, bool force) {
   if (fc->lsp_datas.is_enable) {
 
     // check if the askCompletion have to be replaced by a askSignature.

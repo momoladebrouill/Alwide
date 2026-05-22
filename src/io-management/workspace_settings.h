@@ -41,7 +41,7 @@ cJSON* WorkspaceSettingsToJSON(WorkspaceSettings* settings);
 
 void JSONToWorkspaceSettings(WorkspaceSettings* settings, cJSON* json);
 
-void setupWorkspace(WorkspaceSettings* loaded_settings, int* file_count, char*** file_names, GUIContext* gui_context,
+void setupWorkspace(WorkspaceSettings* loaded_settings, int* file_count, char*** file_names, gui_Context* gui_context,
                     int* current_file_index);
 
 

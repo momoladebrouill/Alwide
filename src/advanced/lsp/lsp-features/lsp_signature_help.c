@@ -8,7 +8,7 @@
 #include "../../../utils/tools.h"
 #include "../lsp_handler.h"
 
-void receiveSignatureHelpData(cJSON* packet, FileContainer* file, GUIContext* gui, Cursor* cursor) {
+void receiveSignatureHelpData(cJSON* packet, FileContainer* file, gui_Context* gui, Cursor* cursor) {
   LSP_destroySignatureHelp(&file->lsp_datas.computed->signature_help);
   LSP_getSignatureHelpFromJSON(LSP_getPacketResult(packet), &file->lsp_datas.computed->signature_help);
 

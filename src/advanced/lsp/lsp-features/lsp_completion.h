@@ -13,7 +13,7 @@ void executeLSPCompletion(Cursor* cursor, LSP_CompletionItem* item, History** hi
                           PayloadStateChange payload_state_change, LF_Tabulation* tab);
 
 
-void askCompletion(GUIContext* gui_context, FileContainer* fc, bool reset, bool force);
+void askCompletion(gui_Context* gui_context, FileContainer* fc, bool reset, bool force);
 
 void receiveCompletionData(cJSON* packet, FileContainer* file, ViewPort* view_port, Cursor* cursor);
 

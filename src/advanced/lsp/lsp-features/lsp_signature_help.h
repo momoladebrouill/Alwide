@@ -4,7 +4,7 @@
 #include "../../../core/editor_context.h"
 #include "../lsp_client.h"
 
-void receiveSignatureHelpData(cJSON* packet, FileContainer* file, GUIContext* gui, Cursor* cursor);
+void receiveSignatureHelpData(cJSON* packet, FileContainer* file, gui_Context* gui, Cursor* cursor);
 
 void askSignatureHelp(FileContainer* file, Cursor* cursor);
 

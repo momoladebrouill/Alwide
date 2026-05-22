@@ -13,6 +13,7 @@
 #include "../io-management/io_explorer.h"
 #include "../io-management/workspace_settings.h"
 #include "../terminal/highlight.h"
+#include "../terminal/windows/tpw.h"
 
 static void finalizeTerminal() {
   /// --- Teardown Terminal ---
@@ -72,6 +73,7 @@ static void finalizeGlobalSystems() {
 }
 
 void finalizeEditor(EditorContext* ctx) {
+  gui_destroyAllToplevelPopups(&ctx->gui_context);
   finalizeWorkspace(ctx);
   finalizeFileData(ctx);
   finalizeGlobalSystems();

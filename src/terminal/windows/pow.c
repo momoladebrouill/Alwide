@@ -80,7 +80,7 @@ void gui_showGenericPopupWithTextAnchor(ViewPort* view_port, Cursor* cursor, int
                               getScreenXForCursor(*cursor, *view_port->screen_x, tab_size), height, width, popup_owner);
 }
 
-void gui_showGenericPopup(GUIContext* gui_context, int y, int x, int prefered_height, int prefered_width,
+void gui_showGenericPopup(gui_Context* gui_context, int y, int x, int prefered_height, int prefered_width,
                           PopupOwner popup_owner) {
   int height = min(getmaxy(gui_context->edw_context.ftw) - y, prefered_height);
   int width = min(getmaxx(gui_context->edw_context.ftw) - x, prefered_width);
@@ -97,11 +97,11 @@ void gui_showGenericPopup(GUIContext* gui_context, int y, int x, int prefered_he
   wbkgd(gui_context->edw_context.pow, COLOR_PAIR(INFO_COLOR_PAIR));
 }
 
-void gui_setLastTextAnchor(GUIContext* gui_context, CursorDescriptor descriptor) {
+void gui_setLastTextAnchor(gui_Context* gui_context, CursorDescriptor descriptor) {
   gui_context->edw_context.lastTextAnchor = descriptor;
 }
 
-void gui_showDiagnostic(GUIContext* gui_context, int y, int x, LSP_Diagnostic* diagnostic, int tab_size) {
+void gui_showDiagnostic(gui_Context* gui_context, int y, int x, LSP_Diagnostic* diagnostic, int tab_size) {
   if (diagnostic == NULL) {
     return;
   }
@@ -144,7 +144,7 @@ void gui_showDiagnostic(GUIContext* gui_context, int y, int x, LSP_Diagnostic* d
 }
 
 
-void gui_printCompletionPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
+void gui_printCompletionPopup(gui_EDW* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
   if (lsp_data == NULL) {
     fprintf(stderr, "INTERNAL ERROR : Asked to print the popup on a non lsp file.\n");
     return;
@@ -208,7 +208,7 @@ const char* gui_getGotoLabel(LSP_GOTO_TYPE type) {
   }
 }
 
-void gui_printGotoChoicePopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
+void gui_printGotoChoicePopup(gui_EDW* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
   int width = getmaxx(context->pow), height = getmaxy(context->pow);
   werase(context->pow);
 
@@ -240,7 +240,7 @@ void gui_printGotoChoicePopup(EDW_GUIContext* context, Cursor* cursor, LSP_Compu
   }
 }
 
-void gui_printHoverPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
+void gui_printHoverPopup(gui_EDW* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
   int width = getmaxx(context->pow), height = getmaxy(context->pow);
   werase(context->pow);
   wattr_set(context->pow, A_NORMAL, INFO_COLOR_PAIR, NULL);
@@ -274,7 +274,7 @@ void gui_printHoverPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedDa
 }
 
 
-void gui_printSignatureHelpPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
+void gui_printSignatureHelpPopup(gui_EDW* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
   int width = getmaxx(context->pow), height = getmaxy(context->pow);
   werase(context->pow);
 
@@ -364,7 +364,7 @@ void gui_printSignatureHelpPopup(EDW_GUIContext* context, Cursor* cursor, LSP_Co
 }
 
 
-void gui_printPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
+void gui_printPopup(gui_EDW* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
   switch (context->pow_owner) {
     case COMPLETION:
       gui_printCompletionPopup(context, cursor, lsp_data, tab_size);
@@ -383,7 +383,7 @@ void gui_printPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* l
   }
 }
 
-bool gui_handleCompletionInput(GUIContext* context, FileContainer* fc, int c_hash, int c_raw,
+bool gui_handleCompletionInput(gui_Context* context, FileContainer* fc, int c_hash, int c_raw,
                                PayloadStateChange payload_state_change, ModuleContext* payload, MEVENT* m_event) {
   Cursor* cursor = &fc->cursor;
   LSP_ComputedData* lsp_data = fc->lsp_datas.computed;
@@ -475,7 +475,7 @@ bool gui_handleCompletionInput(GUIContext* context, FileContainer* fc, int c_has
   return false;
 }
 
-bool gui_handleGotoChoiceInput(GUIContext* context, FileContainer* fc, int c_hash, int c_raw,
+bool gui_handleGotoChoiceInput(gui_Context* context, FileContainer* fc, int c_hash, int c_raw,
                                PayloadStateChange payload_state_change, ModuleContext* payload, MEVENT* m_event) {
   LSP_ComputedData* lsp_data = fc->lsp_datas.computed;
   int height = getmaxy(context->edw_context.pow) - 2;
@@ -552,7 +552,7 @@ bool gui_handleGotoChoiceInput(GUIContext* context, FileContainer* fc, int c_has
 }
 
 
-bool gui_handlePopupInput(GUIContext* context, FileContainer* fc, int c_raw, int c_hash,
+bool gui_handlePopupInput(gui_Context* context, FileContainer* fc, int c_raw, int c_hash,
                           PayloadStateChange payload_state_change, ModuleContext* payload, MEVENT* m_event) {
   if (context->edw_context.show_pow == false || context->edw_context.pow == NULL) {
     return false;

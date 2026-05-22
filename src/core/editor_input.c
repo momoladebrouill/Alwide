@@ -5,6 +5,7 @@
 #include <ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ttydefaults.h>
 #include <time.h>
 
@@ -22,6 +23,7 @@
 #include "../terminal/windows/few.h"
 #include "../terminal/windows/ofw.h"
 #include "../terminal/windows/pow.h"
+#include "../terminal/windows/tpw.h"
 #include "../utils/clipboard_manager.h"
 #include "../utils/key_management.h"
 #include "../utils/tools.h"
@@ -29,10 +31,28 @@
 
 
 bool handlePopupInput(EditorContext* ctx, int c, int hash) {
+  // Route keyboard input to the focused active toplevel popup first
   ModuleContext payload = buildModuleContext(ctx);
+
+  gui_TPW* popup = ctx->gui_context.toplevel_popups;
+  while (popup != NULL) {
+    if (popup->visible && popup->has_focus && popup->on_input) {
+      if (popup->on_input(popup, c, hash, popup->payload)) {
+        return true;
+      }
+      if (popup->strong_focus) {
+        return true;
+      }
+    }
+    popup = popup->next;
+  }
+
   FileContainer* fc = &ctx->files[ctx->current_file_index];
   MEVENT* mouse_event = (hash == KEY_MOUSE) ? &ctx->m_event : NULL;
-  return gui_handlePopupInput(&ctx->gui_context, fc, c, hash, ctx->payload_state_change, &payload, mouse_event);
+
+  bool result = gui_handlePopupInput(&ctx->gui_context, fc, c, hash, ctx->payload_state_change, &payload, mouse_event);
+
+  return result;
 }
 
 void readNextInput(EditorContext* ctx, int* out_c, int* out_hash) {
@@ -417,7 +437,7 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       gui_updateEDW(&ctx->gui_context);
       break;
     case CTRL('e'):
-      switchFEW(&ctx->gui_context);
+      gui_switchFEW(&ctx->gui_context);
       break;
     case CTRL('l'):
       gui_switchOFW(&ctx->gui_context);

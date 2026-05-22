@@ -7,5 +7,5 @@
 
 
 void LSP_highlightCurrentFile(LSP_Data* lsp_datas, Cursor cursor, WindowHighlightDescriptor* highlight_descriptor,
-                              GUIContext* context);
+                              gui_Context* context);
 #endif // WISHWIM_LSP_HIGHLIGHTER_H

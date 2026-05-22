@@ -3,12 +3,12 @@
 #include "../../io-management/io_explorer.h"
 #include "gui_entities.h"
 
-void gui_initFEWContext(FEW_GUIContext* context);
+void gui_initFEWContext(gui_FEW* context);
 
-void gui_resizeFEW(GUIContext* gui_context, int few_new_width);
+void gui_resizeFEW(gui_Context* gui_context, int few_new_width);
 
-void gui_repaintFEW(FEW_GUIContext* context, ExplorerFolder* pwd);
+void gui_repaintFEW(gui_FEW* context, ExplorerFolder* pwd);
 
-void switchFEW(GUIContext* gui_context);
+void gui_switchFEW(gui_Context* gui_context);
 
 #endif // WISHWIM_FEW_H

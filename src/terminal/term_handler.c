@@ -15,20 +15,22 @@
 #include "windows/edw.h"
 #include "windows/few.h"
 #include "windows/ofw.h"
+#include "windows/tpw.h"
 
 
 ////// -------------- WINDOWS MANAGEMENTS --------------
 
 
-void gui_initGUIContext(GUIContext* gui_context) {
+void gui_initGUIContext(gui_Context* gui_context) {
   gui_context->focus_w = NULL; // Used to set the window where start mouse drag
+  gui_context->toplevel_popups = NULL;
 
   gui_initEDWContext(&gui_context->edw_context);
   gui_initFEWContext(&gui_context->few_context);
   gui_initOFWContext(&gui_context->ofw_context);
 }
 
-void gui_initNCurses(GUIContext* gui_context) {
+void gui_initNCurses(gui_Context* gui_context) {
   set_escdelay(25);
   // Init ncurses
   if (initscr() == NULL) {
@@ -83,14 +85,14 @@ void gui_initNCurses(GUIContext* gui_context) {
   }
 }
 
-void gui_setFocus(GUIContext* gui_context, WINDOW* w) { gui_context->focus_w = w; }
+void gui_setFocus(gui_Context* gui_context, WINDOW* w) { gui_context->focus_w = w; }
 
-void gui_resetFocus(GUIContext* gui_context) { gui_context->focus_w = NULL; }
+void gui_resetFocus(gui_Context* gui_context) { gui_context->focus_w = NULL; }
 
 ////// -------------- PRINT FUNCTIONS --------------
 
 
-void gui_repaintGUI(GUIContext* gui_context, WindowHighlightDescriptor* highlight_descriptor, ExplorerFolder* explorer,
+void gui_repaintGUI(gui_Context* gui_context, WindowHighlightDescriptor* highlight_descriptor, ExplorerFolder* explorer,
                     FileContainer* files, int file_count, int current_file) {
   wnoutrefresh(stdscr);
   gui_repaintEDW(&gui_context->edw_context, files[current_file].cursor, files[current_file].select_cursor,
@@ -98,6 +100,7 @@ void gui_repaintGUI(GUIContext* gui_context, WindowHighlightDescriptor* highligh
                  files[current_file].lsp_datas.computed, LF_tab_size(files[current_file].feature));
   gui_repaintFEW(&gui_context->few_context, explorer);
   gui_repaintOFW(&gui_context->ofw_context, files, file_count, current_file);
+  gui_repaintTPW(gui_context);
   doupdate();
 }
 
@@ -136,27 +139,27 @@ LineMarker gui_getMarkerForCurrentLine(int row, WindowHighlightDescriptor* highl
   return marker;
 }
 
-void gui_updateEDW(GUIContext* gui_context) { gui_context->edw_context.refresh_edw = true; }
+void gui_updateEDW(gui_Context* gui_context) { gui_context->edw_context.refresh_edw = true; }
 
-void gui_updateFEW(GUIContext* gui_context) { gui_context->few_context.refresh_few = true; }
+void gui_updateFEW(gui_Context* gui_context) { gui_context->few_context.refresh_few = true; }
 
-void gui_updateOFW(GUIContext* gui_context) { gui_context->ofw_context.refresh_ofw = true; }
+void gui_updateOFW(gui_Context* gui_context) { gui_context->ofw_context.refresh_ofw = true; }
 
-void gui_updateGUI(GUIContext* gui_context) {
+void gui_updateGUI(gui_Context* gui_context) {
   gui_updateEDW(gui_context);
   gui_updateFEW(gui_context);
   gui_updateOFW(gui_context);
 }
 
-bool gui_doesGUINeedRepaint(GUIContext* gui_context) {
+bool gui_doesGUINeedRepaint(gui_Context* gui_context) {
   return gui_context->edw_context.refresh_edw || gui_context->few_context.refresh_few ||
-    gui_context->ofw_context.refresh_ofw;
+    gui_context->ofw_context.refresh_ofw || gui_context->refresh_tpw;
 }
 
 ////// -------------- UTILS FUNCTIONS --------------
 
 
-void moveScreenToMatchCursor(GUIContext* context, Cursor cursor, int* screen_x, int* screen_y, int tab_size) {
+void moveScreenToMatchCursor(gui_Context* context, Cursor cursor, int* screen_x, int* screen_y, int tab_size) {
   int current_lines = getmaxy(context->edw_context.ftw);
   int current_columns = getmaxx(context->edw_context.ftw);
 
@@ -188,7 +191,7 @@ void moveScreenToMatchCursor(GUIContext* context, Cursor cursor, int* screen_x, 
   }
 }
 
-void centerCursorOnScreen(GUIContext* context, Cursor cursor, int* screen_x, int* screen_y, int tab_size) {
+void centerCursorOnScreen(gui_Context* context, Cursor cursor, int* screen_x, int* screen_y, int tab_size) {
   // center for y, but right for x.
   *screen_x = cursor.line_id.absolute_column - (COLS /*/ 2*/);
   *screen_y = cursor.file_id.absolute_row - (LINES / 2);
