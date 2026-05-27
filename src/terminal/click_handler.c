@@ -12,9 +12,9 @@
 #include "../utils/key_management.h"
 #include "term_handler.h"
 #include "windows/edw.h"
+#include "windows/popups/language_popup.h"
 #include "windows/few.h"
 #include "windows/pow.h"
-#include "windows/tpw.h"
 
 
 bool isClickInsideWindow(WINDOW* w, MEVENT* m_event) {
@@ -32,71 +32,13 @@ Cursor getCursorForEDWClick(Cursor* cursor, MEVENT* m_event, int screen_x, int s
 }
 
 
-void handleClick(EditorContext* ctx, int* c) {
-mouse_read:;
-  assert(&ctx->mouse_drag != NULL);
-
-  // Avoid too much refresh, to avoid input buffer full.
-  // We drain pending mouse events if they arrive too fast.
-  if (ctx->m_event.bstate == NO_EVENT_MOUSE && ctx->mouse_drag == true) {
-    time_val current_time = timeInMilliseconds();
-    if (diff2Time(ctx->last_time_mouse_drag, current_time) < SKIP_MOUSE_EVENT_DELAY) {
-      nodelay(stdscr, TRUE);
-      int next_c = getch();
-      if (next_c != ERR && next_c == KEY_MOUSE) {
-        MEVENT tmp_event;
-        if (getmouse(&tmp_event) == OK) {
-          // skip current event but process its state change
-          detectComplexMouseEvents(&tmp_event);
-          *c = next_c;
-          ctx->m_event = tmp_event;
-          ctx->t_date = timeInMilliseconds();
-          ctx->t_clock = clock();
-          nodelay(stdscr, FALSE);
-          goto mouse_read;
-        }
-      }
-      if (next_c != ERR) {
-        ctx->peek_c = next_c;
-      }
-      nodelay(stdscr, FALSE);
-    }
-    else {
-      ctx->last_time_mouse_drag = current_time;
-    }
-  }
-
+void handleClick(EditorContext* ctx) {
   // If pressed enable drag
   if (ctx->m_event.bstate & BUTTON1_PRESSED && ctx->mouse_drag == false) {
     ctx->mouse_drag = true;
   }
 
   FileContainer* fc = &ctx->files[ctx->current_file_index];
-
-  // Intercept click inside any active, visible toplevel popup
-  gui_TPW* popup = ctx->gui_context.toplevel_popups;
-  while (popup != NULL) {
-
-    if (popup->visible && popup->tpw != NULL) {
-
-      if (popup->strong_focus) {
-        if (popup->on_input) {
-          popup->on_input(popup, KEY_MOUSE, KEY_MOUSE, popup->payload);
-        }
-        return;
-      }
-
-      if (isClickInsideWindow(popup->tpw, &ctx->m_event)) {
-        gui_setToplevelPopupFocus(&ctx->gui_context, popup);
-        if (popup->on_input) {
-          popup->on_input(popup, KEY_MOUSE, KEY_MOUSE, popup->payload);
-        }
-        return;
-      }
-
-    }
-    popup = popup->next;
-  }
 
   if ((ctx->m_event.x < getbegx(ctx->gui_context.edw_context.lnw) && ctx->gui_context.focus_w == NULL) ||
       (ctx->gui_context.few_context.few != NULL && ctx->gui_context.focus_w == ctx->gui_context.few_context.few)) {
@@ -117,12 +59,25 @@ mouse_read:;
                           &ctx->refresh_local_vars, ctx->mouse_drag);
   }
   else {
-    // Click on editor windows
-    if (ctx->m_event.bstate & BUTTON1_PRESSED) {
-      ctx->gui_context.focus_w = ctx->gui_context.edw_context.ftw;
+    bool consumed = false;
+    if (ctx->gui_context.edw_context.show_sbw && ctx->gui_context.edw_context.sbw != NULL && isClickInsideWindow(ctx->gui_context.edw_context.sbw, &ctx->m_event)) {
+      if (ctx->m_event.bstate & BUTTON1_PRESSED || ctx->m_event.bstate & BUTTON1_CLICKED) {
+        // click inside the status bar
+        consumed = true;
+        ctx->mouse_drag = false;
+        ctx->gui_context.focus_w = NULL;
+        gui_openLanguageSelectPopup(ctx);
+      }
     }
-    handleEditorClick(&ctx->gui_context, &fc->cursor, &fc->select_cursor, &fc->desired_column, &fc->screen_x,
-                      &fc->screen_y, &ctx->m_event, ctx->mouse_drag, fc, &ctx->highlight_descriptor);
+
+    if (!consumed) {
+      // Click on editor windows
+      if (ctx->m_event.bstate & BUTTON1_PRESSED) {
+        ctx->gui_context.focus_w = ctx->gui_context.edw_context.ftw;
+      }
+      handleEditorClick(&ctx->gui_context, &fc->cursor, &fc->select_cursor, &fc->desired_column, &fc->screen_x,
+                        &fc->screen_y, &ctx->m_event, ctx->mouse_drag, fc, &ctx->highlight_descriptor);
+    }
   }
 
   if (ctx->m_event.bstate & BUTTON1_RELEASED || ctx->m_event.bstate & BUTTON1_CLICKED) {

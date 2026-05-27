@@ -41,6 +41,7 @@ SRC_MODULES= \
 	src/terminal/windows/pow.c \
 	src/terminal/windows/tpw.c \
 	src/terminal/windows/popups/search_popup.c \
+	src/terminal/windows/popups/language_popup.c \
 	src/config/config.c \
 	src/config/language_feature.c \
 	src/io-management/workspace_settings.c \

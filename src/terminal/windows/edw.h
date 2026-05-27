@@ -2,6 +2,7 @@
 #define WISHWIM_FTW_H
 
 #include "../../advanced/lsp/lsp_handler.h"
+#include "../../data-management/file_management.h"
 #include "../highlight.h"
 #include "gui_entities.h"
 
@@ -11,6 +12,10 @@ void gui_resizeEDW(gui_Context* gui_context, int lnw_new_width);
 
 void gui_repaintEDW(gui_EDW* context, Cursor cursor, Cursor select_cursor, int screen_x, int screen_y,
                     WindowHighlightDescriptor* highlight_descriptor, LSP_ComputedData* lsp_data, int tab_size);
+
+void gui_repaintSBW(gui_EDW* context, FileContainer* fc);
+
+void gui_switchSBW(gui_Context* gui_context);
 
 int getEDW_LengthLineNumber(gui_Context* gui_context);
 

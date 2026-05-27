@@ -1,8 +1,6 @@
 #include <assert.h>
-#include <ncurses.h>
 #include <stdio.h>
 
-#include "advanced/lsp/lsp_dispatcher.h"
 #include "advanced/tree-sitter/tree_manager.h"
 #include "config/config.h"
 #include "config/language_feature.h"
@@ -11,7 +9,6 @@
 #include "io-management/workspace_settings.h"
 #include "terminal/highlight.h"
 #include "terminal/term_handler.h"
-#include "utils/key_management.h"
 
 #include "core/editor_context.h"
 #include "core/editor_destroy.h"
@@ -23,13 +20,13 @@
 #include "environnement/setup.h"
 
 // Global vars.
-int color_pair = 5;
+int color_pair = 6;
 int color_index = 20;
 cJSON* config;
+LF_LanguageFeatureList language_features;
 ParserList parsers;
 LSPServerLinkedList lsp_servers;
 WorkspaceSettings workspace_settings;
-LF_LanguageFeatureList language_features;
 
 
 int main(int file_count, char** args) {

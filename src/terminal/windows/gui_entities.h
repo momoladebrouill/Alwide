@@ -7,7 +7,7 @@
 typedef struct gui_TPW gui_TPW;
 
 typedef void (*gui_TPW_paintCallback)(gui_TPW* popup, void* payload);
-typedef bool (*gui_TPW_inputCallback)(gui_TPW* popup, int c_raw, int c_hash, void* payload);
+typedef bool (*gui_TPW_inputCallback)(gui_TPW* popup, int c_raw, int c_hash, MEVENT* m_event, void* payload);
 typedef void (*gui_TPW_destroyCallback)(gui_TPW* popup, void* payload);
 
 struct gui_TPW {
@@ -63,9 +63,12 @@ typedef struct {
   WINDOW* ftw; // File Text Window
   WINDOW* lnw; // Line Number Window
   WINDOW* pow; // Popup Window
+  WINDOW* sbw; // Status Bar Window
 
   // Local data
   bool refresh_edw; // Need to reprint editor window
+  bool show_sbw;    // Status Bar Toggle
+  bool sbw_hovered; // Status Bar Hover state
 
   // lnw vars
   int length_line_number;

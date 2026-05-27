@@ -78,7 +78,7 @@ static void perform_incremental_search(SearchPopupContext* state) {
   }
 }
 
-static bool input_search_popup(gui_TPW* popup, int c_raw, int c_hash, void* payload) {
+static bool input_search_popup(gui_TPW* popup, int c_raw, int c_hash, MEVENT *m_event, void* payload) {
   SearchPopupContext* state = (SearchPopupContext*)payload;
   FileContainer* fc = &state->ctx->files[state->ctx->current_file_index];
 

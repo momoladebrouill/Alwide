@@ -11,4 +11,4 @@ void gui_repaintOFW(gui_OFW* context, FileContainer* files, int file_count, int 
 
 void gui_switchOFW(gui_Context* gui_context);
 
-#endif // WISHWIM_OFW_H
+#endif

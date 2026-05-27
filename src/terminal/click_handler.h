@@ -11,7 +11,7 @@
 
 bool isClickInsideWindow(WINDOW* w, MEVENT* m_event);
 
-void handleClick(EditorContext* ctx, int* c);
+void handleClick(EditorContext* ctx);
 
 ////// -------------- CLICK FUNCTIONS --------------
 

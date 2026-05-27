@@ -21,8 +21,8 @@
 #include "../terminal/click_handler.h"
 #include "../terminal/windows/few.h"
 #include "../terminal/windows/ofw.h"
-#include "../terminal/windows/pow.h"
 #include "../terminal/windows/popups/search_popup.h"
+#include "../terminal/windows/pow.h"
 #include "../utils/clipboard_manager.h"
 #include "../utils/key_management.h"
 #include "../utils/tools.h"
@@ -33,15 +33,6 @@ EventLoopAction dispatchInput(EditorContext* ctx, int c, int hash) {
   // if input is empty, execute nothing and read again
   if (hash == ERR) {
     return EVENT_READ_INPUT;
-  }
-
-  // if input is mouse, fetch and detect mouse event
-  if (hash == KEY_MOUSE) {
-    if (getmouse(&ctx->m_event) != OK) {
-      fprintf(stderr, "MOUVE_EVENT_NOT_OK !\r\n");
-      return EVENT_READ_INPUT;
-    }
-    detectComplexMouseEvents(&ctx->m_event);
   }
 
   EventLoopAction loopEnd = EVENT_READ_INPUT;
@@ -64,8 +55,10 @@ bool handlePopupInput(EditorContext* ctx, int c, int hash) {
   gui_TPW* popup = ctx->gui_context.toplevel_popups;
   while (popup != NULL) {
     if (popup->visible && popup->on_input) {
-      if (popup->on_input(popup, c, hash, popup->payload)) {
-        return true;
+      if (hash != KEY_MOUSE || isClickInsideWindow(popup->tpw, &ctx->m_event)) {
+        if (popup->on_input(popup, c, hash, &ctx->m_event, popup->payload)) {
+          return true;
+        }
       }
       if (popup->strong_focus) {
         return true;
@@ -136,6 +129,53 @@ void readNextInput(EditorContext* ctx, int* out_c, int* out_hash) {
     }
   }
 
+  // if input is mouse, fetch and detect mouse event
+  if (hash == KEY_MOUSE) {
+
+    if (getmouse(&ctx->m_event) != OK) {
+      fprintf(stderr, "MOUVE_EVENT_NOT_OK !\r\n");
+      *out_c = ERR;
+      *out_hash = ERR;
+      return;
+    }
+
+    detectComplexMouseEvents(&ctx->m_event);
+
+  peek_mouse_event:;
+
+    assert(&ctx->mouse_drag != NULL);
+
+    // Avoid too much refresh, to avoid input buffer full.
+    // We drain pending mouse events if they arrive too fast.
+    if (ctx->m_event.bstate == NO_EVENT_MOUSE && ctx->mouse_drag == true) {
+      time_val current_time = timeInMilliseconds();
+      if (diff2Time(ctx->last_time_mouse_drag, current_time) < SKIP_MOUSE_EVENT_DELAY) {
+        nodelay(stdscr, TRUE);
+        int next_c = getch();
+        if (next_c != ERR && next_c == KEY_MOUSE) {
+          MEVENT tmp_event;
+          if (getmouse(&tmp_event) == OK) {
+            // skip current event but process its state change
+            detectComplexMouseEvents(&tmp_event);
+            c = next_c;
+            ctx->m_event = tmp_event;
+            ctx->t_date = timeInMilliseconds();
+            ctx->t_clock = clock();
+            nodelay(stdscr, FALSE);
+            goto peek_mouse_event;
+          }
+        }
+        if (next_c != ERR) {
+          ctx->peek_c = next_c;
+        }
+        nodelay(stdscr, FALSE);
+      }
+      else {
+        ctx->last_time_mouse_drag = current_time;
+      }
+    }
+  }
+
   *out_c = c;
   *out_hash = hash;
 }
@@ -203,7 +243,7 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
 
   switch (hash) {
     case KEY_MOUSE:
-      handleClick(ctx, &c);
+      handleClick(ctx);
       break;
 
     case H_KEY_RIGHT:
@@ -483,6 +523,10 @@ EventLoopAction runKeyHandler(EditorContext* ctx, int c, int hash) {
       break;
     case CTRL('e'):
       gui_switchFEW(&ctx->gui_context);
+      break;
+    case CTRL('b'):
+      gui_switchSBW(&ctx->gui_context);
+      gui_updateGUI(&ctx->gui_context);
       break;
     case CTRL('l'):
       gui_switchOFW(&ctx->gui_context);

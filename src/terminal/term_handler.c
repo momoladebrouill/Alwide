@@ -69,6 +69,7 @@ void gui_initNCurses(gui_Context* gui_context) {
       init_extended_color(BG_COLOR_HOVER, 200, 200, 200);
       init_extended_color(BG_COLOR_POPUP, 100, 100, 100);
       init_extended_color(COLOR_CYAN, 100, 700, 650);
+      init_extended_color(COLOR_TRUE_WHITE, 1000, 1000, 1000);
     }
 
     init_extended_pair(DEFAULT_COLOR_PAIR, COLOR_WHITE, BG_COLOR_DEFAULT);
@@ -82,6 +83,8 @@ void gui_initNCurses(gui_Context* gui_context) {
 
     init_extended_pair(INFO_COLOR_PAIR, COLOR_CYAN, BG_COLOR_POPUP);
     init_extended_pair(INFO_COLOR_HOVER_PAIR, COLOR_CYAN, BG_COLOR_HOVER);
+
+    init_extended_pair(STATUS_BAR_COLOR_PAIR, COLOR_TRUE_WHITE, BG_COLOR_HOVER);
   }
 }
 
@@ -100,6 +103,7 @@ void gui_repaintGUI(gui_Context* gui_context, WindowHighlightDescriptor* highlig
                  files[current_file].lsp_datas.computed, LF_tab_size(files[current_file].feature));
   gui_repaintFEW(&gui_context->few_context, explorer);
   gui_repaintOFW(&gui_context->ofw_context, files, file_count, current_file);
+  gui_repaintSBW(&gui_context->edw_context, file_count > 0 ? &files[current_file] : NULL);
   gui_repaintTPW(gui_context);
   doupdate();
 }
