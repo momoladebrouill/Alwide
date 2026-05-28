@@ -2,6 +2,7 @@
 
 #include "../../environnement/global_variables.h"
 #include "../../utils/tools.h"
+#include "../../utils/key_management.h"
 
 int global_version = 2;
 
@@ -58,7 +59,7 @@ void onStateChangeLSP(Action action, LSP_Data* data, Cursor* cursor) {
       }
     }
     else {
-      Char_U8 u8 = readChar_U8FromInput(action.unique_ch);
+      Char_U8 u8 = readChar_U8FromInput(K_CODE(action.unique_ch));
       if (action.unique_ch == '\n') {
         old_end_lsp_col = 0;
       }

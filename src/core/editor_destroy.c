@@ -13,8 +13,8 @@
 #include "../io-management/io_explorer.h"
 #include "../io-management/workspace_settings.h"
 #include "../terminal/highlight.h"
+#include "../terminal/kitty_protocol.h"
 #include "../terminal/windows/tpw.h"
-#include "../terminal/kitty_keyboard.h"
 
 static void finalizeTerminal() {
   /// --- Teardown Terminal ---

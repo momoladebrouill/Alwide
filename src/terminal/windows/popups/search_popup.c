@@ -83,7 +83,7 @@ static bool input_search_popup(gui_TPW* popup, int key, MEVENT *m_event, void* p
   FileContainer* fc = &state->ctx->files[state->ctx->current_file_index];
 
   // 1. ESC: Exit search
-  if (key == H_KEY_ESCAPE || key == K(K_MOD_CTRL, '[')) {
+  if (key == H_KEY_ESCAPE || key == K_SPECIAL(K_MOD_CTRL, '[')) {
     EditorContext* ctx = state->ctx;
     gui_destroyToplevelPopup(&ctx->gui_context, popup);
     gui_updateGUI(&ctx->gui_context);
@@ -91,7 +91,7 @@ static bool input_search_popup(gui_TPW* popup, int key, MEVENT *m_event, void* p
   }
 
   // 2. Ctrl+G: Toggle Case Sensitivity
-  if (key == K(K_MOD_CTRL, 'g')) {
+  if (key == K_SPECIAL(K_MOD_CTRL, 'g')) {
     state->case_sensitive = !state->case_sensitive;
     perform_incremental_search(state);
     gui_updateGUI(&state->ctx->gui_context);
@@ -116,7 +116,7 @@ static bool input_search_popup(gui_TPW* popup, int key, MEVENT *m_event, void* p
   }
 
   // 4. Ctrl+P: Find Prev
-  if (key == K(K_MOD_CTRL, 'p')) {
+  if (key == K_SPECIAL(K_MOD_CTRL, 'p')) {
     if (state->query_len > 0) {
       Cursor start_cur, end_cur;
       if (ilj_findPrev(fc, state->query, state->case_sensitive, state->wrap, &start_cur, &end_cur)) {
@@ -143,8 +143,8 @@ static bool input_search_popup(gui_TPW* popup, int key, MEVENT *m_event, void* p
   }
 
   // 6. Character input
-  if (!IS_SPECIAL(key)) {
-    int codepoint = key & 0x00FFFFFF;
+  if (!K_IS_SPECIAL(key)) {
+    int codepoint = K_CODE(key);
     if (codepoint >= 32 && codepoint < 127) { /* Standard printable ASCII for search */
       if (state->query_len < 127) {
         state->query[state->query_len++] = (char)codepoint;

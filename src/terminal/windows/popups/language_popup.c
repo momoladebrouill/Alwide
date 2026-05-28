@@ -103,7 +103,7 @@ static bool input_lang_popup(gui_TPW* popup, int key, MEVENT* m_event, void* pay
   LanguageSelectPopupContext* state = payload;
   EditorContext* ctx = state->ctx;
 
-  if (key == H_KEY_ESCAPE || key == K(K_MOD_CTRL, '[')) {
+  if (key == H_KEY_ESCAPE || key == K_SPECIAL(K_MOD_CTRL, '[')) {
     gui_destroyToplevelPopup(&ctx->gui_context, popup);
     return true;
   }
@@ -130,7 +130,7 @@ static bool input_lang_popup(gui_TPW* popup, int key, MEVENT* m_event, void* pay
     return true;
   }
 
-  if (key == H_KEY_ENTER || key == K(0, '\r')) {
+  if (key == H_KEY_ENTER || key == K_SPECIAL(0, '\r')) {
     apply_language_change(ctx, state->selected_index);
     gui_destroyToplevelPopup(&ctx->gui_context, popup);
     return true;

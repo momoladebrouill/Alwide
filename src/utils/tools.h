@@ -73,7 +73,4 @@ Cursor LSP_tryToReachCursorForLSPPosition(Cursor cursor, LSP_Position position);
 int LSP_0_row_to_1_row(int lsp_row);
 
 
-int normalize_legacy(int c) ;
-
-
 #endif // TOOLS_H

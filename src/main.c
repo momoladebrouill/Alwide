@@ -77,7 +77,6 @@ int main(int file_count, char** args) {
     // read from input stream
   read_input:;
     int key = readNextInput(&ctx);
-    logInput(key);
 
     //// ---- BEGIN background / delayed operations BLOCK ----
 

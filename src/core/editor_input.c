@@ -1,6 +1,7 @@
 #include "editor_input.h"
 
 #include <assert.h>
+#include <ctype.h>
 #include <limits.h>
 #include <ncurses.h>
 #include <stdio.h>
@@ -17,7 +18,7 @@
 #include "../environnement/global_variables.h"
 #include "../io-management/io_manager.h"
 #include "../terminal/click_handler.h"
-#include "../terminal/kitty_keyboard.h"
+#include "../terminal/kitty_protocol.h"
 #include "../terminal/windows/few.h"
 #include "../terminal/windows/ofw.h"
 #include "../terminal/windows/popups/search_popup.h"
@@ -43,7 +44,7 @@ EventLoopAction dispatchInput(EditorContext* ctx, int key) {
   }
 
   /* Route all functional navigation, hotkeys, and releases to the command handler */
-  if (IS_SPECIAL(key)) {
+  if (K_IS_SPECIAL(key)) {
     return runSpecialKeyHandler(ctx, key);
   }
 
@@ -51,7 +52,7 @@ EventLoopAction dispatchInput(EditorContext* ctx, int key) {
    * Unified Routing:
    * Any key NOT marked as Special is a printable character.
    */
-  handleCharBufferInsertion(ctx, key);
+  handleCharInsertion(ctx, key);
   return EVENT_CONTINUE;
 }
 
@@ -71,7 +72,7 @@ bool handlePopupInput(EditorContext* ctx, int key) {
 }
 
 bool runInternalLogic(EditorContext* ctx, int key, EventLoopAction* out_action) {
-  if (key == K(K_MOD_CTRL, 'q')) {
+  if (key == K_SPECIAL(K_MOD_CTRL, 'q')) {
     *out_action = EVENT_QUIT;
     return true;
   }
@@ -208,65 +209,16 @@ int readNextInput(EditorContext* ctx) {
   return key;
 }
 
-void logInput(int key) {
-  if (key == ERR) return;
-
-  FILE* f = fopen(".logs.txt", "a");
-  if (!f) return;
-
-  fprintf(f, "[INPUT] Key: 0x%08X | ", key);
-
-  // Modifiers
-  if (key & K_MOD_CTRL)  fprintf(f, "CTRL+");
-  if (key & K_MOD_ALT)   fprintf(f, "ALT+");
-  if (key & K_MOD_SHIFT) fprintf(f, "SHIFT+");
-  if (key & K_MOD_SUPER) fprintf(f, "SUPER+");
-
-  int codepoint = key & 0x00FFFFFF;
-
-  if (IS_SPECIAL(key)) {
-    fprintf(f, "SPECIAL: code : %d ", codepoint);
-    if (codepoint >= KEY_MIN && codepoint <= KEY_MAX) {
-      fprintf(f, ": %s", keyname(codepoint));
-    }
-    else if (codepoint == 27) {
-      fprintf(f, ": ESCAPE");
-    }
-    
-    if (codepoint >= 32 && codepoint <= 126) {
-      fprintf(f, " : char : %c", (char)codepoint);
-    }
-  }
-  else {
-    Char_U8 u8 = readChar_U8FromInput(codepoint);
-    fprintf(f, "CHAR: '");
-    for (int i = 0; i < 4 && u8.t[i]; i++) {
-      fprintf(f, "%c", u8.t[i]);
-    }
-    fprintf(f, "' (U+%04X)", codepoint);
-  }
-
-  if (IS_RELEASE(key)) {
-    fprintf(f, " [RELEASE]");
-  }
-  else {
-    fprintf(f, " [PRESS]");
-  }
-
-  fprintf(f, "\n");
-  fclose(f);
-}
-
-void handleCharBufferInsertion(EditorContext* ctx, int key) {
+void handleCharInsertion(EditorContext* ctx, int key) {
   FileContainer* fc = &ctx->files[ctx->current_file_index];
 
   /* Extract printable codepoint (Bits 0-23) */
-  int codepoint = key & 0x00FFFFFF;
+  int codepoint = K_CODE(key);
   assert(codepoint == key);
 
   /* Ignore control characters, except Tab and Newline (though those are usually Special keys) */
   if (codepoint == ERR || (codepoint < 32 && codepoint != '\t' && codepoint != '\n') || codepoint == 127) {
-    assert(false);
+    return;
   }
 
   Cursor* cursor = &fc->cursor;
@@ -421,7 +373,7 @@ EventLoopAction runSpecialKeyHandler(EditorContext* ctx, int key) {
       gui_updateOFW(&ctx->gui_context);
       gui_closePopup(&ctx->gui_context);
       break;
-    case K(K_MOD_CTRL, 'r'):
+    case K_SPECIAL(K_MOD_CTRL, 'r'):
       askFormatting(fc);
       break;
 
@@ -449,7 +401,7 @@ EventLoopAction runSpecialKeyHandler(EditorContext* ctx, int key) {
       setDesiredColumn(*cursor, desired_column);
       gui_closePopup(&ctx->gui_context);
       break;
-    case K(K_MOD_CTRL, 'z'):
+    case K_SPECIAL(K_MOD_CTRL, 'z'):
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_LEFT);
       *cursor =
         undo(history_frame, *cursor, globalOnStageChange, (long*)&ctx->payload_state_change, LF_tab(fc->feature));
@@ -458,7 +410,7 @@ EventLoopAction runSpecialKeyHandler(EditorContext* ctx, int key) {
       gui_updateEDW(&ctx->gui_context);
       askCompletion(&ctx->gui_context, fc, true, false);
       break;
-    case K(K_MOD_CTRL, 'y'):
+    case K_SPECIAL(K_MOD_CTRL, 'y'):
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_LEFT);
       *cursor =
         redo(history_frame, *cursor, globalOnStageChange, (long*)&ctx->payload_state_change, LF_tab(fc->feature));
@@ -467,23 +419,23 @@ EventLoopAction runSpecialKeyHandler(EditorContext* ctx, int key) {
       gui_updateEDW(&ctx->gui_context);
       askCompletion(&ctx->gui_context, fc, true, false);
       break;
-    case K(K_MOD_CTRL, 'c'):
+    case K_SPECIAL(K_MOD_CTRL, 'c'):
       saveToClipBoard(*cursor, *select_cursor);
       break;
-    case K(K_MOD_CTRL, 'a'):
+    case K_SPECIAL(K_MOD_CTRL, 'a'):
       *select_cursor = tryToReachAbsPosition(*cursor, 1, 0);
       *cursor = tryToReachAbsPosition(*cursor, INT_MAX, INT_MAX);
       break;
-    case K(K_MOD_CTRL, 'f'):
+    case K_SPECIAL(K_MOD_CTRL, 'f'):
       gui_openSearchPopup(ctx);
       break;
-    case K(K_MOD_CTRL, 'x'):
+    case K_SPECIAL(K_MOD_CTRL, 'x'):
       saveToClipBoard(*cursor, *select_cursor);
       deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
       setDesiredColumn(*cursor, desired_column);
       gui_updateEDW(&ctx->gui_context);
       break;
-    case K(K_MOD_CTRL, 'v'):
+    case K_SPECIAL(K_MOD_CTRL, 'v'):
       deleteSelectionWithState(history_frame, cursor, select_cursor, ctx->payload_state_change);
       tmp = cursor_to_desc(*cursor);
       *cursor = loadFromClipBoard(fc);
@@ -491,19 +443,19 @@ EventLoopAction runSpecialKeyHandler(EditorContext* ctx, int key) {
                  (long*)&ctx->payload_state_change);
       setDesiredColumn(*cursor, desired_column);
       break;
-    case K(K_MOD_CTRL | K_MOD_SHIFT, ':'):
-    case K(K_MOD_CTRL, '_'):
+    case K_SPECIAL(K_MOD_CTRL | K_MOD_SHIFT, '/'):
+    case K_SPECIAL(K_MOD_CTRL, '_'):
       ilj_toggleComments(fc, history_frame, &ctx->payload_state_change);
       gui_updateEDW(&ctx->gui_context);
       break;
-    case K(K_MOD_CTRL, 'q'):
+    case K_SPECIAL(K_MOD_CTRL, 'q'):
       return EVENT_QUIT;
-    case K(K_MOD_CTRL, 'w'):
+    case K_SPECIAL(K_MOD_CTRL, 'w'):
       closeFile(&ctx->files, &ctx->file_count, &ctx->current_file_index, &ctx->refresh_local_vars);
       gui_updateOFW(&ctx->gui_context);
       gui_updateEDW(&ctx->gui_context);
       break;
-    case K(K_MOD_CTRL, 's'):
+    case K_SPECIAL(K_MOD_CTRL, 's'):
       if (io_file->status == NONE) {
         printf("\r\nNo specified file\r\n");
         return EVENT_QUIT;
@@ -517,8 +469,7 @@ EventLoopAction runSpecialKeyHandler(EditorContext* ctx, int key) {
       setlastFilePosition(io_file->path_abs, cursor_row(*cursor), cursor_col(*cursor), *screen_x, *screen_y);
       saveCurrentStateControl(**history_root, *history_frame, io_file->path_abs);
       break;
-    case H_KEY_CTRL_DELETE:
-    case K(K_MOD_CTRL, 'h'):
+    case K_SPECIAL(K_MOD_CTRL, 'h'):
       {
         setSelectCursorOn(*cursor, select_cursor);
         *cursor = moveToPreviousWord(*cursor);
@@ -595,7 +546,7 @@ EventLoopAction runSpecialKeyHandler(EditorContext* ctx, int key) {
       ilf_deindentSelectedLines(fc, history_frame, &ctx->payload_state_change);
       gui_updateEDW(&ctx->gui_context);
       break;
-    case K(K_MOD_CTRL, 'd'):
+    case K_SPECIAL(K_MOD_CTRL, 'd'):
       if (cursor_is_disabled(*select_cursor) == true) {
         selectLine(cursor, select_cursor);
       }
@@ -604,27 +555,25 @@ EventLoopAction runSpecialKeyHandler(EditorContext* ctx, int key) {
       gui_closePopup(&ctx->gui_context);
       gui_updateEDW(&ctx->gui_context);
       break;
-    case K(K_MOD_CTRL, 'e'):
+    case K_SPECIAL(K_MOD_CTRL, 'e'):
       gui_switchFEW(&ctx->gui_context);
       break;
-    case K(K_MOD_CTRL, 'b'):
+    case K_SPECIAL(K_MOD_CTRL, 'b'):
       gui_switchSBW(&ctx->gui_context);
       gui_updateGUI(&ctx->gui_context);
       break;
-    case K(K_MOD_CTRL, 'l'):
+    case K_SPECIAL(K_MOD_CTRL, 'l'):
       gui_switchOFW(&ctx->gui_context);
       break;
-    case K(K_MOD_CTRL, ' '):
+    case K_SPECIAL(K_MOD_CTRL, ' '):
       askCompletion(&ctx->gui_context, fc, true, true);
       break;
     case H_KEY_ESCAPE:
-    case K(K_MOD_CTRL, '['):
+    case K_SPECIAL(K_MOD_CTRL, '['):
       gui_closePopup(&ctx->gui_context);
       break;
     default:
       /* Unmapped command, release, or hotkey sequence: safely ignore it */
-      fprintf(stderr, "Key not handled\n    =>  ");
-      logInput(key);
       break;
   }
   return EVENT_CONTINUE;

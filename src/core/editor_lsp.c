@@ -47,7 +47,7 @@ void waitForLspResponse(EditorContext* ctx, int timeout_ms) {
 
 void askOnCharTypeLspInfos(EditorContext* ctx, int key, FileContainer* fc, Cursor* cursor) {
   /* Only ask for LSP info on pure printable characters (Bits 0-23) */
-  int codepoint = key & 0x00FFFFFF;
+  int codepoint = K_CODE(key);
   assert(codepoint == key);
   bool hasAsked = askSignatureHelpOnChar(ctx, codepoint, fc, cursor); // priority 1
   if (hasAsked) {

@@ -1,9 +1,9 @@
-#include "kitty_keyboard.h"
 #include <ctype.h>
 #include <ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "../utils/key_management.h"
+#include "kitty_protocol.h"
 
 void kitty_enable(void) {
   /* Use Push (>) flag 3 (1|2) to set disambiguate and event types */
@@ -258,7 +258,7 @@ bool kitty_translate_event(const KittyKeyEvent* event, int* out_unified) {
   }
 
   if (is_functional) {
-    *out_unified = K(unified_mods, translated_key);
+    *out_unified = K_SPECIAL(unified_mods, translated_key);
     if (is_release) {
       *out_unified |= K_FLAG_RELEASE;
     }
@@ -269,7 +269,7 @@ bool kitty_translate_event(const KittyKeyEvent* event, int* out_unified) {
     if (translated_key >= 'A' && translated_key <= 'Z') {
       translated_key += ('a' - 'A');
     }
-    *out_unified = K(unified_mods, translated_key);
+    *out_unified = K_SPECIAL(unified_mods, translated_key);
     if (is_release) {
       *out_unified |= K_FLAG_RELEASE;
     }

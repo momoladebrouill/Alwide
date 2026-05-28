@@ -5,8 +5,8 @@
 #include <string.h>
 
 #include "../data-management/file_management.h"
+#include "kitty_protocol.h"
 #include "term_handler.h"
-#include "kitty_keyboard.h"
 
 #include <limits.h>
 #include <math.h>
