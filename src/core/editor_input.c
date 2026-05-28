@@ -96,113 +96,121 @@ bool runInternalLogic(EditorContext* ctx, int key, EventLoopAction* out_action) 
   }
 }
 
-int readNextInput(EditorContext* ctx) {
-  int c;
+/**
+ * --- Static Helpers for Input Processing ---
+ */
+
+static int getRawByte(EditorContext* ctx) {
   if (ctx->peek_c == -1) {
-    c = getch();
+    return getch();
   }
-  else {
-    c = ctx->peek_c;
-    ctx->peek_c = -1;
+  int c = ctx->peek_c;
+  ctx->peek_c = -1;
+  return c;
+}
+
+static int parseEscapeSequence(EditorContext* ctx, int first_char) {
+  KittyKeyEvent kitty_event;
+  int unread = ERR;
+  int key = ERR;
+
+  if (kitty_parse_sequence(first_char, &kitty_event, &unread)) {
+    if (unread != ERR) {
+      ctx->peek_c = unread;
+    }
+    if (!kitty_translate_event(&kitty_event, &key)) {
+      return ERR;
+    }
   }
+  return key;
+}
+
+static int manualUtf8Decode(int first_byte) {
+  unsigned char first = (unsigned char)first_byte;
+  int codepoint = 0;
+  int bytes_to_read = 0;
+
+  if ((first & 0xE0) == 0xC0) { bytes_to_read = 1; codepoint = first & 0x1F; }
+  else if ((first & 0xF0) == 0xE0) { bytes_to_read = 2; codepoint = first & 0x0F; }
+  else if ((first & 0xF8) == 0xF0) { bytes_to_read = 3; codepoint = first & 0x07; }
+
+  if (bytes_to_read > 0) {
+    bool valid = true;
+    for (int i = 0; i < bytes_to_read; i++) {
+      timeout(20);
+      int next_byte = getch();
+      if (next_byte == ERR || (next_byte & 0xC0) != 0x80) {
+        valid = false;
+        break;
+      }
+      codepoint = (codepoint << 6) | (next_byte & 0x3F);
+    }
+    timeout(20);
+    if (valid) return codepoint;
+  }
+  return ERR;
+}
+
+static void processMouseInput(EditorContext* ctx) {
+  if (getmouse(&ctx->m_event) != OK) return;
+  detectComplexMouseEvents(&ctx->m_event);
+
+peek_mouse_event:;
+  if (ctx->m_event.bstate == NO_EVENT_MOUSE && ctx->mouse_drag == true) {
+    time_val current_time = timeInMilliseconds();
+    if (diff2Time(ctx->last_time_mouse_drag, current_time) < SKIP_MOUSE_EVENT_DELAY) {
+      nodelay(stdscr, TRUE);
+      int next_c = getch();
+      if (next_c != ERR && next_c == KEY_MOUSE) {
+        MEVENT tmp_event;
+        if (getmouse(&tmp_event) == OK) {
+          detectComplexMouseEvents(&tmp_event);
+          ctx->m_event = tmp_event;
+          ctx->t_date = timeInMilliseconds();
+          ctx->t_clock = clock();
+          timeout(20);
+          goto peek_mouse_event;
+        }
+      }
+      if (next_c != ERR) {
+        ctx->peek_c = next_c;
+      }
+      timeout(20);
+    } else {
+      ctx->last_time_mouse_drag = current_time;
+    }
+  }
+}
+
+int readNextInput(EditorContext* ctx) {
+  int c = getRawByte(ctx);
+  if (c == ERR) return ERR;
 
   ctx->t_date = timeInMilliseconds();
   ctx->t_clock = clock();
 
   int key = ERR;
 
-  /* 1. Try to parse as a Kitty/ANSI Escape sequence */
+  /* Tier 1: Kitty/ANSI Escape sequences */
   if (c == 27) {
-    KittyKeyEvent kitty_event;
-    int unread = ERR;
-    if (kitty_parse_sequence(c, &kitty_event, &unread)) {
-      /* Sequence parsed or swallowed. Handle peeked char if any. */
-      if (unread != ERR) {
-        ctx->peek_c = unread;
-      }
-
-      if (!kitty_translate_event(&kitty_event, &key)) {
-        /* Ignored event (e.g. non-modifier release) */
-        return ERR;
-      }
-    }
+    key = parseEscapeSequence(ctx, c);
   }
 
-  /* 2. Fallback to Legacy Normalization */
-  if (key == ERR && c != ERR) {
+  /* Tier 2: Legacy Fallback (UTF-8 or Normalization) */
+  if (key == ERR) {
     if (c == KEY_MOUSE) {
       key = H_KEY_MOUSE;
-    }
-    else if ((c & 0x80) != 0 && c <= 255) {
-      /* Potential UTF-8 start byte (>= 128) in legacy mode */
-      unsigned char first = (unsigned char)c;
-      int codepoint = 0;
-      int bytes_to_read = 0;
-
-      if ((first & 0xE0) == 0xC0) { bytes_to_read = 1; codepoint = first & 0x1F; }
-      else if ((first & 0xF0) == 0xE0) { bytes_to_read = 2; codepoint = first & 0x0F; }
-      else if ((first & 0xF8) == 0xF0) { bytes_to_read = 3; codepoint = first & 0x07; }
-
-      if (bytes_to_read > 0) {
-        bool valid = true;
-        for (int i = 0; i < bytes_to_read; i++) {
-          /* Wait briefly for subsequent bytes of the UTF-8 sequence */
-          timeout(20);
-          int next_byte = getch();
-          if (next_byte == ERR || (next_byte & 0xC0) != 0x80) {
-            valid = false;
-            break;
-          }
-          codepoint = (codepoint << 6) | (next_byte & 0x3F);
-        }
-        timeout(20); /* Restore default timeout */
-        if (valid) {
-          key = codepoint;
-        } else {
-          key = normalize_legacy(c);
-        }
-      } else {
-        key = normalize_legacy(c);
-      }
-    }
-    else {
+    } else if ((c & 0x80) != 0 && c <= 255) {
+      key = manualUtf8Decode(c);
+      if (key == ERR) key = normalize_legacy(c);
+    } else {
       key = normalize_legacy(c);
     }
   }
 
-  /* 3. Mouse Event Handling */
+  /* Mouse Event Handling */
   if (key == H_KEY_MOUSE) {
-    if (getmouse(&ctx->m_event) != OK) {
-      return ERR;
-    }
-    detectComplexMouseEvents(&ctx->m_event);
-
-  peek_mouse_event:;
-    if (ctx->m_event.bstate == NO_EVENT_MOUSE && ctx->mouse_drag == true) {
-      time_val current_time = timeInMilliseconds();
-      if (diff2Time(ctx->last_time_mouse_drag, current_time) < SKIP_MOUSE_EVENT_DELAY) {
-        nodelay(stdscr, TRUE);
-        int next_c = getch();
-        if (next_c != ERR && next_c == KEY_MOUSE) {
-          MEVENT tmp_event;
-          if (getmouse(&tmp_event) == OK) {
-            detectComplexMouseEvents(&tmp_event);
-            ctx->m_event = tmp_event;
-            ctx->t_date = timeInMilliseconds();
-            ctx->t_clock = clock();
-            timeout(20);
-            goto peek_mouse_event;
-          }
-        }
-        if (next_c != ERR) {
-          ctx->peek_c = next_c;
-        }
-        timeout(20);
-      }
-      else {
-        ctx->last_time_mouse_drag = current_time;
-      }
-    }
+    processMouseInput(ctx);
   }
 
   return key;
