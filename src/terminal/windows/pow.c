@@ -383,7 +383,7 @@ void gui_printPopup(gui_EDW* context, Cursor* cursor, LSP_ComputedData* lsp_data
   }
 }
 
-bool gui_handleCompletionInput(gui_Context* context, FileContainer* fc, int c_hash, int c_raw,
+bool gui_handleCompletionInput(gui_Context* context, FileContainer* fc, int key,
                                PayloadStateChange payload_state_change, ModuleContext* payload, MEVENT* m_event) {
   Cursor* cursor = &fc->cursor;
   LSP_ComputedData* lsp_data = fc->lsp_datas.computed;
@@ -394,8 +394,7 @@ bool gui_handleCompletionInput(gui_Context* context, FileContainer* fc, int c_ha
   int comp_size = lsp_data->completions.completions.size;
   int total_size = ca_size + comp_size;
 
-  if (c_hash == KEY_MOUSE && m_event != NULL) {
-
+  if (key == H_KEY_MOUSE && m_event != NULL) {
     if (m_event->bstate & BUTTON4_PRESSED) {
       if (context->edw_context.item_select_offset_y > 0) {
         context->edw_context.item_select_offset_y--;
@@ -433,7 +432,7 @@ bool gui_handleCompletionInput(gui_Context* context, FileContainer* fc, int c_ha
     return true;
   }
 
-  switch (c_hash) {
+  switch (key) {
     case H_KEY_UP:
       if (context->edw_context.item_selected > 0) {
         context->edw_context.item_selected--;
@@ -453,9 +452,8 @@ bool gui_handleCompletionInput(gui_Context* context, FileContainer* fc, int c_ha
       }
       gui_updateEDW(context);
       return true;
-    case '\n':
-    case KEY_ENTER:
-    case KEY_TAB:
+    case H_KEY_ENTER:
+    case H_KEY_TAB:
       if (context->edw_context.item_selected < total_size) {
         if (context->edw_context.item_selected < ca_size) {
           executeCodeAction(fc, cursor, &lsp_data->code_actions.items[context->edw_context.item_selected], payload);
@@ -475,12 +473,12 @@ bool gui_handleCompletionInput(gui_Context* context, FileContainer* fc, int c_ha
   return false;
 }
 
-bool gui_handleGotoChoiceInput(gui_Context* context, FileContainer* fc, int c_hash, int c_raw,
+bool gui_handleGotoChoiceInput(gui_Context* context, FileContainer* fc, int key,
                                PayloadStateChange payload_state_change, ModuleContext* payload, MEVENT* m_event) {
   LSP_ComputedData* lsp_data = fc->lsp_datas.computed;
   int height = getmaxy(context->edw_context.pow) - 2;
 
-  if (c_hash == KEY_MOUSE && m_event != NULL) {
+  if (key == H_KEY_MOUSE && m_event != NULL) {
     int item_count = lsp_data->gotos.size;
     int items_per_page = height;
 
@@ -516,7 +514,7 @@ bool gui_handleGotoChoiceInput(gui_Context* context, FileContainer* fc, int c_ha
     return true;
   }
 
-  switch (c_hash) {
+  switch (key) {
     case H_KEY_UP:
       if (context->edw_context.item_selected > 0) {
         context->edw_context.item_selected--;
@@ -536,9 +534,8 @@ bool gui_handleGotoChoiceInput(gui_Context* context, FileContainer* fc, int c_ha
       }
       gui_updateEDW(context);
       return true;
-    case '\n':
-    case KEY_ENTER:
-    case KEY_TAB:
+    case H_KEY_ENTER:
+    case H_KEY_TAB:
       if (context->edw_context.item_selected < lsp_data->gotos.size && payload != NULL) {
         jumpToLocation(payload, lsp_data->gotos.items[context->edw_context.item_selected]);
       }
@@ -552,21 +549,21 @@ bool gui_handleGotoChoiceInput(gui_Context* context, FileContainer* fc, int c_ha
 }
 
 
-bool gui_handlePopupInput(gui_Context* context, FileContainer* fc, int c_raw, int c_hash,
+bool gui_handlePopupInput(gui_Context* context, FileContainer* fc, int key,
                           PayloadStateChange payload_state_change, ModuleContext* payload, MEVENT* m_event) {
   if (context->edw_context.show_pow == false || context->edw_context.pow == NULL) {
     return false;
   }
 
-  if (c_hash == KEY_MOUSE && m_event != NULL && !isClickInsideWindow(context->edw_context.pow, m_event)) {
+  if (key == H_KEY_MOUSE && m_event != NULL && !isClickInsideWindow(context->edw_context.pow, m_event)) {
     return false;
   }
 
   switch (context->edw_context.pow_owner) {
     case COMPLETION:
-      return gui_handleCompletionInput(context, fc, c_hash, c_raw, payload_state_change, payload, m_event);
+      return gui_handleCompletionInput(context, fc, key, payload_state_change, payload, m_event);
     case GOTO_CHOICE:
-      return gui_handleGotoChoiceInput(context, fc, c_hash, c_raw, payload_state_change, payload, m_event);
+      return gui_handleGotoChoiceInput(context, fc, key, payload_state_change, payload, m_event);
     case SIGNATURE_HELP:
       return false; // Let the editor handle typing, which will trigger updates
     default:

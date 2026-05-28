@@ -16,6 +16,7 @@
 #include <unistd.h>
 
 #include "../environnement/constants.h"
+#include "key_management.h"
 
 bool areStringEquals(String str1, String str2) { return strcmp(str1.content, str2.content) == 0; }
 
@@ -258,6 +259,45 @@ void countStringFrame(char* ch, int length, int* current_row, int* current_colum
   }
 }
 
+int countStringUTF16Length(const char* ch, int length) {
+  if (ch == NULL) {
+    return 0;
+  }
+  int index = 0;
+  int utf16_len = 0;
+  while (index < length && ch[index] != '\0') {
+    Char_U8 u8 = readChar_U8FromCharArrayWithFirst((char*)ch + index, ch[index]);
+    index += sizeChar_U8(u8);
+    utf16_len += getUTF16Length(u8);
+  }
+  return utf16_len;
+}
+
+int getUTF16Offset(Char_U8* ch, int element_number, int character_column) {
+  int utf16_offset = 0;
+  for (int i = 0; i < character_column && i < element_number; i++) {
+    utf16_offset += getUTF16Length(ch[i]);
+  }
+  return utf16_offset;
+}
+
+int getCharacterColumnFromUTF16Offset(Char_U8* ch, int element_number, int utf16_offset) {
+  int current_utf16 = 0;
+  int i = 0;
+  for (; i < element_number && current_utf16 < utf16_offset; i++) {
+    current_utf16 += getUTF16Length(ch[i]);
+  }
+  return i;
+}
+
+int getByteOffset(Char_U8* ch, int element_number, int character_column) {
+  int byte_offset = 0;
+  for (int i = 0; i < character_column && i < element_number; i++) {
+    byte_offset += sizeChar_U8(ch[i]);
+  }
+  return byte_offset;
+}
+
 char* trim(char* ch) {
   while (*ch != '\0' && isblank(*ch)) {
     ch++;
@@ -318,10 +358,15 @@ CursorDescriptor positionToCursorDescriptor(LSP_Position position) {
 
 // --- Conversion Helpers ---
 
-LSP_Position LSP_pos_from_cursor(int ww_row, int ww_col) { return (LSP_Position){.row = ww_row - 1, .column = ww_col}; }
+LSP_Position LSP_pos_from_cursor(Cursor cursor) {
+  int character_col = cursor.line_id.absolute_column;
+  LineNode* line = cursor.line_id.line;
+  int utf16_col = getUTF16Offset(line->ch, line->element_number, character_col);
+  return (LSP_Position){.row = cursor.file_id.absolute_row - 1, .column = utf16_col};
+}
 
-LSP_Range LSP_range_from_cursor(int r1, int c1, int r2, int c2) {
-  return (LSP_Range){.pos1 = LSP_pos_from_cursor(r1, c1), .pos2 = LSP_pos_from_cursor(r2, c2)};
+LSP_Range LSP_range_from_cursor(Cursor c1, Cursor c2) {
+  return (LSP_Range){.pos1 = LSP_pos_from_cursor(c1), .pos2 = LSP_pos_from_cursor(c2)};
 }
 
 
@@ -333,5 +378,160 @@ int LSP_0_row_to_1_row(int lsp_row) {
 }
 
 Cursor LSP_tryToReachCursorForLSPPosition(Cursor cursor, LSP_Position position) {
-  return tryToReachAbsPosition(cursor, LSP_0_row_to_1_row(position.row), position.column);
+  Cursor target_row = tryToReachAbsPosition(cursor, LSP_0_row_to_1_row(position.row), 0);
+  int character_col = getCharacterColumnFromUTF16Offset(target_row.line_id.line->ch, target_row.line_id.line->element_number,
+                                                        position.column);
+  return tryToReachAbsPosition(target_row, LSP_0_row_to_1_row(position.row), character_col);
+}
+
+int normalize_legacy(int c) {
+  if (c == ERR) {
+    return ERR;
+  }
+
+  /* 1. Handle Ncurses-translated shifted/modified keys */
+  switch (c) {
+    case KEY_BTAB:
+      return K(K_MOD_SHIFT, KEY_BTAB);
+    case KEY_SRIGHT:
+      return K(K_MOD_SHIFT, KEY_RIGHT);
+    case KEY_SLEFT:
+      return K(K_MOD_SHIFT, KEY_LEFT);
+    case KEY_SHOME:
+      return K(K_MOD_SHIFT, KEY_HOME);
+    case KEY_SEND:
+      return K(K_MOD_SHIFT, KEY_END);
+    case KEY_SDC:
+      return K(K_MOD_SHIFT, KEY_DC);
+    case KEY_SIC:
+      return K(K_MOD_SHIFT, KEY_IC);
+    case KEY_SNEXT:
+      return K(K_MOD_SHIFT, KEY_NPAGE);
+
+    // Shift + Up/Down (often KEY_SR / KEY_SF)
+    case KEY_SR:
+      return K(K_MOD_SHIFT, KEY_UP);
+    case KEY_SF:
+      return K(K_MOD_SHIFT, KEY_DOWN);
+
+    // Hardcoded fallbacks for the logged system keycodes
+    case 554:
+      return K(K_MOD_CTRL, KEY_LEFT);
+    case 569:
+      return K(K_MOD_CTRL, KEY_RIGHT);
+    case 575:
+      return K(K_MOD_CTRL, KEY_UP);
+    case 534:
+      return K(K_MOD_CTRL, KEY_DOWN);
+
+    case 555:
+      return K(K_MOD_CTRL | K_MOD_SHIFT, KEY_LEFT);
+    case 570:
+      return K(K_MOD_CTRL | K_MOD_SHIFT, KEY_RIGHT);
+    case 576:
+      return K(K_MOD_CTRL | K_MOD_SHIFT, KEY_UP);
+    case 535:
+      return K(K_MOD_CTRL | K_MOD_SHIFT, KEY_DOWN);
+  }
+
+  /* 2. Map ASCII control codes 1-31 to Unified format. */
+  if (((c >= 1 && c <= 31) || c == 0) && c != 9 && c != 10 && c != 13) {
+    int base;
+    if (c == 0) {
+      base = ' ';
+    }
+    else if (c >= 1 && c <= 26) {
+      base = c + 'a' - 1;
+    }
+    else if (c == 27) {
+      return H_KEY_ESCAPE;
+    }
+    else if (c == 28) {
+      base = '\\';
+    }
+    else if (c == 29) {
+      base = ']';
+    }
+    else if (c == 30) {
+      base = '^';
+    }
+    else if (c == 31) {
+      base = '_';
+    }
+    else {
+      base = c;
+    }
+    return K(K_MOD_CTRL, base);
+  }
+
+  /* 3. Standard keycodes */
+  switch (c) {
+    case 9:
+      return H_KEY_TAB;
+    case 10:
+    case 13:
+      return H_KEY_ENTER;
+    case 127:
+      return K(0, KEY_BACKSPACE);
+    default:
+      if (c > 255) {
+        /* Ultimate fallback: parse dynamically via Ncurses terminfo keyname */
+        const char* name = keyname(c);
+        if (name && strlen(name) >= 4 && name[0] == 'k') {
+          int target_key = 0;
+          if (strncmp(name, "kUP", 3) == 0) {
+            target_key = KEY_UP;
+          }
+          else if (strncmp(name, "kDN", 3) == 0) {
+            target_key = KEY_DOWN;
+          }
+          else if (strncmp(name, "kLFT", 4) == 0) {
+            target_key = KEY_LEFT;
+          }
+          else if (strncmp(name, "kRGT", 4) == 0) {
+            target_key = KEY_RIGHT;
+          }
+          else if (strncmp(name, "kHOM", 4) == 0) {
+            target_key = KEY_HOME;
+          }
+          else if (strncmp(name, "kEND", 4) == 0) {
+            target_key = KEY_END;
+          }
+          else if (strncmp(name, "kDC", 3) == 0) {
+            target_key = KEY_DC;
+          }
+          else if (strncmp(name, "kIC", 3) == 0) {
+            target_key = KEY_IC;
+          }
+
+          if (target_key != 0) {
+            int len = strlen(name);
+            char last_char = name[len - 1];
+            if (isdigit((unsigned char)last_char)) {
+              int mod_num = last_char - '0';
+              int val = mod_num - 1;
+              if (val < 0) {
+                val = 0;
+              }
+              int unified_mods = 0;
+              if (val & 1) {
+                unified_mods |= K_MOD_SHIFT;
+              }
+              if (val & 2) {
+                unified_mods |= K_MOD_ALT;
+              }
+              if (val & 4) {
+                unified_mods |= K_MOD_CTRL;
+              }
+              if (val & 8) {
+                unified_mods |= K_MOD_SUPER;
+              }
+              return K(unified_mods, target_key);
+            }
+          }
+        }
+        return K(0, c); /* Other Ncurses keys */
+      }
+      return c; /* Standard printable byte */
+  }
 }

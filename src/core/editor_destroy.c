@@ -14,12 +14,14 @@
 #include "../io-management/workspace_settings.h"
 #include "../terminal/highlight.h"
 #include "../terminal/windows/tpw.h"
+#include "../terminal/kitty_keyboard.h"
 
 static void finalizeTerminal() {
   /// --- Teardown Terminal ---
-  // Restore terminal state (cursor and mouse)
+  // Restore terminal state (cursor and mouse) and disable Kitty Keyboard Protocol
   printf("\033[?1003l\033[0 q\n");
   fflush(stdout);
+  kitty_disable();
 
   // End ncurses and clean input buffer
   usleep(30000);

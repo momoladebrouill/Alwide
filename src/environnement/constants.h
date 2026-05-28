@@ -6,7 +6,7 @@
 // #define PARSE_PRINT
 #define SIMULATED_CURSOR
 
-#define SCROLL_SPEED 3
+#define SCROLL_SPEED 2
 #define NO_EVENT_MOUSE 268435456
 
 #define FILE_NAME_SEPARATOR " | "

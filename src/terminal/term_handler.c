@@ -6,6 +6,7 @@
 
 #include "../data-management/file_management.h"
 #include "term_handler.h"
+#include "kitty_keyboard.h"
 
 #include <limits.h>
 #include <math.h>
@@ -55,8 +56,9 @@ void gui_initNCurses(gui_Context* gui_context) {
               BUTTON3_RELEASED | BUTTON4_PRESSED | BUTTON5_PRESSED | BUTTON_SHIFT | BUTTON_CTRL | BUTTON_ALT |
               REPORT_MOUSE_POSITION,
             NULL);
-  timeout(100);
+  timeout(20);
   printf("\033[?1003h\033[5 q"); // enable mouse tracking and beam cursor
+  kitty_enable(); // Enable Kitty Keyboard Protocol (flags 1 and 2)
   fflush(stdout);
   // Color setup
   if (has_colors()) {

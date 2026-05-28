@@ -82,7 +82,7 @@ void askOnTypeFormatting(FileContainer* file, char* ch, ModuleContext* data) {
     };
 
     LSP_requestOnTypeFormatting(lsp, file->io_file.path_abs,
-                                LSP_pos(data->cursor->file_id.absolute_row - 1, data->cursor->line_id.absolute_column),
-                                ch, options);
+                                LSP_pos_from_cursor(*data->cursor), ch, options);
+
   }
 }

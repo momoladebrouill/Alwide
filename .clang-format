@@ -2,9 +2,10 @@
 ---
 Language: Cpp
 BasedOnStyle: LLVM
-AlignConsecutiveAssignments: false
-AlignConsecutiveDeclarations: false
-AlignOperands: false
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignConsecutiveMacros: true
+AlignOperands: true
 AlignTrailingComments: true
 AlwaysBreakTemplateDeclarations: Yes
 BraceWrapping:

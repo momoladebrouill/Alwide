@@ -108,13 +108,17 @@ LSP_Position calculateEndPos(LSP_Position start, const char* text) {
   if (!text) {
     return end;
   }
-  for (int i = 0; text[i]; i++) {
-    if (text[i] == '\n') {
+  int index = 0;
+  while (text[index]) {
+    if (text[index] == '\n') {
       end.row++;
       end.column = 0;
+      index++;
     }
     else {
-      end.column++;
+      Char_U8 u8 = readChar_U8FromCharArrayWithFirst((char*)text + index, text[index]);
+      index += sizeChar_U8(u8);
+      end.column += getUTF16Length(u8);
     }
   }
   return end;

@@ -1,5 +1,6 @@
 #include "editor_lsp.h"
 
+#include <assert.h>
 #include <ncurses.h>
 #include <unistd.h>
 
@@ -20,15 +21,11 @@ ModuleContext buildModuleContext(EditorContext* ctx) {
   return payload;
 }
 
-void handleLspServers(EditorContext* ctx, int* c, int* hash) {
+void handleLspServers(EditorContext* ctx, int key) {
   LSPServerLinkedList_Cell* cell = lsp_servers.head;
   while (cell != NULL) {
     ModuleContext payload = buildModuleContext(ctx);
     while (LSP_dispatchOnReceive(&cell->lsp_server, dispatcher, &payload)) {
-      if (*c == ERR) {
-        *c = ONLY_REPAINT_INPUT;
-        *hash = ONLY_REPAINT_INPUT;
-      }
       // Refresh payload in case of realloc during dispatch
       payload = buildModuleContext(ctx);
     }
@@ -38,15 +35,17 @@ void handleLspServers(EditorContext* ctx, int* c, int* hash) {
 
 void waitForLspResponse(EditorContext* ctx, int timeout_ms) {
   time_val start = timeInMilliseconds();
-  int dummy_c = ERR, dummy_hash = ERR;
   while (diff2Time(timeInMilliseconds(), start) < timeout_ms) {
-    handleLspServers(ctx, &dummy_c, &dummy_hash);
+    handleLspServers(ctx, ERR);
     usleep(10000); // 10ms
   }
 }
 
-void askOnCharTypeLspInfos(EditorContext* ctx, int c, FileContainer* fc, Cursor* cursor) {
-  bool hasAsked = askSignatureHelpOnChar(ctx, c, fc, cursor); // priority 1
+void askOnCharTypeLspInfos(EditorContext* ctx, int key, FileContainer* fc, Cursor* cursor) {
+  /* Only ask for LSP info on pure printable characters (Bits 0-23) */
+  int codepoint = key & 0x00FFFFFF;
+  assert(codepoint == key);
+  bool hasAsked = askSignatureHelpOnChar(ctx, codepoint, fc, cursor); // priority 1
   if (hasAsked) {
     return;
   }

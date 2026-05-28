@@ -27,6 +27,7 @@ SRC_MODULES= \
 	src/io-management/viewport_history.c \
 	src/data-management/state_control.c \
 	src/terminal/term_handler.c \
+	src/terminal/kitty_keyboard.c \
 	src/io-management/io_explorer.c \
 	src/advanced/lsp/lsp_client.c \
 	src/advanced/tree-sitter/tree_manager.c \

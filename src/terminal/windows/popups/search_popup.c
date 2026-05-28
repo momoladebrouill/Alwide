@@ -78,12 +78,12 @@ static void perform_incremental_search(SearchPopupContext* state) {
   }
 }
 
-static bool input_search_popup(gui_TPW* popup, int c_raw, int c_hash, MEVENT *m_event, void* payload) {
+static bool input_search_popup(gui_TPW* popup, int key, MEVENT *m_event, void* payload) {
   SearchPopupContext* state = (SearchPopupContext*)payload;
   FileContainer* fc = &state->ctx->files[state->ctx->current_file_index];
 
   // 1. ESC: Exit search
-  if (c_hash == H_KEY_ESCAPE || c_raw == CTRL('[')) {
+  if (key == H_KEY_ESCAPE || key == K(K_MOD_CTRL, '[')) {
     EditorContext* ctx = state->ctx;
     gui_destroyToplevelPopup(&ctx->gui_context, popup);
     gui_updateGUI(&ctx->gui_context);
@@ -91,7 +91,7 @@ static bool input_search_popup(gui_TPW* popup, int c_raw, int c_hash, MEVENT *m_
   }
 
   // 2. Ctrl+G: Toggle Case Sensitivity
-  if (c_raw == CTRL('G')) {
+  if (key == K(K_MOD_CTRL, 'g')) {
     state->case_sensitive = !state->case_sensitive;
     perform_incremental_search(state);
     gui_updateGUI(&state->ctx->gui_context);
@@ -99,7 +99,7 @@ static bool input_search_popup(gui_TPW* popup, int c_raw, int c_hash, MEVENT *m_
   }
 
   // 3. ENTER / Ctrl+N: Find Next
-  if (c_raw == KEY_ENTER || c_raw == '\n') {
+  if (key == H_KEY_ENTER) {
     if (state->query_len > 0) {
       Cursor start_cur, end_cur;
       if (ilj_findNext(fc, state->query, state->case_sensitive, state->wrap, &start_cur, &end_cur)) {
@@ -116,7 +116,7 @@ static bool input_search_popup(gui_TPW* popup, int c_raw, int c_hash, MEVENT *m_
   }
 
   // 4. Ctrl+P: Find Prev
-  if (c_raw == CTRL('P')) {
+  if (key == K(K_MOD_CTRL, 'p')) {
     if (state->query_len > 0) {
       Cursor start_cur, end_cur;
       if (ilj_findPrev(fc, state->query, state->case_sensitive, state->wrap, &start_cur, &end_cur)) {
@@ -133,7 +133,7 @@ static bool input_search_popup(gui_TPW* popup, int c_raw, int c_hash, MEVENT *m_
   }
 
   // 5. Backspace
-  if (c_raw == KEY_BACKSPACE) {
+  if (key == H_KEY_BACKSPACE) {
     if (state->query_len > 0) {
       state->query[--state->query_len] = '\0';
       perform_incremental_search(state);
@@ -143,14 +143,17 @@ static bool input_search_popup(gui_TPW* popup, int c_raw, int c_hash, MEVENT *m_
   }
 
   // 6. Character input
-  if (c_raw >= 32 && c_raw < 127) {
-    if (state->query_len < 127) {
-      state->query[state->query_len++] = (char)c_raw;
-      state->query[state->query_len] = '\0';
-      perform_incremental_search(state);
+  if (!IS_SPECIAL(key)) {
+    int codepoint = key & 0x00FFFFFF;
+    if (codepoint >= 32 && codepoint < 127) { /* Standard printable ASCII for search */
+      if (state->query_len < 127) {
+        state->query[state->query_len++] = (char)codepoint;
+        state->query[state->query_len] = '\0';
+        perform_incremental_search(state);
+      }
+      gui_updateGUI(&state->ctx->gui_context);
+      return true;
     }
-    gui_updateGUI(&state->ctx->gui_context);
-    return true;
   }
 
   // Consume any other key inputs so they do not fall back into the editor

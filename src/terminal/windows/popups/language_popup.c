@@ -99,16 +99,16 @@ static void apply_language_change(EditorContext* ctx, int index) {
   gui_updateGUI(&ctx->gui_context);
 }
 
-static bool input_lang_popup(gui_TPW* popup, int c_raw, int c_hash, MEVENT* m_event, void* payload) {
+static bool input_lang_popup(gui_TPW* popup, int key, MEVENT* m_event, void* payload) {
   LanguageSelectPopupContext* state = payload;
   EditorContext* ctx = state->ctx;
 
-  if (c_hash == H_KEY_ESCAPE || c_raw == CTRL('[')) {
+  if (key == H_KEY_ESCAPE || key == K(K_MOD_CTRL, '[')) {
     gui_destroyToplevelPopup(&ctx->gui_context, popup);
     return true;
   }
 
-  if (c_hash == H_KEY_UP || c_raw == KEY_UP) {
+  if (key == H_KEY_UP) {
     if (state->selected_index > 0) {
       state->selected_index--;
     }
@@ -119,7 +119,7 @@ static bool input_lang_popup(gui_TPW* popup, int c_raw, int c_hash, MEVENT* m_ev
     return true;
   }
 
-  if (c_hash == H_KEY_DOWN || c_raw == KEY_DOWN) {
+  if (key == H_KEY_DOWN) {
     if (state->selected_index < language_features.size - 1) {
       state->selected_index++;
     }
@@ -130,13 +130,13 @@ static bool input_lang_popup(gui_TPW* popup, int c_raw, int c_hash, MEVENT* m_ev
     return true;
   }
 
-  if (c_raw == KEY_ENTER || c_raw == '\n' || c_raw == '\r') {
+  if (key == H_KEY_ENTER || key == K(0, '\r')) {
     apply_language_change(ctx, state->selected_index);
     gui_destroyToplevelPopup(&ctx->gui_context, popup);
     return true;
   }
 
-  if (c_raw == KEY_MOUSE && (m_event->bstate & BUTTON1_CLICKED || m_event->bstate & BUTTON1_PRESSED)) {
+  if (key == H_KEY_MOUSE && (m_event->bstate & BUTTON1_CLICKED || m_event->bstate & BUTTON1_PRESSED)) {
     int clicked_y = m_event->y - getbegy(popup->tpw);
     int index = clicked_y - 1;
     if (index >= 0 && index < language_features.size) {
@@ -146,7 +146,7 @@ static bool input_lang_popup(gui_TPW* popup, int c_raw, int c_hash, MEVENT* m_ev
     gui_updateTPW(&ctx->gui_context);
   }
 
-  if (c_raw == KEY_MOUSE && m_event->bstate & BUTTON1_DOUBLE_CLICKED) {
+  if (key == H_KEY_MOUSE && m_event->bstate & BUTTON1_DOUBLE_CLICKED) {
     int clicked_y = m_event->y - getbegy(popup->tpw);
     int index = clicked_y - 1;
     if (index >= 0 && index < language_features.size) {
@@ -155,6 +155,8 @@ static bool input_lang_popup(gui_TPW* popup, int c_raw, int c_hash, MEVENT* m_ev
       return true;
     }
   }
+
+  return true;
 }
 
 static void destroy_lang_popup(gui_TPW* popup, void* payload) {

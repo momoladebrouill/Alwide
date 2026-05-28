@@ -95,22 +95,31 @@ Char_U8 readChar_U8FromFileWithFirstUsingFd(int fd, char c) {
 
 
 /**
- * Return the first Char_U8 from sdtin.
+ * Return the first Char_U8 from a Unicode codepoint.
  */
-Char_U8 readChar_U8FromInput(char c) {
-  Char_U8 ch;
-  ch.t[0] = c;
-  int size = sizeChar_U8(ch);
+Char_U8 readChar_U8FromInput(int codepoint) {
+  Char_U8 ch = {{0, 0, 0, 0}};
+  unsigned int c = (unsigned int)codepoint;
 
-  for (char i = 1; i < size; i++) {
-    // scan end of the char
-    fscanf(stdin, "%c", ch.t + i);
+  if (c <= 0x7F) {
+    ch.t[0] = (char)c;
+  } else if (c <= 0x7FF) {
+    ch.t[0] = (char)(0xC0 | (c >> 6));
+    ch.t[1] = (char)(0x80 | (c & 0x3F));
+  } else if (c <= 0xFFFF) {
+    ch.t[0] = (char)(0xE0 | (c >> 12));
+    ch.t[1] = (char)(0x80 | ((c >> 6) & 0x3F));
+    ch.t[2] = (char)(0x80 | (c & 0x3F));
+  } else if (c <= 0x10FFFF) {
+    ch.t[0] = (char)(0xF0 | (c >> 18));
+    ch.t[1] = (char)(0x80 | ((c >> 12) & 0x3F));
+    ch.t[2] = (char)(0x80 | ((c >> 6) & 0x3F));
+    ch.t[3] = (char)(0x80 | (c & 0x3F));
+  } else {
+    /* Fallback for raw bytes > 255 if they somehow reach here, though they shouldn't */
+    ch.t[0] = (char)(c & 0xFF);
   }
 
-  for (char i = size; i < 4; i++) {
-    // optional, fill the rest of the Char_U8 with 0
-    ch.t[i] = 0;
-  }
   return ch;
 }
 
@@ -234,4 +243,22 @@ bool areChar_U8Equals(Char_U8 ch1, Char_U8 ch2) {
   }
 
   return true;
+}
+
+int getUTF16Length(Char_U8 ch) {
+  int size = sizeChar_U8(ch);
+  unsigned char* t = (unsigned char*)ch.t;
+  unsigned int codepoint = 0;
+
+  if (size == 1) {
+    codepoint = t[0];
+  } else if (size == 2) {
+    codepoint = ((t[0] & 0x1F) << 6) | (t[1] & 0x3F);
+  } else if (size == 3) {
+    codepoint = ((t[0] & 0x0F) << 12) | ((t[1] & 0x3F) << 6) | (t[2] & 0x3F);
+  } else if (size == 4) {
+    codepoint = ((t[0] & 0x07) << 18) | ((t[1] & 0x3F) << 12) | ((t[2] & 0x3F) << 6) | (t[3] & 0x3F);
+  }
+
+  return (codepoint > 0xFFFF) ? 2 : 1;
 }

@@ -34,8 +34,9 @@ Char_U8 readChar_U8FromFileWithFirst(FILE* f, char c);
 Char_U8 readChar_U8FromFileWithFirstUsingFd(int fd, char c);
 /**
  * Return the first Char_U8 from sdtin.
+ * If c > 255, it's treated as a full Unicode codepoint (e.g. from Kitty).
  */
-Char_U8 readChar_U8FromInput(char c);
+Char_U8 readChar_U8FromInput(int c);
 
 /**
  * Return the first Char_U8 of char*.
@@ -72,5 +73,7 @@ bool isAWordLetter(Char_U8 ch);
 bool isInvisible(Char_U8 ch);
 
 bool areChar_U8Equals(Char_U8 ch1, Char_U8 ch2);
+
+int getUTF16Length(Char_U8 ch);
 
 #endif // UTF_8_EXTRACTOR_H

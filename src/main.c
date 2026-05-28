@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <stdio.h>
 
 #include "advanced/tree-sitter/tree_manager.h"
 #include "config/config.h"
@@ -77,13 +76,12 @@ int main(int file_count, char** args) {
 
     // read from input stream
   read_input:;
-    int c, hash;
-    readNextInput(&ctx, &c, &hash);
+    int key = readNextInput(&ctx);
 
     //// ---- BEGIN background / delayed operations BLOCK ----
 
     // handle lsp servers
-    handleLspServers(&ctx, &c, &hash);
+    handleLspServers(&ctx, key);
 
     // if lsp ask to refresh local_vars we have to execute post processing
     if (ctx.refresh_local_vars) {
@@ -94,7 +92,7 @@ int main(int file_count, char** args) {
     //// ---- END background / delayed operations BLOCK ----
 
     // dispatch and process input
-    EventLoopAction loopEnd = dispatchInput(&ctx, c, hash);
+    EventLoopAction loopEnd = dispatchInput(&ctx, key);
 
     // process the loop end behavior
     switch (loopEnd) {

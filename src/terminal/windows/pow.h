@@ -27,7 +27,7 @@ typedef struct ModuleContext ModuleContext;
 
 #include "../../data-management/file_management.h"
 
-bool gui_handlePopupInput(gui_Context* context, FileContainer* fc, int c_raw, int c_hash,
-                          PayloadStateChange payload_state_change, ModuleContext* payload, MEVENT* m_event);
+bool gui_handlePopupInput(gui_Context* context, FileContainer* fc, int key, PayloadStateChange payload_state_change,
+                          ModuleContext* payload, MEVENT* m_event);
 
 #endif // WISHWIM_POW_H

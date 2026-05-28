@@ -7,7 +7,7 @@
 typedef struct gui_TPW gui_TPW;
 
 typedef void (*gui_TPW_paintCallback)(gui_TPW* popup, void* payload);
-typedef bool (*gui_TPW_inputCallback)(gui_TPW* popup, int c_raw, int c_hash, MEVENT* m_event, void* payload);
+typedef bool (*gui_TPW_inputCallback)(gui_TPW* popup, int key, MEVENT* m_event, void* payload);
 typedef void (*gui_TPW_destroyCallback)(gui_TPW* popup, void* payload);
 
 struct gui_TPW {

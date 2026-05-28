@@ -31,9 +31,8 @@ void receiveHoverData(cJSON* packet, FileContainer* file, ViewPort* view_port, C
     selectWord(&end, &begin);
 
     // set up the new range
-    file->lsp_datas.computed->hover.range.pos1 =
-      LSP_pos_from_cursor(begin.file_id.absolute_row, begin.line_id.absolute_column);
-    file->lsp_datas.computed->hover.range.pos2 = LSP_pos_from_cursor(end.file_id.absolute_row, end.line_id.absolute_column);
+    file->lsp_datas.computed->hover.range.pos1 = LSP_pos_from_cursor(begin);
+    file->lsp_datas.computed->hover.range.pos2 = LSP_pos_from_cursor(end);
     file->lsp_datas.computed->hover.is_range = true;
   }
 

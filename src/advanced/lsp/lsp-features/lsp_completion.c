@@ -40,8 +40,7 @@ LSP_Range getReplaceRange(Cursor* cursor, char insertText[METHOD_MAX_LENGTH]) {
     begin = *cursor;
   }
 
-  return LSP_range_from_cursor(begin.file_id.absolute_row, begin.line_id.absolute_column, cursor->file_id.absolute_row,
-                               cursor->line_id.absolute_column);
+  return LSP_range_from_cursor(begin, *cursor);
 }
 
 void executeLSPCompletion(Cursor* cursor, LSP_CompletionItem* item, History** history_p,
@@ -117,7 +116,7 @@ void askCompletion(gui_Context* gui_context, FileContainer* fc, bool reset, bool
     }
 
     LSP_requestCompletion(getLSPServerForLanguage(&lsp_servers, fc->lsp_datas.lang_id), fc->lsp_datas.path_abs,
-                          LSP_pos_from_cursor(cursor_row(fc->cursor), cursor_col(fc->cursor)));
+                          LSP_pos_from_cursor(fc->cursor));
     if (gui_context->edw_context.pow_owner != COMPLETION) {
       gui_setLastTextAnchor(gui_context, cursor_to_desc(fc->cursor));
     }

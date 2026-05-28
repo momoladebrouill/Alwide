@@ -196,7 +196,7 @@ void handleEditorClick(gui_Context* gui_context, Cursor* cursor, Cursor* select_
       // goto action ctrl + click
       if (m_event->bstate & BUTTON1_CLICKED) {
         LSP_requestGoto(getLSPServerForLanguage(&lsp_servers, file->lsp_datas.lang_id), file->io_file.path_abs,
-                        LSP_pos_from_cursor(cursor_row(hover_cursor), cursor_col(hover_cursor)), LSP_GOTO_DEFINITION);
+                        LSP_pos_from_cursor(hover_cursor), LSP_GOTO_DEFINITION);
       }
       if (gui_context->edw_context.pow_owner != GOTO_CHOICE) {
         if (file->lsp_datas.computed->hover.is_range == false ||
@@ -205,7 +205,7 @@ void handleEditorClick(gui_Context* gui_context, Cursor* cursor, Cursor* select_
                                     positionToCursorDescriptor(file->lsp_datas.computed->hover.range.pos2))) {
           // Regulate the hover requests, to avoid spamming for nothing. Don't reask for the same word.
           LSP_requestHover(getLSPServerForLanguage(&lsp_servers, file->lsp_datas.lang_id), file->io_file.path_abs,
-                           LSP_pos_from_cursor(cursor_row(hover_cursor), cursor_col(hover_cursor)));
+                           LSP_pos_from_cursor(hover_cursor));
         }
         else if (file->lsp_datas.computed->hover.size != 0) {
           // We resume the hover data previously fetched.
