@@ -21,12 +21,15 @@ ModuleContext buildModuleContext(EditorContext* ctx) {
   return payload;
 }
 
-void handleLspServers(EditorContext* ctx, int key) {
+void handleLspServers(EditorContext* ctx, int* key) {
   LSPServerLinkedList_Cell* cell = lsp_servers.head;
   while (cell != NULL) {
     ModuleContext payload = buildModuleContext(ctx);
     while (LSP_dispatchOnReceive(&cell->lsp_server, dispatcher, &payload)) {
       // Refresh payload in case of realloc during dispatch
+      if (*key == ERR) {
+        *key = ONLY_REPAINT_INPUT;
+      }
       payload = buildModuleContext(ctx);
     }
     cell = cell->next;
@@ -36,7 +39,8 @@ void handleLspServers(EditorContext* ctx, int key) {
 void waitForLspResponse(EditorContext* ctx, int timeout_ms) {
   time_val start = timeInMilliseconds();
   while (diff2Time(timeInMilliseconds(), start) < timeout_ms) {
-    handleLspServers(ctx, ERR);
+    int key = ERR;
+    handleLspServers(ctx, &key);
     usleep(10000); // 10ms
   }
 }

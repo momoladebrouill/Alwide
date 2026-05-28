@@ -19,13 +19,13 @@
 #include "environnement/setup.h"
 
 // Global vars.
-int color_pair = 6;
-int color_index = 20;
-cJSON* config;
+int                    color_pair  = 6;
+int                    color_index = 20;
+cJSON*                 config;
 LF_LanguageFeatureList language_features;
-ParserList parsers;
-LSPServerLinkedList lsp_servers;
-WorkspaceSettings workspace_settings;
+ParserList             parsers;
+LSPServerLinkedList    lsp_servers;
+WorkspaceSettings      workspace_settings;
 
 
 int main(int file_count, char** args) {
@@ -77,11 +77,12 @@ int main(int file_count, char** args) {
     // read from input stream
   read_input:;
     int key = readNextInput(&ctx);
+    logInput(key);
 
     //// ---- BEGIN background / delayed operations BLOCK ----
 
     // handle lsp servers
-    handleLspServers(&ctx, key);
+    handleLspServers(&ctx, &key);
 
     // if lsp ask to refresh local_vars we have to execute post processing
     if (ctx.refresh_local_vars) {

@@ -31,4 +31,6 @@ bool getFileClickedFileExplorer(ExplorerFolder* pwd, int y_click, int few_x_offs
                                 ExplorerFolder** res_folder, int* file_index);
 
 
+bool dispatchInputToTPW(EditorContext* ctx, int key) ;
+
 #endif // CLICK_HANDLER_H

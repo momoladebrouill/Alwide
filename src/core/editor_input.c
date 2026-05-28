@@ -1,7 +1,6 @@
 #include "editor_input.h"
 
 #include <assert.h>
-#include <ctype.h>
 #include <limits.h>
 #include <ncurses.h>
 #include <stdio.h>
@@ -56,29 +55,17 @@ EventLoopAction dispatchInput(EditorContext* ctx, int key) {
   return EVENT_CONTINUE;
 }
 
+
 bool handlePopupInput(EditorContext* ctx, int key) {
   // Route keyboard input to the focused active toplevel popup first
-  ModuleContext payload = buildModuleContext(ctx);
-
-  gui_TPW* popup = ctx->gui_context.toplevel_popups;
-  while (popup != NULL) {
-    if (popup->visible && popup->on_input) {
-      if (key != H_KEY_MOUSE || isClickInsideWindow(popup->tpw, &ctx->m_event)) {
-        if (popup->on_input(popup, key, &ctx->m_event, popup->payload)) {
-          return true;
-        }
-      }
-      if (popup->strong_focus) {
-        return true;
-      }
-    }
-    popup = popup->next;
+  if (dispatchInputToTPW(ctx, key)) {
+    return true;
   }
 
+  // Next route input to the edw internal popup system
   FileContainer* fc = &ctx->files[ctx->current_file_index];
-  MEVENT* mouse_event = (key == H_KEY_MOUSE) ? &ctx->m_event : NULL;
-
-  bool result = gui_handlePopupInput(&ctx->gui_context, fc, key, ctx->payload_state_change, &payload, mouse_event);
+  ModuleContext payload = buildModuleContext(ctx);
+  bool result = gui_handlePopupInput(&ctx->gui_context, fc, key, ctx->payload_state_change, &payload, &ctx->m_event);
 
   return result;
 }
@@ -108,7 +95,6 @@ bool runInternalLogic(EditorContext* ctx, int key, EventLoopAction* out_action) 
       return false;
   }
 }
-
 
 int readNextInput(EditorContext* ctx) {
   int c;
@@ -222,6 +208,55 @@ int readNextInput(EditorContext* ctx) {
   return key;
 }
 
+void logInput(int key) {
+  if (key == ERR) return;
+
+  FILE* f = fopen(".logs.txt", "a");
+  if (!f) return;
+
+  fprintf(f, "[INPUT] Key: 0x%08X | ", key);
+
+  // Modifiers
+  if (key & K_MOD_CTRL)  fprintf(f, "CTRL+");
+  if (key & K_MOD_ALT)   fprintf(f, "ALT+");
+  if (key & K_MOD_SHIFT) fprintf(f, "SHIFT+");
+  if (key & K_MOD_SUPER) fprintf(f, "SUPER+");
+
+  int codepoint = key & 0x00FFFFFF;
+
+  if (IS_SPECIAL(key)) {
+    fprintf(f, "SPECIAL: code : %d ", codepoint);
+    if (codepoint >= KEY_MIN && codepoint <= KEY_MAX) {
+      fprintf(f, ": %s", keyname(codepoint));
+    }
+    else if (codepoint == 27) {
+      fprintf(f, ": ESCAPE");
+    }
+    
+    if (codepoint >= 32 && codepoint <= 126) {
+      fprintf(f, " : char : %c", (char)codepoint);
+    }
+  }
+  else {
+    Char_U8 u8 = readChar_U8FromInput(codepoint);
+    fprintf(f, "CHAR: '");
+    for (int i = 0; i < 4 && u8.t[i]; i++) {
+      fprintf(f, "%c", u8.t[i]);
+    }
+    fprintf(f, "' (U+%04X)", codepoint);
+  }
+
+  if (IS_RELEASE(key)) {
+    fprintf(f, " [RELEASE]");
+  }
+  else {
+    fprintf(f, " [PRESS]");
+  }
+
+  fprintf(f, "\n");
+  fclose(f);
+}
+
 void handleCharBufferInsertion(EditorContext* ctx, int key) {
   FileContainer* fc = &ctx->files[ctx->current_file_index];
 
@@ -231,7 +266,7 @@ void handleCharBufferInsertion(EditorContext* ctx, int key) {
 
   /* Ignore control characters, except Tab and Newline (though those are usually Special keys) */
   if (codepoint == ERR || (codepoint < 32 && codepoint != '\t' && codepoint != '\n') || codepoint == 127) {
-    return;
+    assert(false);
   }
 
   Cursor* cursor = &fc->cursor;
@@ -248,11 +283,13 @@ void handleCharBufferInsertion(EditorContext* ctx, int key) {
     saveAction(history_frame, createInsertAction(*cursor, tmp), globalOnStageChange, cursor,
                (long*)&ctx->payload_state_change);
   }
+
   setDesiredColumn(*cursor, desired_column);
 
   if (ctx->gui_context.edw_context.pow_owner == DIAGNOSTICS) {
     gui_closePopup(&ctx->gui_context);
   }
+
   ModuleContext lsp_ctx = buildModuleContext(ctx);
   askOnTypeFormatting(fc, u8.t, &lsp_ctx);
   askOnCharTypeLspInfos(ctx, key, fc, cursor);
@@ -454,7 +491,7 @@ EventLoopAction runSpecialKeyHandler(EditorContext* ctx, int key) {
                  (long*)&ctx->payload_state_change);
       setDesiredColumn(*cursor, desired_column);
       break;
-    case H_KEY_CTRL_MAJ_SLASH:
+    case K(K_MOD_CTRL | K_MOD_SHIFT, ':'):
     case K(K_MOD_CTRL, '_'):
       ilj_toggleComments(fc, history_frame, &ctx->payload_state_change);
       gui_updateEDW(&ctx->gui_context);
@@ -586,6 +623,8 @@ EventLoopAction runSpecialKeyHandler(EditorContext* ctx, int key) {
       break;
     default:
       /* Unmapped command, release, or hotkey sequence: safely ignore it */
+      fprintf(stderr, "Key not handled\n    =>  ");
+      logInput(key);
       break;
   }
   return EVENT_CONTINUE;

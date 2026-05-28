@@ -427,3 +427,23 @@ bool getFileClickedFileExplorer(ExplorerFolder* pwd, int y_click, int few_x_offs
   y_click += few_y_offset;
   return internalGetClickedExplorerFile(pwd, &y_click, few_x_offset, few_y_offset, res_folder, file_index);
 }
+
+
+
+bool dispatchInputToTPW(EditorContext* ctx, int key) {
+  gui_TPW* popup = ctx->gui_context.toplevel_popups;
+  while (popup != NULL) {
+    if (popup->visible && popup->on_input) {
+      if (key != H_KEY_MOUSE || isClickInsideWindow(popup->tpw, &ctx->m_event)) {
+        if (popup->on_input(popup, key, &ctx->m_event, popup->payload)) {
+          return true;
+        }
+      }
+      if (popup->strong_focus) {
+        return true;
+      }
+    }
+    popup = popup->next;
+  }
+  return false;
+}
