@@ -311,6 +311,10 @@ EventLoopAction runSpecialKeyHandler(EditorContext* ctx, int key) {
     case H_KEY_RIGHT:
       if (cursor_is_disabled(*select_cursor)) {
         *cursor = moveRight(*cursor);
+        if (areChar_U8Equals(getCharAtCursor(*cursor), readChar_U8FromCharArray(")")) &&
+            ctx->gui_context.edw_context.pow_owner == SIGNATURE_HELP) {
+          gui_closePopup(&ctx->gui_context);
+        }
       }
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_RIGHT);
       setDesiredColumn(*cursor, desired_column);
@@ -361,11 +365,19 @@ EventLoopAction runSpecialKeyHandler(EditorContext* ctx, int key) {
     case H_KEY_CTRL_RIGHT:
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_RIGHT);
       *cursor = moveToNextWord(*cursor);
+      if (areChar_U8Equals(getCharAtCursor(*cursor), readChar_U8FromCharArray(")")) &&
+          ctx->gui_context.edw_context.pow_owner == SIGNATURE_HELP) {
+        gui_closePopup(&ctx->gui_context);
+      }
       setDesiredColumn(*cursor, desired_column);
       askCompletion(&ctx->gui_context, fc, true, false);
       break;
     case H_KEY_CTRL_LEFT:
       setSelectCursorOff(cursor, select_cursor, SELECT_OFF_LEFT);
+      if (areChar_U8Equals(getCharAtCursor(*cursor), readChar_U8FromCharArray("(")) &&
+          ctx->gui_context.edw_context.pow_owner == SIGNATURE_HELP) {
+        gui_closePopup(&ctx->gui_context);
+      }
       *cursor = moveToPreviousWord(*cursor);
       setDesiredColumn(*cursor, desired_column);
       askCompletion(&ctx->gui_context, fc, true, false);
@@ -470,7 +482,7 @@ EventLoopAction runSpecialKeyHandler(EditorContext* ctx, int key) {
                  (long*)&ctx->payload_state_change);
       setDesiredColumn(*cursor, desired_column);
       break;
-    case K_SPECIAL(K_MOD_CTRL | K_MOD_SHIFT, '/'):
+    case K_SPECIAL(K_MOD_CTRL | K_MOD_SHIFT, ':'):
     case K_SPECIAL(K_MOD_CTRL, '_'):
       ilj_toggleComments(fc, history_frame, &ctx->payload_state_change);
       gui_updateEDW(&ctx->gui_context);
