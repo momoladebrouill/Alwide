@@ -51,7 +51,7 @@ void gui_initNCurses(gui_Context* gui_context) {
   // where mouseinterval(0) causes mouse events to be delayed until the next input.
   // see https://github.com/termux/termux-packages/issues/28372
   // and https://lists.gnu.org/archive/html/bug-ncurses/2026-04/msg00009.html
-  mouseinterval(1);
+  mouseinterval(0);
   mousemask(BUTTON1_PRESSED | BUTTON1_RELEASED | BUTTON2_PRESSED | BUTTON2_RELEASED | BUTTON3_PRESSED |
               BUTTON3_RELEASED | BUTTON4_PRESSED | BUTTON5_PRESSED | BUTTON_SHIFT | BUTTON_CTRL | BUTTON_ALT |
               REPORT_MOUSE_POSITION,
