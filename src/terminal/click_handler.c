@@ -193,25 +193,29 @@ void handleEditorClick(gui_Context* gui_context, Cursor* cursor, Cursor* select_
                                                LF_tab_size(file->feature));
     gui_context->edw_context.lastMousePosition = cursor_to_desc(hover_cursor);
     if (file->lsp_datas.is_enable && m_event->bstate & BUTTON_CTRL) {
+      LSP_Server* lsp_server = getLSPServerForLanguage(&lsp_servers, file->lsp_datas.lang_id);
 
       // goto action ctrl + click
       if (m_event->bstate & BUTTON1_CLICKED) {
-        LSP_requestGoto(getLSPServerForLanguage(&lsp_servers, file->lsp_datas.lang_id), file->io_file.path_abs,
-                        LSP_pos_from_cursor(hover_cursor), LSP_GOTO_DEFINITION);
+        LSP_requestGoto(lsp_server, file->io_file.path_abs, LSP_pos_from_cursor(lsp_server, hover_cursor),
+                        LSP_GOTO_DEFINITION);
       }
       if (gui_context->edw_context.pow_owner != GOTO_CHOICE) {
+        LSP_Server* lsp = getLSPServerForLanguage(&lsp_servers, file->lsp_datas.lang_id);
         if (file->lsp_datas.computed->hover.is_range == false ||
             !cursor_desc_is_between(cursor_to_desc(hover_cursor),
-                                    positionToCursorDescriptor(file->lsp_datas.computed->hover.range.pos1),
-                                    positionToCursorDescriptor(file->lsp_datas.computed->hover.range.pos2))) {
+                                    cursor_to_desc(LSP_tryToReachCursorForLSPPosition(
+                                      lsp, hover_cursor, file->lsp_datas.computed->hover.range.pos1)),
+                                    cursor_to_desc(LSP_tryToReachCursorForLSPPosition(
+                                      lsp, hover_cursor, file->lsp_datas.computed->hover.range.pos2)))) {
           // Regulate the hover requests, to avoid spamming for nothing. Don't reask for the same word.
-          LSP_requestHover(getLSPServerForLanguage(&lsp_servers, file->lsp_datas.lang_id), file->io_file.path_abs,
-                           LSP_pos_from_cursor(hover_cursor));
+          LSP_requestHover(lsp_server, file->io_file.path_abs, LSP_pos_from_cursor(lsp_server, hover_cursor));
         }
         else if (file->lsp_datas.computed->hover.size != 0) {
           // We resume the hover data previously fetched.
           ViewPort view_port = (ViewPort){.gui = gui_context, .screen_x = screen_x, .screen_y = screen_y};
-          gui_resumeHoverInformation(cursor, &view_port, &file->lsp_datas.computed->hover, LF_tab_size(file->feature));
+          gui_resumeHoverInformation(cursor, &view_port, file, &file->lsp_datas.computed->hover,
+                                     LF_tab_size(file->feature));
         }
       }
     }

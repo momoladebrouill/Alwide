@@ -14,10 +14,21 @@
 #include "edw.h"
 
 
-bool gui_resumeHoverInformation(Cursor* cursor, ViewPort* view_port, LSP_Hover* hover, int tab_size) {
+bool gui_resumeHoverInformation(Cursor* cursor, ViewPort* view_port, FileContainer* file, LSP_Hover* hover,
+                                int tab_size) {
   assert(hover->is_range);
-  CursorDescriptor start_descriptor = positionToCursorDescriptor(hover->range.pos1);
-  CursorDescriptor end_descriptor = positionToCursorDescriptor(hover->range.pos2);
+
+  LSP_Server* lsp = getLSPServerForLanguage(&lsp_servers, file->lsp_datas.lang_id);
+  if (lsp == NULL) {
+    return false;
+  }
+
+  Cursor start_cur = LSP_tryToReachCursorForLSPPosition(lsp, *cursor, hover->range.pos1);
+  Cursor end_cur = LSP_tryToReachCursorForLSPPosition(lsp, *cursor, hover->range.pos2);
+
+  CursorDescriptor start_descriptor = cursor_to_desc(start_cur);
+  CursorDescriptor end_descriptor = cursor_to_desc(end_cur);
+
   fprintf(stderr, "Last position saved (%d, %d), in range (%d, %d) -> (%d, %d)\n",
           view_port->gui->edw_context.lastMousePosition.row, view_port->gui->edw_context.lastMousePosition.column,
           start_descriptor.row, start_descriptor.column, end_descriptor.row, end_descriptor.column);
@@ -31,7 +42,8 @@ bool gui_resumeHoverInformation(Cursor* cursor, ViewPort* view_port, LSP_Hover* 
   }
 
   fprintf(stderr, "opening popup !\n");
-  Cursor new_cur = tryToReachAbsPosition(*cursor, start_descriptor.row, start_descriptor.column);
+  // Set focus on the first character of the range (start_cur is before first char, so move right)
+  Cursor new_cur = moveRight(start_cur);
 
   // calculating the best popup size.
   int total_height = 0;
@@ -422,8 +434,9 @@ bool gui_handleCompletionInput(gui_Context* context, FileContainer* fc, int key,
           executeCodeAction(fc, cursor, &lsp_data->code_actions.items[clicked_item], payload);
         }
         else {
-          executeLSPCompletion(cursor, lsp_data->completions.completions.items + (clicked_item - ca_size), history_p,
-                               payload_state_change, LF_tab(fc->feature));
+          LSP_Server* lsp = getLSPServerForLanguage(&lsp_servers, fc->lsp_datas.lang_id);
+          executeLSPCompletion(lsp, cursor, lsp_data->completions.completions.items + (clicked_item - ca_size),
+                               history_p, payload_state_change, LF_tab(fc->feature));
         }
         gui_closePopup(context);
       }
@@ -459,7 +472,8 @@ bool gui_handleCompletionInput(gui_Context* context, FileContainer* fc, int key,
           executeCodeAction(fc, cursor, &lsp_data->code_actions.items[context->edw_context.item_selected], payload);
         }
         else {
-          executeLSPCompletion(cursor,
+          LSP_Server* lsp = getLSPServerForLanguage(&lsp_servers, fc->lsp_datas.lang_id);
+          executeLSPCompletion(lsp, cursor,
                                lsp_data->completions.completions.items + (context->edw_context.item_selected - ca_size),
                                history_p, payload_state_change, LF_tab(fc->feature));
         }

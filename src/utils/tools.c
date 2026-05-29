@@ -1,6 +1,8 @@
 #include "tools.h"
+#include "../advanced/lsp/lsp_client.h"
 #include "../data-management/encoding/utf16.h"
 #include "../data-management/encoding/utf8.h"
+#include "../data-management/file_management.h"
 
 #include <asm-generic/errno-base.h>
 #include <assert.h>
@@ -326,15 +328,28 @@ CursorDescriptor positionToCursorDescriptor(LSP_Position position) {
 
 // --- Conversion Helpers ---
 
-LSP_Position LSP_pos_from_cursor(Cursor cursor) {
-  int character_col = cursor.line_id.absolute_column;
-  LineNode* line = cursor.line_id.line;
-  int utf16_col = utf16_get_offset(line->ch, line->element_number, character_col);
-  return (LSP_Position){.row = cursor.file_id.absolute_row - 1, .column = utf16_col};
+LSP_Position LSP_pos_from_cursor(LSP_Server* server_ptr, Cursor cursor) {
+  LSP_Server* server = (LSP_Server*)server_ptr;
+  int column_offset;
+  if (server != NULL && server->position_encoding == LSP_POSITION_ENCODING_UTF32) {
+    column_offset = cursor.line_id.absolute_column;
+  }
+  else if (server != NULL && server->position_encoding == LSP_POSITION_ENCODING_UTF8) {
+    int total_line_bytes = cursor.file_id.file->lines_byte_count[cursor.file_id.relative_row - 1];
+    int remaining_bytes = byteCountForCurrentLineToEnd(cursor.line_id.line, cursor.line_id.relative_column);
+    column_offset = total_line_bytes - remaining_bytes;
+  }
+  else {
+    // Default to UTF-16
+    column_offset =
+      utf16_get_offset(cursor.line_id.line->ch, cursor.line_id.line->element_number, cursor.line_id.absolute_column);
+  }
+
+  return (LSP_Position){.row = cursor.file_id.absolute_row - 1, .column = column_offset};
 }
 
-LSP_Range LSP_range_from_cursor(Cursor c1, Cursor c2) {
-  return (LSP_Range){.pos1 = LSP_pos_from_cursor(c1), .pos2 = LSP_pos_from_cursor(c2)};
+LSP_Range LSP_range_from_cursor(LSP_Server* server, Cursor c1, Cursor c2) {
+  return (LSP_Range){.pos1 = LSP_pos_from_cursor(server, c1), .pos2 = LSP_pos_from_cursor(server, c2)};
 }
 
 
@@ -345,7 +360,15 @@ int LSP_0_row_to_1_row(int lsp_row) {
   return lsp_row + 1;
 }
 
-Cursor LSP_tryToReachCursorForLSPPosition(Cursor cursor, LSP_Position position) {
+Cursor LSP_tryToReachCursorForLSPPosition(LSP_Server* server_ptr, Cursor cursor, LSP_Position position) {
+  LSP_Server* server = (LSP_Server*)server_ptr;
+  if (server != NULL && server->position_encoding == LSP_POSITION_ENCODING_UTF32) {
+    return tryToReachAbsPosition(cursor, LSP_0_row_to_1_row(position.row), position.column);
+  }
+  if (server != NULL && server->position_encoding == LSP_POSITION_ENCODING_UTF8) {
+    return byteCursorToCursor(cursor, position.row, position.column);
+  }
+  // Default to UTF-16
   Cursor target_row = tryToReachAbsPosition(cursor, LSP_0_row_to_1_row(position.row), 0);
   int character_col =
     utf16_get_char_column(target_row.line_id.line->ch, target_row.line_id.line->element_number, position.column);

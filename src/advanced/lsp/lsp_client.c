@@ -485,6 +485,13 @@ static cJSON* buildInitPacket(LSP_Server* lsp, char* client_name, char* client_v
   cJSON_AddStringToObject(client_info, "version", client_version);
 
   cJSON* capabilities = cJSON_AddObjectToObject(init_params, "capabilities");
+
+  cJSON* general = cJSON_AddObjectToObject(capabilities, "general");
+  cJSON* positionEncodings = cJSON_AddArrayToObject(general, "positionEncodings");
+  cJSON_AddItemToArray(positionEncodings, cJSON_CreateString("utf-32"));
+  cJSON_AddItemToArray(positionEncodings, cJSON_CreateString("utf-8"));
+  cJSON_AddItemToArray(positionEncodings, cJSON_CreateString("utf-16"));
+
   cJSON* textDocument = cJSON_AddObjectToObject(capabilities, "textDocument");
 
   // Synchronization
@@ -535,16 +542,28 @@ static cJSON* buildInitPacket(LSP_Server* lsp, char* client_name, char* client_v
   cJSON_AddStringToObject(workspace, "name", basename(current_workspace_path));
   cJSON_AddItemToArray(workspace_array, workspace);
 
-  cJSON* general = cJSON_AddObjectToObject(init_params, "general");
-  cJSON* positionEncodings = cJSON_AddArrayToObject(general, "positionEncodings");
-  cJSON_AddItemToArray(positionEncodings, cJSON_CreateString("utf-8"));
   return init_params;
 }
 
 static void extractDataFromServerCapability(LSP_Server* lsp) {
   // Extract on-type trigger characters
   cJSON* server_capabilities = cJSON_GetObjectItem(lsp->init_result, "capabilities");
+
+  // Default to UTF-16
+  lsp->position_encoding = LSP_POSITION_ENCODING_UTF16;
+
   if (server_capabilities) {
+    cJSON* positionEncoding = cJSON_GetObjectItem(server_capabilities, "positionEncoding");
+    if (positionEncoding && cJSON_IsString(positionEncoding)) {
+      char* encoding_str = cJSON_GetStringValue(positionEncoding);
+      if (strcmp(encoding_str, "utf-32") == 0) {
+        lsp->position_encoding = LSP_POSITION_ENCODING_UTF32;
+      }
+      else if (strcmp(encoding_str, "utf-8") == 0) {
+        lsp->position_encoding = LSP_POSITION_ENCODING_UTF8;
+      }
+    }
+
     cJSON* onType = cJSON_GetObjectItem(server_capabilities, "documentOnTypeFormattingProvider");
     if (onType) {
       cJSON* first = cJSON_GetObjectItem(onType, "firstTriggerCharacter");

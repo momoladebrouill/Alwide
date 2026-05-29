@@ -9,7 +9,7 @@
 #include "../../shared.h"
 #include "../lsp_client.h"
 
-void executeLSPCompletion(Cursor* cursor, LSP_CompletionItem* item, History** history_p,
+void executeLSPCompletion(LSP_Server* lsp, Cursor* cursor, LSP_CompletionItem* item, History** history_p,
                           PayloadStateChange payload_state_change, LF_Tabulation* tab);
 
 

@@ -45,6 +45,12 @@ struct _LSP_PendingPacket {
 
 typedef struct _LSP_PendingPacket LSP_PendingPacket;
 
+typedef enum {
+  LSP_POSITION_ENCODING_UTF16,
+  LSP_POSITION_ENCODING_UTF8,
+  LSP_POSITION_ENCODING_UTF32
+} LSP_PositionEncoding;
+
 typedef struct {
   char name[LANGUAGE_ID_LENGTH];
   char language[LANGUAGE_ID_LENGTH];
@@ -62,6 +68,7 @@ typedef struct {
   pthread_mutex_t pending_lock;
 
   // Capabilities
+  LSP_PositionEncoding position_encoding;
   char** on_type_trigger_chars;
   int on_type_trigger_chars_count;
 } LSP_Server;

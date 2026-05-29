@@ -7,10 +7,19 @@
 
 int global_version = 2;
 
-static int getLSPColumnFromCursor(Cursor cursor, int row, int character_column) {
-  Cursor target = tryToReachAbsPosition(cursor, row + 1, 0);
-  LineNode* line = target.line_id.line;
-  return utf16_get_offset(line->ch, line->element_number, character_column);
+static int getLSPColumnFromCursor(LSP_Server* server, Cursor cursor, int row, int character_column) {
+  Cursor target = tryToReachAbsPosition(cursor, row + 1, character_column);
+  return LSP_pos_from_cursor(server, target).column;
+}
+
+static int getLSPCharLen(LSP_Server* server, Char_U8 u8) {
+  if (server->position_encoding == LSP_POSITION_ENCODING_UTF32) {
+    return 1;
+  }
+  if (server->position_encoding == LSP_POSITION_ENCODING_UTF8) {
+    return utf8_size(u8);
+  }
+  return utf16_length(u8);
 }
 
 void onStateChangeLSP(Action action, LSP_Data* data, Cursor* cursor) {
@@ -24,40 +33,37 @@ void onStateChangeLSP(Action action, LSP_Data* data, Cursor* cursor) {
 
   ChangeDescriptor action_change = actionToChangeDescriptor(action);
 
-  int start_lsp_col = getLSPColumnFromCursor(*cursor, action_change.start_point.row, action_change.start_point.column);
+  int start_lsp_col =
+    getLSPColumnFromCursor(lsp_server, *cursor, action_change.start_point.row, action_change.start_point.column);
   int old_end_lsp_col = start_lsp_col;
-  // int new_end_lsp_col = start_lsp_col; // Currently not used directly for range
 
   if (action.action == INSERT) {
-    // new_end_lsp_col = getLSPColumnFromCursor(*cursor, action_change.new_end_point.row,
-    // action_change.new_end_point.column);
     old_end_lsp_col = start_lsp_col;
   }
   else if (action.action == DELETE || action.action == DELETE_ONE) {
     if (action.action == DELETE) {
-      // For multi-line DELETE, we need to find the UTF-16 offset on the LAST line of the deletion.
       int rows_deleted = 0;
-      int last_line_utf16_len = 0;
+      int last_line_lsp_len = 0;
       int index = 0;
       int length = action.byte_end - action.byte_start;
       while (index < length && action.ch[index] != '\0') {
         if (action.ch[index] == '\n') {
           rows_deleted++;
-          last_line_utf16_len = 0;
+          last_line_lsp_len = 0;
           index++;
         }
         else {
           Char_U8 u8 = readChar_U8FromCharArrayWithFirst((char*)action.ch + index, action.ch[index]);
           index += utf8_size(u8);
-          last_line_utf16_len += utf16_length(u8);
+          last_line_lsp_len += getLSPCharLen(lsp_server, u8);
         }
       }
 
       if (rows_deleted > 0) {
-        old_end_lsp_col = last_line_utf16_len;
+        old_end_lsp_col = last_line_lsp_len;
       }
       else {
-        old_end_lsp_col = start_lsp_col + last_line_utf16_len;
+        old_end_lsp_col = start_lsp_col + last_line_lsp_len;
       }
     }
     else {
@@ -66,7 +72,7 @@ void onStateChangeLSP(Action action, LSP_Data* data, Cursor* cursor) {
         old_end_lsp_col = 0;
       }
       else {
-        old_end_lsp_col = start_lsp_col + utf16_length(u8);
+        old_end_lsp_col = start_lsp_col + getLSPCharLen(lsp_server, u8);
       }
     }
   }

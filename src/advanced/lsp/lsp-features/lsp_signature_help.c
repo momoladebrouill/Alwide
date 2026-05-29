@@ -108,7 +108,7 @@ void askSignatureHelp(FileContainer* file, Cursor* cursor) {
     return;
   }
 
-  LSP_requestSignatureHelp(lsp, file->io_file.path_abs, LSP_pos_from_cursor(*cursor));
+  LSP_requestSignatureHelp(lsp, file->io_file.path_abs, LSP_pos_from_cursor(lsp, *cursor));
 }
 
 

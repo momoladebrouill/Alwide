@@ -25,20 +25,21 @@ void receiveHoverData(cJSON* packet, FileContainer* file, ViewPort* view_port, C
   // create range using cursor position when request if not present
   if (file->lsp_datas.computed->hover.size > 0 && file->lsp_datas.computed->hover.is_range == false) {
     LSP_Position* pos = payload;
+    LSP_Server* lsp = getLSPServerForLanguage(&lsp_servers, file->lsp_datas.lang_id);
 
-    Cursor end = tryToReachAbsPosition(*cursor, LSP_0_row_to_1_row(pos->row), pos->column);
+    Cursor end = LSP_tryToReachCursorForLSPPosition(lsp, *cursor, *pos);
     Cursor begin = cursor_disable(*cursor);
     selectWord(&end, &begin);
 
     // set up the new range
-    file->lsp_datas.computed->hover.range.pos1 = LSP_pos_from_cursor(begin);
-    file->lsp_datas.computed->hover.range.pos2 = LSP_pos_from_cursor(end);
+    file->lsp_datas.computed->hover.range.pos1 = LSP_pos_from_cursor(lsp, begin);
+    file->lsp_datas.computed->hover.range.pos2 = LSP_pos_from_cursor(lsp, end);
     file->lsp_datas.computed->hover.is_range = true;
   }
 
   // We assert that every data going outfrom there has a range.
   assert(file->lsp_datas.computed->hover.is_range);
-  gui_resumeHoverInformation(cursor, view_port, &file->lsp_datas.computed->hover, LF_tab_size(file->feature));
+  gui_resumeHoverInformation(cursor, view_port, file, &file->lsp_datas.computed->hover, LF_tab_size(file->feature));
 
   free(payload);
 }

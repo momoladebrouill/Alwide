@@ -7,7 +7,7 @@
 #include "../../shared.h"
 #include "../lsp_client.h"
 
-void applyTextEdit(Cursor* cursor, LSP_TextEdit* text_edit, History** history_p,
+void applyTextEdit(LSP_Server* lsp, Cursor* cursor, LSP_TextEdit* text_edit, History** history_p,
                    PayloadStateChange payload_state_change, LF_Tabulation* tab);
 
 
@@ -16,7 +16,7 @@ void applyTextEdit(Cursor* cursor, LSP_TextEdit* text_edit, History** history_p,
  * Edits are sorted bottom-to-top to ensure offsets remain valid during application.
  * The cursor position is tracked and updated based on the shifts.
  */
-void applyTextEditsArray(Cursor* cursor, LSP_TextEdit* edits, int edits_size, History** history_p,
+void applyTextEditsArray(LSP_Server* lsp, Cursor* cursor, LSP_TextEdit* edits, int edits_size, History** history_p,
                          PayloadStateChange payload_state_change, LF_Tabulation* tab);
 
 /**
@@ -30,7 +30,7 @@ int compareTextEdit(const void* e1_p, const void* e2_p);
 
 int compareLSPPos(LSP_Position p1, LSP_Position p2);
 
-LSP_Position calculateEndPos(LSP_Position start, const char* text);
+LSP_Position calculateEndPos(LSP_Server* server, LSP_Position start, const char* text);
 
 
 #endif // ALWIDE_LSP_TOOLS_H

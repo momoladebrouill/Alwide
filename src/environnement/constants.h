@@ -12,8 +12,6 @@
 #define FILE_NAME_SEPARATOR       " | "
 #define OPENED_FILE_WINDOW_HEIGHT 2 // 2 to enable 0 to disable
 
-// use make -B after changing the TAB_SIZE
-
 #define FILE_EXPLORER_WIDTH       30
 #define FILE_EXPLORER_TREE_OFFSET 1
 

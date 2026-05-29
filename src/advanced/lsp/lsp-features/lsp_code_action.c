@@ -76,7 +76,7 @@ void askCodeAction(FileContainer* file, Cursor* cursor) {
 
   // Request code actions for the whole current line
   LSP_Position start_pos = LSP_pos(lsp_row, 0);
-  LSP_Position end_pos = LSP_pos_from_cursor(goToEnd(*cursor));
+  LSP_Position end_pos = LSP_pos_from_cursor(lsp, goToEnd(*cursor));
   LSP_Range range = LSP_range(start_pos, end_pos);
 
   LSP_requestCodeAction(lsp, file->io_file.path_abs, range, context_diags, diags_count);
