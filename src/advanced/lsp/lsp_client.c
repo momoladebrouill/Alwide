@@ -1333,15 +1333,16 @@ void LSP_getHoverFromJSON(cJSON* json, LSP_Hover* hover_list) {
 
   cJSON* contents = cJSON_GetObjectItem(json, "contents");
   if (cJSON_IsArray(contents)) {
-    hover_list->size = cJSON_GetArraySize(contents);
-    hover_list->contents = malloc(sizeof(LSP_MarkedString) * hover_list->size);
-    for (int i = 0; i < hover_list->size; i++) {
-      LSP_getMarkedStringFromJSON(cJSON_GetArrayItem(contents, i), &hover_list->contents[i]);
-      if (hover_list->contents[i].value[0] == '\0') {
-        i--;
-        hover_list->size--;
+    int array_size = cJSON_GetArraySize(contents);
+    hover_list->contents = malloc(sizeof(LSP_MarkedString) * array_size);
+    int valid_count = 0;
+    for (int i = 0; i < array_size; i++) {
+      LSP_getMarkedStringFromJSON(cJSON_GetArrayItem(contents, i), &hover_list->contents[valid_count]);
+      if (hover_list->contents[valid_count].value[0] != '\0') {
+        valid_count++;
       }
     }
+    hover_list->size = valid_count;
   }
   else {
     hover_list->size = 1;
@@ -1354,9 +1355,11 @@ void LSP_getHoverFromJSON(cJSON* json, LSP_Hover* hover_list) {
 }
 
 void LSP_getMarkedStringFromJSON(cJSON* json, LSP_MarkedString* item) {
+  item->value[0] = '\0';
+  item->documentationType = dt_PLAIN_TEXT;
+
   if (cJSON_IsString(json)) {
     strlcpy(item->value, cJSON_GetStringValue(json), MESSAGE_LENGTH);
-    item->documentationType = dt_PLAIN_TEXT;
   }
   else if (cJSON_IsObject(json)) {
     cJSON* kind = cJSON_GetObjectItem(json, "kind");
@@ -1365,9 +1368,6 @@ void LSP_getMarkedStringFromJSON(cJSON* json, LSP_MarkedString* item) {
       // MarkupContent
       if (strcmp(cJSON_GetStringValue(kind), "markdown") == 0) {
         item->documentationType = dt_MARKDOWN;
-      }
-      else {
-        item->documentationType = dt_PLAIN_TEXT;
       }
       strlcpy(item->value, cJSON_GetStringValue(value), MESSAGE_LENGTH);
     }
@@ -1381,7 +1381,6 @@ void LSP_getMarkedStringFromJSON(cJSON* json, LSP_MarkedString* item) {
        *  ```
        */
       strlcpy(item->value, cJSON_GetStringValue(value), MESSAGE_LENGTH);
-      item->documentationType = dt_PLAIN_TEXT;
     }
   }
 }

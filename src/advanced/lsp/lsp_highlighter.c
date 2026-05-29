@@ -36,7 +36,7 @@ void LSP_highlightCurrentFile(LSP_Data* lsp_datas, Cursor cursor, WindowHighligh
     Cursor end_cursor = tryToReachAbsPosition(cursor, end_descriptor.row, end_descriptor.column);
 
     attr_t attr = A_UNDERLINE;
-    NCURSES_PAIRS_T color = 0;
+    NCURSES_PAIRS_T color = DEFAULT_COLOR_PAIR;
 
     whd_insertDescriptor(highlight_descriptor, begin_cursor, end_cursor, color, attr, 100, false, LINE_MARKER_NONE,
                          NULL);

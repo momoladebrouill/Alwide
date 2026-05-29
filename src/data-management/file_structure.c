@@ -2107,6 +2107,13 @@ Cursor tryToReachAbsPosition(Cursor cursor, int row, int column) {
     row = 1;
   }
   FileIdentifier new_file_id = tryToReachAbsRow(cursor.file_id, row);
+  // if the preferred row isn't found adapt the preferred column
+  if (new_file_id.absolute_row < row) {
+    column = INT_MAX;
+  }
+  if (new_file_id.absolute_row > row) {
+    column = 0;
+  }
   LineIdentifier new_line_id =
     tryToReachAbsColumn(moduloLineIdentifierR(getLineForFileIdentifier(new_file_id), 0), column);
   return cursorOf(new_file_id, new_line_id);
