@@ -58,3 +58,6 @@
 [submodule "lib/cJSON"]
 	path = lib/cJSON
 	url = https://github.com/DaveGamble/cJSON.git
+[submodule "lib/tree-sitter-latex"]
+	path = lib/tree-sitter-latex
+	url = https://github.com/latex-lsp/tree-sitter-latex

@@ -100,7 +100,8 @@ RUST_MODULES= \
 	lib/tree-sitter-vhdl/target/release/libtree_sitter_vhdl.rlib \
 	lib/tree-sitter-lua/target/release/libtree_sitter_lua.rlib \
 	lib/tree-sitter-asm/target/release/libtree_sitter_asm.rlib \
-	lib/tree-sitter-html/target/release/libtree_sitter_html.rlib
+	lib/tree-sitter-html/target/release/libtree_sitter_html.rlib \
+	lib/tree-sitter-latex/target/release/libtree_sitter_latex.rlib
 
 # Map sources to objects in BUILD_DIR
 OBJECTS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(SRC_MODULES) $(LIB_C_MODULES))
