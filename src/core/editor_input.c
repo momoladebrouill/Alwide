@@ -163,35 +163,54 @@ static int manualUtf8Decode(int first_byte) {
 }
 
 static void processMouseInput(EditorContext* ctx) {
-  if (getmouse(&ctx->m_event) != OK) {
-    return;
-  }
   detectComplexMouseEvents(&ctx->m_event);
 
-peek_mouse_event:;
+  // Coalesce mouse drag/movement events to prevent input queue lag
   if (ctx->m_event.bstate == NO_EVENT_MOUSE && ctx->mouse_drag == true) {
-    time_val current_time = timeInMilliseconds();
-    if (diff2Time(ctx->last_time_mouse_drag, current_time) < SKIP_MOUSE_EVENT_DELAY) {
-      nodelay(stdscr, TRUE);
+    while (true) {
+      timeout(0); // Non-blocking peek
       int next_c = getch();
-      if (next_c != ERR && next_c == KEY_MOUSE) {
+      timeout(20); // Restore normal timeout
+
+      if (next_c == ERR) {
+        break;
+      }
+
+      if (next_c == 27) {
+        KittyKeyEvent kitty_event;
+        int unread = ERR;
         MEVENT tmp_event;
-        if (getmouse(&tmp_event) == OK) {
-          detectComplexMouseEvents(&tmp_event);
-          ctx->m_event = tmp_event;
-          ctx->t_date = timeInMilliseconds();
-          ctx->t_clock = clock();
-          timeout(20);
-          goto peek_mouse_event;
+        if (kitty_parse_sequence(next_c, &kitty_event, &tmp_event, &unread)) {
+          if (unread != ERR) {
+            ctx->peek_c = unread;
+          }
+          int key = ERR;
+          if (kitty_translate_event(&kitty_event, &key)) {
+            if (key == H_KEY_MOUSE) {
+              // Overwrite current m_event with the newly parsed mouse event
+              ctx->m_event = tmp_event;
+              detectComplexMouseEvents(&ctx->m_event);
+              ctx->t_date = timeInMilliseconds();
+              ctx->t_clock = clock();
+
+              if (tmp_event.bstate == NO_EVENT_MOUSE) {
+                fprintf(stderr, "Mouse event skipped !\n");
+                // It is a drag/move event: we can continue coalescing
+                continue;
+              } else {
+                // It is a press or release event: stop coalescing immediately so it gets processed
+                break;
+              }
+            } else if (key != ERR) {
+              ctx->peek_c = key;
+              break;
+            }
+          }
         }
-      }
-      if (next_c != ERR) {
+      } else {
         ctx->peek_c = next_c;
+        break;
       }
-      timeout(20);
-    }
-    else {
-      ctx->last_time_mouse_drag = current_time;
     }
   }
 }
