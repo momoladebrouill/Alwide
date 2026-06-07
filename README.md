@@ -128,6 +128,33 @@ Ubuntu :
 Others distro may not have rustup package. Check for your personnal distro.
 You might find this useful : https://rustup.rs/
 
+#### Nix-based systems
+
+As always :
+
+```bash
+git clone --recursive https://github.com/arnauda-gh/Alwide.git
+cd systems
+```
+And then, depending on your preferences :
+```
+nix-shell
+```
+or 
+```
+nix develop
+```
+Then install rust dependencies :
+```bash
+rustup update stable
+```
+
+and compile `tree-sitter`:
+
+```bash
+sudo make -C lib/tree-sitter/ install
+```
+
 #### Compile :
 
 In the root folder, compile the default debug/development version:
