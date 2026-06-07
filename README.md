@@ -88,7 +88,7 @@ al  # Open current directory
 | `Ctrl + O` | **Open File** toggle |
 | `Ctrl + Space` | **Completion Popup** toggle |
 | `Ctrl + W` | **Close** Current Tab |
-| `Ctrl + /` | **Toggle Comment** |
+| `Ctrl + Shift + /` | **Toggle Comment** |
 | `Ctrl + R` | **Format** Code (LSP) |
 | `Ctrl + Z/Y` | **Undo / Redo** |
 | `Shift + Arrows` | **Select Text** |
