@@ -68,8 +68,9 @@ bool any_of(ProcessPredicatePayload* payload) {
     String string_to_match;
     predicates_consumeString(payload->stream, payload->query, &string_to_match);
 
-    if (found == true)
+    if (found == true) {
       continue;
+    }
 
     for (int i = 0; i < payload->qmatch.capture_count; i++) {
       String match_capture_name = getCaptureString(payload->query, payload->qmatch.captures[i].index);

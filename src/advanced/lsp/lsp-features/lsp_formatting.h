@@ -1,8 +1,8 @@
 #ifndef LSP_FORMATTING_H
 #define LSP_FORMATTING_H
 
-#include "../lsp_dispatcher.h"
 #include "../lsp_client.h"
+#include "../lsp_dispatcher.h"
 
 void receiveFormattingData(cJSON* packet, FileContainer* file, ModuleContext* data);
 

@@ -13,12 +13,15 @@
 #include "../io-management/io_explorer.h"
 #include "../io-management/workspace_settings.h"
 #include "../terminal/highlight.h"
+#include "../terminal/kitty_protocol.h"
+#include "../terminal/windows/tpw.h"
 
 static void finalizeTerminal() {
   /// --- Teardown Terminal ---
-  // Restore terminal state (cursor and mouse)
-  printf("\033[?1003l\033[0 q\n");
+  // Restore terminal state (cursor and mouse) and disable Kitty Keyboard Protocol
+  printf("\033[?1003l\033[?1006l\033[0 q\n");
   fflush(stdout);
+  kitty_disable();
 
   // End ncurses and clean input buffer
   usleep(30000);
@@ -72,6 +75,7 @@ static void finalizeGlobalSystems() {
 }
 
 void finalizeEditor(EditorContext* ctx) {
+  gui_destroyAllToplevelPopups(&ctx->gui_context);
   finalizeWorkspace(ctx);
   finalizeFileData(ctx);
   finalizeGlobalSystems();

@@ -148,7 +148,7 @@ bool isFileContainerEmpty(FileContainer* container) {
   }
 
   return container->cursor.file_id.absolute_row == 1 && container->cursor.line_id.absolute_column == 0 &&
-    cursor_eq(container->cursor, moveRight(container->cursor));
+         cursor_eq(container->cursor, moveRight(container->cursor));
 }
 
 void setupOpenedFiles(int* file_count, char** file_names, FileContainer** files) {
@@ -212,9 +212,8 @@ Cursor moveLeft(Cursor cursor) {
     // If the cursor is at the begin of the line try to reach previous line.
     cursor.file_id.relative_row--;
     cursor.file_id.absolute_row--;
-    cursor = cursorOf(cursor.file_id,
-                      moduloLineIdentifierR(getLineForFileIdentifier(cursor.file_id),
-                                            sizeLineNode(getLineForFileIdentifier(cursor.file_id))));
+    cursor = cursorOf(cursor.file_id, moduloLineIdentifierR(getLineForFileIdentifier(cursor.file_id),
+                                                            sizeLineNode(getLineForFileIdentifier(cursor.file_id))));
   }
 
   return cursor;

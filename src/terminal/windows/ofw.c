@@ -6,7 +6,7 @@
 #include "../../data-management/file_management.h"
 #include "edw.h"
 
-void gui_initOFWContext(OFW_GUIContext* context) {
+void gui_initOFWContext(gui_OFW* context) {
   context->ofw = NULL;         // Opened Files Window
   context->refresh_ofw = true; // Need to reprint opened file window
 
@@ -17,7 +17,7 @@ void gui_initOFWContext(OFW_GUIContext* context) {
 }
 
 
-void gui_resizeOFW(GUIContext* gui_context) {
+void gui_resizeOFW(gui_Context* gui_context) {
   delwin(gui_context->ofw_context.ofw);
   gui_context->ofw_context.ofw = newwin(gui_context->ofw_context.ofw_height, 0, 0, gui_context->few_context.few_width);
   wbkgd(gui_context->ofw_context.ofw, COLOR_PAIR(DEFAULT_COLOR_PAIR));
@@ -25,7 +25,7 @@ void gui_resizeOFW(GUIContext* gui_context) {
 }
 
 
-void gui_repaintOFW(OFW_GUIContext* context, FileContainer* files, int file_count, int current_file) {
+void gui_repaintOFW(gui_OFW* context, FileContainer* files, int file_count, int current_file) {
   if (!((context->refresh_ofw == true || files[current_file].io_file.status == NONE) && context->ofw_height != 0)) {
     return;
   }
@@ -41,19 +41,23 @@ void gui_repaintOFW(OFW_GUIContext* context, FileContainer* files, int file_coun
   // Move to the top left corner.
   for (int i = context->current_file_offset; i < file_count; i++) {
     // Style file names.
-    if (i == current_file)
+    if (i == current_file) {
       wattron(context->ofw, A_BOLD);
-    else
+    }
+    else {
       wattron(context->ofw, A_DIM);
+    }
     // Print file name
     char* file_name = basename(files[i].io_file.path_args);
     current_offset += strlen(file_name);
     wprintw(context->ofw, "%s", file_name);
     // Style file names.
-    if (i == current_file)
+    if (i == current_file) {
       wattroff(context->ofw, A_BOLD);
-    else
+    }
+    else {
       wattroff(context->ofw, A_DIM);
+    }
     // Print file name separator
     if (i < file_count - 1) {
       wprintw(context->ofw, FILE_NAME_SEPARATOR);
@@ -84,7 +88,7 @@ void gui_repaintOFW(OFW_GUIContext* context, FileContainer* files, int file_coun
 }
 
 
-void gui_switchOFW(GUIContext* gui_context) {
+void gui_switchOFW(gui_Context* gui_context) {
   if (gui_context->ofw_context.ofw_height == OPENED_FILE_WINDOW_HEIGHT) {
     gui_context->ofw_context.ofw_height = 0;
   }

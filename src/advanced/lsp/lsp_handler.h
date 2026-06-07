@@ -2,10 +2,10 @@
 #define LSP_HANDLER_H
 #include <stdbool.h>
 
+#include "../../config/language_feature.h"
 #include "../../environnement/constants.h"
 #include "../../io-management/io_manager.h"
 #include "lsp_client.h"
-#include "../../config/language_feature.h"
 
 
 typedef struct {

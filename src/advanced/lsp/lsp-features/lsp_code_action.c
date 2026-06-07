@@ -43,7 +43,8 @@ void receiveCodeActionData(cJSON* packet, FileContainer* file, ModuleContext* da
   else {
     ViewPort view_port = viewPortOf(data->view_port.gui, &file->screen_x, &file->screen_y);
     // We use COMPLETION owner for the unified list
-    gui_showGenericPopupWithTextAnchor(&view_port, data->cursor, computed->code_actions.size + 2, 45, COMPLETION, LF_tab_size(file->feature));
+    gui_showGenericPopupWithTextAnchor(&view_port, data->cursor, computed->code_actions.size + 2, 45, COMPLETION,
+                                       LF_tab_size(file->feature));
     gui_updateEDW(data->view_port.gui);
   }
 }
@@ -74,7 +75,9 @@ void askCodeAction(FileContainer* file, Cursor* cursor) {
   }
 
   // Request code actions for the whole current line
-  LSP_Range range = LSP_range(LSP_pos(lsp_row, 0), LSP_pos(lsp_row, 1000));
+  LSP_Position start_pos = LSP_pos(lsp_row, 0);
+  LSP_Position end_pos = LSP_pos_from_cursor(lsp, goToEnd(*cursor));
+  LSP_Range range = LSP_range(start_pos, end_pos);
 
   LSP_requestCodeAction(lsp, file->io_file.path_abs, range, context_diags, diags_count);
 }

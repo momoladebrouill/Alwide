@@ -4,7 +4,8 @@ Language: Cpp
 BasedOnStyle: LLVM
 AlignConsecutiveAssignments: false
 AlignConsecutiveDeclarations: false
-AlignOperands: false
+AlignConsecutiveMacros: true
+AlignOperands: true
 AlignTrailingComments: true
 AlwaysBreakTemplateDeclarations: Yes
 BraceWrapping:

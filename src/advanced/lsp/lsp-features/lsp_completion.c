@@ -12,7 +12,7 @@
 #include "lsp_tools.h"
 
 
-LSP_Range getReplaceRange(Cursor* cursor, char insertText[METHOD_MAX_LENGTH]) {
+LSP_Range getReplaceRange(LSP_Server* lsp, Cursor* cursor, char insertText[METHOD_MAX_LENGTH]) {
   Cursor select = cursor_disable(*cursor);
   if (cursor->line_id.absolute_column != 0) {
     Cursor tmp = *cursor;
@@ -40,11 +40,10 @@ LSP_Range getReplaceRange(Cursor* cursor, char insertText[METHOD_MAX_LENGTH]) {
     begin = *cursor;
   }
 
-  return LSP_range_from_cursor(begin.file_id.absolute_row, begin.line_id.absolute_column, cursor->file_id.absolute_row,
-                               cursor->line_id.absolute_column);
+  return LSP_range_from_cursor(lsp, begin, *cursor);
 }
 
-void executeLSPCompletion(Cursor* cursor, LSP_CompletionItem* item, History** history_p,
+void executeLSPCompletion(LSP_Server* lsp, Cursor* cursor, LSP_CompletionItem* item, History** history_p,
                           PayloadStateChange payload_state_change, LF_Tabulation* tab) {
   if (!item->is_text_edit) {
     // copy the text to the edit.
@@ -52,7 +51,7 @@ void executeLSPCompletion(Cursor* cursor, LSP_CompletionItem* item, History** hi
     memcpy(item->text_edit.new_text, item->insertText, sizeof(char) * METHOD_MAX_LENGTH);
 
     // we have to detect what to replace.
-    item->text_edit.range = getReplaceRange(cursor, item->insertText);
+    item->text_edit.range = getReplaceRange(lsp, cursor, item->insertText);
     item->is_text_edit = true;
   }
 
@@ -66,7 +65,7 @@ void executeLSPCompletion(Cursor* cursor, LSP_CompletionItem* item, History** hi
   }
 
   // Use the robust generic application tool
-  applyTextEditsArray(cursor, all_edits, total_edits_count, history_p, payload_state_change, tab);
+  applyTextEditsArray(lsp, cursor, all_edits, total_edits_count, history_p, payload_state_change, tab);
 
   free(all_edits);
 }
@@ -82,8 +81,12 @@ static bool checkLineHasDiagnostics(LSP_ComputedData* computed, int row) {
 }
 
 
-void askCompletion(GUIContext* gui_context, FileContainer* fc, bool reset, bool force) {
+void askCompletion(gui_Context* gui_context, FileContainer* fc, bool reset, bool force) {
   if (fc->lsp_datas.is_enable) {
+    LSP_Server* lsp = getLSPServerForLanguage(&lsp_servers, fc->lsp_datas.lang_id);
+    if (lsp == NULL) {
+      return;
+    }
 
     // check if the askCompletion have to be replaced by a askSignature.
     if (hasElementBeforeLine(fc->cursor.line_id)) {
@@ -116,8 +119,7 @@ void askCompletion(GUIContext* gui_context, FileContainer* fc, bool reset, bool 
       askCodeAction(fc, &fc->cursor);
     }
 
-    LSP_requestCompletion(getLSPServerForLanguage(&lsp_servers, fc->lsp_datas.lang_id), fc->lsp_datas.path_abs,
-                          LSP_pos_from_cursor(cursor_row(fc->cursor), cursor_col(fc->cursor)));
+    LSP_requestCompletion(lsp, fc->lsp_datas.path_abs, LSP_pos_from_cursor(lsp, fc->cursor));
     if (gui_context->edw_context.pow_owner != COMPLETION) {
       gui_setLastTextAnchor(gui_context, cursor_to_desc(fc->cursor));
     }

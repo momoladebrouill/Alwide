@@ -17,8 +17,8 @@
 
 #include "../../../lib/cJSON/cJSON.h"
 
-#define MESSAGE_LENGTH 4092
-#define METHOD_MAX_LENGTH 200
+#define MESSAGE_LENGTH     4092
+#define METHOD_MAX_LENGTH  200
 #define LANGUAGE_ID_LENGTH 100
 
 typedef enum { LSP_REQUEST, LSP_NOTIFICATION, LSP_RESPONSE } LSP_PACKET_TYPE;
@@ -45,6 +45,12 @@ struct _LSP_PendingPacket {
 
 typedef struct _LSP_PendingPacket LSP_PendingPacket;
 
+typedef enum {
+  LSP_POSITION_ENCODING_UTF16,
+  LSP_POSITION_ENCODING_UTF8,
+  LSP_POSITION_ENCODING_UTF32
+} LSP_PositionEncoding;
+
 typedef struct {
   char name[LANGUAGE_ID_LENGTH];
   char language[LANGUAGE_ID_LENGTH];
@@ -62,6 +68,7 @@ typedef struct {
   pthread_mutex_t pending_lock;
 
   // Capabilities
+  LSP_PositionEncoding position_encoding;
   char** on_type_trigger_chars;
   int on_type_trigger_chars_count;
 } LSP_Server;
@@ -428,6 +435,7 @@ bool LSP_dispatchOnReceive(LSP_Server* lsp, void (*dispatcher)(cJSON* packet, LS
 
 
 void LSP_notifyLspFileDidOpen(LSP_Server* lsp, char* file_name, char* file_content);
+void LSP_notifyLspFileDidClose(LSP_Server* lsp, char* file_name);
 void LSP_notifyLspFileDidChange(LSP_Server* lsp, char* file_name, cJSON* array_of_changes, int version);
 
 

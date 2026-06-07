@@ -1,20 +1,32 @@
 #include "edw.h"
 
 #include <assert.h>
+#include <libgen.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/ttydefaults.h>
+#include <unistd.h>
 
+#include "../../core/editor_context.h"
 #include "../../data-management/file_management.h"
+#include "../../environnement/global_variables.h"
+#include "../../utils/tools.h"
+#include "../click_handler.h"
 #include "../highlight.h"
+#include "../key_management.h"
 #include "../term_handler.h"
 #include "gui_entities.h"
 #include "pow.h"
+#include "tpw.h"
 
-void gui_initEDWContext(EDW_GUIContext* context) {
+void gui_initEDWContext(gui_EDW* context) {
   context->ftw = NULL; // File Text Window
   context->lnw = NULL; // Line Number Window
   context->pow = NULL; // Popup Window
+  context->sbw = NULL; // Status Bar Window
 
   context->refresh_edw = true; // Need to reprint editor window
+  context->show_sbw = true;    // Status bar visible by default
   context->length_line_number = 0;
 
   // popup init values
@@ -29,26 +41,41 @@ void gui_initEDWContext(EDW_GUIContext* context) {
 }
 
 
-void gui_resizeEDW(GUIContext* gui_context, int length_line_number) {
+void gui_resizeEDW(gui_Context* gui_context, int length_line_number) {
+  gui_EDW* context = &gui_context->edw_context;
 
   if (length_line_number != -1) {
-    gui_context->edw_context.length_line_number = length_line_number;
+    context->length_line_number = length_line_number;
   }
 
-  delwin(gui_context->edw_context.ftw);
-  delwin(gui_context->edw_context.lnw);
-  gui_context->edw_context.ftw =
-    newwin(0, 0, gui_context->ofw_context.ofw_height,
-           gui_context->edw_context.length_line_number + 1 + gui_context->few_context.few_width);
-  gui_context->edw_context.lnw = newwin(0, gui_context->edw_context.length_line_number + 1,
-                                        gui_context->ofw_context.ofw_height, gui_context->few_context.few_width);
+  delwin(context->ftw);
+  delwin(context->lnw);
+  delwin(context->sbw);
 
-  wbkgd(gui_context->edw_context.ftw, COLOR_PAIR(DEFAULT_COLOR_PAIR));
-  gui_context->edw_context.refresh_edw = true;
+  int height = LINES - gui_context->ofw_context.ofw_height;
+  if (height < 1) {
+    height = 1;
+  }
+
+  context->ftw = newwin(height, 0, gui_context->ofw_context.ofw_height,
+                        context->length_line_number + 1 + gui_context->few_context.few_width);
+  context->lnw = newwin(height, context->length_line_number + 1, gui_context->ofw_context.ofw_height,
+                        gui_context->few_context.few_width);
+
+  if (context->show_sbw) {
+    context->sbw = newwin(1, getmaxx(context->ftw) + getmaxx(context->lnw), LINES - 1, getbegx(context->lnw));
+    wbkgd(context->sbw, COLOR_PAIR(DEFAULT_COLOR_PAIR));
+  }
+  else {
+    context->sbw = NULL;
+  }
+
+  wbkgd(context->ftw, COLOR_PAIR(DEFAULT_COLOR_PAIR));
+  context->refresh_edw = true;
 }
 
 
-void printEditor_printLineNumber(EDW_GUIContext* context, Cursor cursor, int screen_y, FileIdentifier file_cur, int row,
+void printEditor_printLineNumber(gui_EDW* context, Cursor cursor, int screen_y, FileIdentifier file_cur, int row,
                                  WindowHighlightDescriptor* highlight_descriptor, int whd_offset) {
   char line_number[40];
   sprintf(line_number, "%d", file_cur.absolute_row);
@@ -95,7 +122,7 @@ void printEditor_printLineNumber(EDW_GUIContext* context, Cursor cursor, int scr
 }
 
 
-void printEditor_printFileContent(EDW_GUIContext* context, Cursor cursor, Cursor select_cursor, int screen_x,
+void printEditor_printFileContent(gui_EDW* context, Cursor cursor, Cursor select_cursor, int screen_x,
                                   WindowHighlightDescriptor* highlight_descriptor, FileIdentifier file_cur,
                                   const int column_count, int* whd_offset, int tab_size) {
   LineIdentifier begin_screen_line_cur =
@@ -124,7 +151,7 @@ void printEditor_printFileContent(EDW_GUIContext* context, Cursor cursor, Cursor
 
     // determine if the char is selected or not.
     bool selected_style =
-        cursor_is_disabled(select_cursor) == false && cursor_is_inside(ch_cursor, select_cursor, cursor);
+      cursor_is_disabled(select_cursor) == false && cursor_is_inside(ch_cursor, select_cursor, cursor);
     // get current highlight.
     TextPartHighlightDescriptor* current_highlight =
       whd_tphd_forCursorWithOffsetIndex(highlight_descriptor, ch_cursor, whd_offset);
@@ -187,7 +214,7 @@ void printEditor_printFileContent(EDW_GUIContext* context, Cursor cursor, Cursor
 }
 
 
-void printEditor_printCursor(EDW_GUIContext* context, Cursor cursor, int screen_x, int screen_y,
+void printEditor_printCursor(gui_EDW* context, Cursor cursor, int screen_x, int screen_y,
                              WindowHighlightDescriptor* highlight_descriptor, const int line_count,
                              const int column_count, int tab_size) {
   // Check if cursor is in the screen and print it if needed.
@@ -225,7 +252,7 @@ void printEditor_printCursor(EDW_GUIContext* context, Cursor cursor, int screen_
 }
 
 
-void move_physical_cursor(EDW_GUIContext* context, Cursor cursor, int screen_x, int screen_y, const int line_count,
+void move_physical_cursor(gui_EDW* context, Cursor cursor, int screen_x, int screen_y, const int line_count,
                           const int column_count, int tab_size) {
   int ftw_x = getScreenXForCursor(cursor, screen_x, tab_size);
   if (cursor.file_id.absolute_row >= screen_y && cursor.file_id.absolute_row < screen_y + line_count && ftw_x >= 0 &&
@@ -241,7 +268,7 @@ void move_physical_cursor(EDW_GUIContext* context, Cursor cursor, int screen_x, 
 }
 
 
-void gui_repaintEDW(EDW_GUIContext* context, Cursor cursor, Cursor select_cursor, int screen_x, int screen_y,
+void gui_repaintEDW(gui_EDW* context, Cursor cursor, Cursor select_cursor, int screen_x, int screen_y,
                     WindowHighlightDescriptor* highlight_descriptor, LSP_ComputedData* lsp_data, int tab_size) {
   if (!context->refresh_edw) {
     return;
@@ -279,14 +306,14 @@ void gui_repaintEDW(EDW_GUIContext* context, Cursor cursor, Cursor select_cursor
 
 
     // ===============  Print File Content  ===============
-
     printEditor_printFileContent(context, cursor, select_cursor, screen_x, highlight_descriptor, file_cur, column_count,
                                  &whd_offset, tab_size);
   }
 
   // ===============  Print Cursor  ===============
 #ifdef SIMULATED_CURSOR
-  printEditor_printCursor(context, cursor, screen_x, screen_y, highlight_descriptor, line_count, column_count, tab_size);
+  printEditor_printCursor(context, cursor, screen_x, screen_y, highlight_descriptor, line_count, column_count,
+                          tab_size);
 #else
   move_physical_cursor(context, cursor, screen_x, screen_y, line_count, column_count, tab_size);
 #endif
@@ -303,9 +330,9 @@ void gui_repaintEDW(EDW_GUIContext* context, Cursor cursor, Cursor select_cursor
   context->refresh_edw = false;
 }
 
-int getEDW_LengthLineNumber(GUIContext* gui_context) { return gui_context->edw_context.length_line_number; }
+int getEDW_LengthLineNumber(gui_Context* gui_context) { return gui_context->edw_context.length_line_number; }
 
-bool gui_showPopup(GUIContext* gui_context, int y, int x, int height, int width, PopupOwner owner) {
+bool gui_showPopup(gui_Context* gui_context, int y, int x, int height, int width, PopupOwner owner) {
   delwin(gui_context->edw_context.pow);
   gui_context->edw_context.pow = newwin(height, width, y - height + getbegy(gui_context->edw_context.ftw),
                                         x + getbegx(gui_context->edw_context.ftw) + 2);
@@ -319,7 +346,7 @@ bool gui_showPopup(GUIContext* gui_context, int y, int x, int height, int width,
   return gui_context->edw_context.show_pow;
 }
 
-bool gui_adaptPopup(GUIContext* gui_context, int slice_x, int slice_y) {
+bool gui_adaptPopup(gui_Context* gui_context, int slice_x, int slice_y) {
   if (gui_context->edw_context.pow == NULL) {
     return false;
   }
@@ -357,8 +384,123 @@ bool gui_adaptPopup(GUIContext* gui_context, int slice_x, int slice_y) {
   return gui_context->edw_context.show_pow;
 }
 
-void gui_closePopup(GUIContext* gui_context) {
+void gui_closePopup(gui_Context* gui_context) {
   gui_context->edw_context.show_pow = false;
   gui_context->edw_context.pow_owner = NO_OWNER;
   gui_updateEDW(gui_context);
+}
+
+void gui_switchSBW(gui_Context* gui_context) {
+  gui_context->edw_context.show_sbw = !gui_context->edw_context.show_sbw;
+  gui_resizeEDW(gui_context, -1);
+}
+
+void gui_repaintSBW(gui_EDW* context, FileContainer* fc) {
+  if (context->sbw == NULL || !context->show_sbw || !fc) {
+    return;
+  }
+
+  // Format left-aligned string: Path from CWD with smart truncation
+  char left_str[256];
+  if (fc->io_file.status == NONE || strlen(fc->io_file.path_abs) == 0) {
+    snprintf(left_str, sizeof(left_str), " [New File]");
+  }
+  else {
+    const char* path_to_use = fc->io_file.path_abs;
+    char path_display[256];
+    char cwd[PATH_MAX];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+      int cwd_len = strlen(cwd);
+      if (strncmp(path_to_use, cwd, cwd_len) == 0) {
+        const char* rel_path = path_to_use + cwd_len;
+        if (*rel_path == '/') {
+          rel_path++;
+        }
+        strncpy(path_display, rel_path, sizeof(path_display));
+        path_display[sizeof(path_display) - 1] = '\0';
+      }
+      else {
+        strncpy(path_display, path_to_use, sizeof(path_display));
+        path_display[sizeof(path_display) - 1] = '\0';
+      }
+    }
+    else {
+      strncpy(path_display, path_to_use, sizeof(path_display));
+      path_display[sizeof(path_display) - 1] = '\0';
+    }
+
+    // Truncate left-aligned path if it exceeds 45 characters
+    int max_path_len = 45;
+    int path_len = strlen(path_display);
+    if (path_len > max_path_len) {
+      char temp[256];
+      int cut_index = path_len - max_path_len + 3; // +3 for "..."
+      const char* slash = strchr(path_display + cut_index, '/');
+      if (slash != NULL) {
+        snprintf(temp, sizeof(temp), "...%s", slash);
+      }
+      else {
+        snprintf(temp, sizeof(temp), "...%s", path_display + cut_index);
+      }
+      strncpy(path_display, temp, sizeof(path_display));
+      path_display[sizeof(path_display) - 1] = '\0';
+    }
+    snprintf(left_str, sizeof(left_str), " %s", path_display);
+  }
+
+  // Format right-aligned string elements
+  const char* lang = LF_label(fc->feature);
+  int tab_size = LF_tab_size(fc->feature);
+  bool use_space = LF_tab_use_space(fc->feature);
+
+  // Sum byte counts across all FileNode blocks
+  int total_bytes = 0;
+  FileNode* fn = fc->root;
+  while (fn != NULL) {
+    total_bytes += fn->byte_count;
+    fn = fn->next;
+  }
+
+  char size_str[32];
+  if (total_bytes < 1024) {
+    snprintf(size_str, sizeof(size_str), "%d B", total_bytes);
+  }
+  else if (total_bytes < 1024 * 1024) {
+    snprintf(size_str, sizeof(size_str), "%.1f KB", total_bytes / 1024.0);
+  }
+  else {
+    snprintf(size_str, sizeof(size_str), "%.1f MB", total_bytes / (1024.0 * 1024.0));
+  }
+
+  int total_lines = sizeFileNode(fc->root);
+
+  char status_str[512];
+  snprintf(status_str, sizeof(status_str), "%s  •  %d %s  •  %s  • %4d lines  • %4d:%-3d", lang ? lang : "Plain Text",
+           tab_size, use_space ? "sp" : "tb", size_str, total_lines, cursor_row(fc->cursor), cursor_col(fc->cursor));
+
+  // Use countStringFrame to get the real screen column size of the right-aligned status string
+  int rows = 0;
+  int cols = 0;
+  countStringFrame(status_str, strlen(status_str), &rows, &cols, NULL, tab_size);
+  int str_len = cols;
+
+  int width = getmaxx(context->ftw) + getmaxx(context->lnw);
+
+  werase(context->sbw);
+  wattron(context->sbw, COLOR_PAIR(STATUS_BAR_COLOR_PAIR));
+
+  // fill the window with space with style.
+  wmove(context->sbw, 0, 0);
+  whline(context->sbw, ' ', width);
+
+  // Print left-aligned text (file name)
+  mvwprintw(context->sbw, 0, 2, "%s", left_str);
+
+  // print the right-aligned text
+  wmove(context->sbw, 0, width - str_len);
+  waddstr(context->sbw, status_str);
+
+  wattroff(context->sbw, COLOR_PAIR(STATUS_BAR_COLOR_PAIR));
+
+  wnoutrefresh(context->sbw);
 }

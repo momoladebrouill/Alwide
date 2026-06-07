@@ -7,4 +7,4 @@ void receiveGotoData(cJSON* packet, LSP_Server* lsp, FileContainer* file, Module
 
 void jumpToLocation(ModuleContext* data, LSP_Location location);
 
-#endif //WISHWIM_LSP_GOTO_H
+#endif // WISHWIM_LSP_GOTO_H

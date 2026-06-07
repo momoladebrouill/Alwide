@@ -3,10 +3,10 @@
 #include <regex.h>
 
 #include "../../../lib/tree-sitter/lib/include/tree_sitter/api.h"
+#include "../../config/language_feature.h"
 #include "../../data-management/state_control.h"
 #include "../../environnement/constants.h"
 #include "../theme.h"
-#include "../../config/language_feature.h"
 
 
 #define CHAR_CHUNK_SIZE_TSINPUT 500
@@ -103,6 +103,8 @@ const TSLanguage* tree_sitter_lua(void);
 const TSLanguage* tree_sitter_asm(void);
 
 const TSLanguage* tree_sitter_html(void);
+
+const TSLanguage* tree_sitter_latex(void);
 
 void initParserList(ParserList* list);
 

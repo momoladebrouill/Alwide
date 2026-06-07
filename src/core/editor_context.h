@@ -19,7 +19,7 @@ typedef struct {
   int file_count;
   int current_file_index;
   ExplorerFolder pwd;
-  GUIContext gui_context;
+  gui_Context gui_context;
   bool refresh_local_vars;
 
   WindowHighlightDescriptor highlight_descriptor;

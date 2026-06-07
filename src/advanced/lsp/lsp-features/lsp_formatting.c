@@ -14,6 +14,11 @@ void receiveFormattingData(cJSON* packet, FileContainer* file, ModuleContext* da
     return;
   }
 
+  LSP_Server* lsp = getLSPServerForLanguage(&lsp_servers, file->lsp_datas.lang_id);
+  if (lsp == NULL) {
+    return;
+  }
+
   int edits_size = cJSON_GetArraySize(result);
   if (edits_size == 0) {
     return;
@@ -24,7 +29,7 @@ void receiveFormattingData(cJSON* packet, FileContainer* file, ModuleContext* da
     edits[i] = LSP_getTextEditFromJSON(cJSON_GetArrayItem(result, i));
   }
 
-  applyTextEditsArray(data->cursor, edits, edits_size, &file->history_frame, data->payload_state_change,
+  applyTextEditsArray(lsp, data->cursor, edits, edits_size, &file->history_frame, data->payload_state_change,
                       LF_tab(file->feature));
   for (int i = 0; i < edits_size; i++) {
     LSP_destroyTextEdit(edits[i]);
@@ -81,8 +86,6 @@ void askOnTypeFormatting(FileContainer* file, char* ch, ModuleContext* data) {
       .trimFinalNewlines = true,
     };
 
-    LSP_requestOnTypeFormatting(lsp, file->io_file.path_abs,
-                                LSP_pos(data->cursor->file_id.absolute_row - 1, data->cursor->line_id.absolute_column),
-                                ch, options);
+    LSP_requestOnTypeFormatting(lsp, file->io_file.path_abs, LSP_pos_from_cursor(lsp, *data->cursor), ch, options);
   }
 }

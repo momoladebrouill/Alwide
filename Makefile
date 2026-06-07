@@ -8,25 +8,30 @@ ifeq ($(shell expr $(CLANG_VERSION) \< $(MIN_CLANG_VERSION)), 1)
 $(error Clang version $(CLANG_VERSION) is too old. Please update to at least version $(MIN_CLANG_VERSION))
 endif
 
-CFLAGS=-g -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600 -DNDEBUG -O3
-#CFLAGS=-g -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600 -D_SHOW_ERROR -fsanitize=address
+#CFLAGS=-DNDEBUG -O3
+CFLAGS=-g -D_SHOW_ERROR -fsanitize=address
+
+CFLAGS +=-Ilib/tree-sitter/lib/src -Ilib/tree-sitter/lib/include -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600
 
 BUILD_DIR=build
 executable=al # lsp_test test_line test_file
 
 # C sources files
 SRC_MODULES= \
+	src/data-management/encoding/utf8.c \
+	src/data-management/encoding/utf16.c \
 	src/data-management/utf_8_extractor.c \
 	src/advanced/shared.c \
 	src/data-management/file_structure.c \
 	src/data-management/file_management.c \
 	src/utils/tools.c \
 	src/io-management/io_manager.c \
-	src/utils/key_management.c \
+	src/terminal/key_management.c \
 	src/utils/clipboard_manager.c \
 	src/io-management/viewport_history.c \
 	src/data-management/state_control.c \
 	src/terminal/term_handler.c \
+	src/terminal/kitty_protocol.c \
 	src/io-management/io_explorer.c \
 	src/advanced/lsp/lsp_client.c \
 	src/advanced/tree-sitter/tree_manager.c \
@@ -39,6 +44,9 @@ SRC_MODULES= \
 	src/terminal/windows/edw.c \
 	src/terminal/windows/ofw.c \
 	src/terminal/windows/pow.c \
+	src/terminal/windows/tpw.c \
+	src/terminal/windows/popups/search_popup.c \
+	src/terminal/windows/popups/language_popup.c \
 	src/config/config.c \
 	src/config/language_feature.c \
 	src/io-management/workspace_settings.c \
@@ -56,6 +64,7 @@ SRC_MODULES= \
 	src/advanced/lsp/lsp_dispatcher.c \
 	src/advanced/lsp/lsp_emitter.c \
 	src/advanced/intelligence/auto_pairs.c \
+	src/advanced/intelligence/search.c \
 	src/advanced/intelligence/comments.c \
 	src/advanced/intelligence/indentation.c \
 	src/core/editor_context.c \
@@ -87,11 +96,12 @@ RUST_MODULES= \
 	lib/tree-sitter-json/target/release/libtree_sitter_json.rlib \
 	lib/tree-sitter-bash/target/release/libtree_sitter_bash.rlib \
 	lib/tree-sitter-markdown/target/release/libtree_sitter_md.rlib \
-	lib/tree-sitter-query/target/release/libtree_sitter_query.rlib \
+	lib/tree-sitter-query/target/release/libtree_sitter_tsquery.rlib \
 	lib/tree-sitter-vhdl/target/release/libtree_sitter_vhdl.rlib \
 	lib/tree-sitter-lua/target/release/libtree_sitter_lua.rlib \
 	lib/tree-sitter-asm/target/release/libtree_sitter_asm.rlib \
-	lib/tree-sitter-html/target/release/libtree_sitter_html.rlib
+	lib/tree-sitter-html/target/release/libtree_sitter_html.rlib \
+	lib/tree-sitter-latex/target/release/libtree_sitter_latex.rlib
 
 # Map sources to objects in BUILD_DIR
 OBJECTS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(SRC_MODULES) $(LIB_C_MODULES))
@@ -105,6 +115,9 @@ lib/tree-sitter-markdown/tree-sitter-markdown/libtree-sitter-markdown.a:
 
 lib/tree-sitter-markdown/tree-sitter-markdown-inline/libtree-sitter-markdown-inline.a:
 	cd lib/tree-sitter-markdown/tree-sitter-markdown-inline/ && tree-sitter generate && $(MAKE)
+
+lib/tree-sitter-latex/target/release/libtree_sitter_latex.rlib:
+	cd lib/tree-sitter-latex && (test -f src/parser.c || tree-sitter generate) && cargo build --release
 
 %.rlib:
 	cd  $(shell echo $@ | cut -d/ -f1-2) && cargo build --release

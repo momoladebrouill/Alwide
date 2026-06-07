@@ -1,5 +1,6 @@
 #include "editor_lsp.h"
 
+#include <assert.h>
 #include <ncurses.h>
 #include <unistd.h>
 
@@ -7,7 +8,7 @@
 #include "../advanced/lsp/lsp-features/lsp_signature_help.h"
 #include "../advanced/lsp/lsp_client.h"
 #include "../environnement/global_variables.h"
-#include "../utils/key_management.h"
+#include "../terminal/key_management.h"
 #include "../utils/tools.h"
 
 ModuleContext buildModuleContext(EditorContext* ctx) {
@@ -20,16 +21,15 @@ ModuleContext buildModuleContext(EditorContext* ctx) {
   return payload;
 }
 
-void handleLspServers(EditorContext* ctx, int* c, int* hash) {
+void handleLspServers(EditorContext* ctx, int* key) {
   LSPServerLinkedList_Cell* cell = lsp_servers.head;
   while (cell != NULL) {
     ModuleContext payload = buildModuleContext(ctx);
     while (LSP_dispatchOnReceive(&cell->lsp_server, dispatcher, &payload)) {
-      if (*c == ERR) {
-        *c = ONLY_REPAINT_INPUT;
-        *hash = ONLY_REPAINT_INPUT;
-      }
       // Refresh payload in case of realloc during dispatch
+      if (*key == ERR) {
+        *key = ONLY_REPAINT_INPUT;
+      }
       payload = buildModuleContext(ctx);
     }
     cell = cell->next;
@@ -38,15 +38,18 @@ void handleLspServers(EditorContext* ctx, int* c, int* hash) {
 
 void waitForLspResponse(EditorContext* ctx, int timeout_ms) {
   time_val start = timeInMilliseconds();
-  int dummy_c = ERR, dummy_hash = ERR;
   while (diff2Time(timeInMilliseconds(), start) < timeout_ms) {
-    handleLspServers(ctx, &dummy_c, &dummy_hash);
+    int key = ERR;
+    handleLspServers(ctx, &key);
     usleep(10000); // 10ms
   }
 }
 
-void askOnCharTypeLspInfos(EditorContext* ctx, int c, FileContainer* fc, Cursor* cursor) {
-  bool hasAsked = askSignatureHelpOnChar(ctx, c, fc, cursor); // priority 1
+void askOnCharTypeLspInfos(EditorContext* ctx, int key, FileContainer* fc, Cursor* cursor) {
+  /* Only ask for LSP info on pure printable characters (Bits 0-23) */
+  int codepoint = K_CODE(key);
+  assert(codepoint == key);
+  bool hasAsked = askSignatureHelpOnChar(ctx, codepoint, fc, cursor); // priority 1
   if (hasAsked) {
     return;
   }

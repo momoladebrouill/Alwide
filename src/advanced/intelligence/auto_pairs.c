@@ -5,7 +5,7 @@
 #include "../../terminal/term_handler.h"
 
 bool ilj_handleAutoPairs(FileContainer* fc, Char_U8 input, History** history_p,
-                        PayloadStateChange payload_state_change) {
+                         PayloadStateChange payload_state_change) {
   if (!fc->feature || fc->feature->pairs_count == 0) {
     return false;
   }

@@ -9,7 +9,7 @@
 #include "ofw.h"
 
 
-void gui_initFEWContext(FEW_GUIContext* context) {
+void gui_initFEWContext(gui_FEW* context) {
   context->few = NULL;         // File Explorer Window
   context->refresh_few = true; // Need to reprint file explorer window
 
@@ -21,7 +21,7 @@ void gui_initFEWContext(FEW_GUIContext* context) {
 }
 
 
-void gui_resizeFEW(GUIContext* gui_context, int few_new_width) {
+void gui_resizeFEW(gui_Context* gui_context, int few_new_width) {
   if (few_new_width == -1) {
     few_new_width = gui_context->few_context.few_width;
   }
@@ -45,7 +45,7 @@ void gui_resizeFEW(GUIContext* gui_context, int few_new_width) {
   gui_context->few_context.refresh_few = true;
 }
 
-void switchFEW(GUIContext* gui_context) {
+void gui_switchFEW(gui_Context* gui_context) {
   if (gui_context->few_context.few == NULL) {
     // Open File Explorer Window
     gui_context->few_context.few_width = gui_context->few_context.saved_few_width;
@@ -70,8 +70,9 @@ void switchFEW(GUIContext* gui_context) {
 void internalPrintExplorerRec(ExplorerFolder* folder, WINDOW* few, int* few_x_offset, int* few_y_offset,
                               int tree_offset_rec, int* selected_line) {
   // Don't print if not in window.
-  if (getcury(few) + 1 >= getmaxy(few))
+  if (getcury(few) + 1 >= getmaxy(few)) {
     return;
+  }
 
   if (folder->open && folder->discovered == false) {
     discoverFolder(folder);
@@ -90,10 +91,12 @@ void internalPrintExplorerRec(ExplorerFolder* folder, WINDOW* few, int* few_x_of
     }
 
     // Print decoration of folder. The decoration describe if the folder is open or not.
-    if (folder->open)
+    if (folder->open) {
       printToNcursesNCharFromString(few, "⌄", getmaxx(few) - (getcurx(few) + 1));
-    else
+    }
+    else {
       printToNcursesNCharFromString(few, "›", getmaxx(few) - (getcurx(few) + 1));
+    }
 
     printToNcursesNCharFromString(few, "📁", getmaxx(few) - (getcurx(few) + 1));
     printToNcursesNCharFromString(few, basename(folder->path), getmaxx(few) - (getcurx(few) + 1));
@@ -109,8 +112,9 @@ void internalPrintExplorerRec(ExplorerFolder* folder, WINDOW* few, int* few_x_of
     (*few_y_offset)--;
   }
 
-  if (folder->open == false)
+  if (folder->open == false) {
     return;
+  }
 
   // Print sub folders
   for (int i = 0; i < folder->folder_count; i++) {
@@ -120,8 +124,9 @@ void internalPrintExplorerRec(ExplorerFolder* folder, WINDOW* few, int* few_x_of
   // Print sub files
   for (int i = 0; i < folder->file_count; i++) {
     // Don't print if not in window.
-    if (getcury(few) + 1 >= getmaxy(few))
+    if (getcury(few) + 1 >= getmaxy(few)) {
       return;
+    }
 
     (*selected_line)--;
     if (*few_y_offset == 0) {
@@ -149,7 +154,7 @@ void internalPrintExplorerRec(ExplorerFolder* folder, WINDOW* few, int* few_x_of
   }
 }
 
-void gui_repaintFEW(FEW_GUIContext* context, ExplorerFolder* pwd) {
+void gui_repaintFEW(gui_FEW* context, ExplorerFolder* pwd) {
   if (!(context->refresh_few == true && context->few_width != 0 && context->few != NULL)) {
     return;
   }
@@ -163,7 +168,7 @@ void gui_repaintFEW(FEW_GUIContext* context, ExplorerFolder* pwd) {
   int tmp_few_selected_line = context->few_selected_line;
   internalPrintExplorerRec(pwd, context->few, &tmp_few_x_offset, &tmp_few_y_offset, 0, &tmp_few_selected_line);
   // Clear end of window
-  
+
   for (int i = getbegy(context->few); i < getmaxy(context->few); i++) {
     mvwprintw(context->few, i, getmaxx(context->few) - 1, "│");
   }

@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "../data-management/file_management.h"
+#include "kitty_protocol.h"
 #include "term_handler.h"
 
 #include <limits.h>
@@ -15,20 +16,22 @@
 #include "windows/edw.h"
 #include "windows/few.h"
 #include "windows/ofw.h"
+#include "windows/tpw.h"
 
 
 ////// -------------- WINDOWS MANAGEMENTS --------------
 
 
-void gui_initGUIContext(GUIContext* gui_context) {
+void gui_initGUIContext(gui_Context* gui_context) {
   gui_context->focus_w = NULL; // Used to set the window where start mouse drag
+  gui_context->toplevel_popups = NULL;
 
   gui_initEDWContext(&gui_context->edw_context);
   gui_initFEWContext(&gui_context->few_context);
   gui_initOFWContext(&gui_context->ofw_context);
 }
 
-void gui_initNCurses(GUIContext* gui_context) {
+void gui_initNCurses(gui_Context* gui_context) {
   set_escdelay(25);
   // Init ncurses
   if (initscr() == NULL) {
@@ -44,17 +47,11 @@ void gui_initNCurses(GUIContext* gui_context) {
   noecho();
   curs_set(0);
   // Mouse setup
-  // Setting mouseinterval to 1 is a workaround for a bug in some ncurses versions (like 6.6)
-  // where mouseinterval(0) causes mouse events to be delayed until the next input.
-  // see https://github.com/termux/termux-packages/issues/28372
-  // and https://lists.gnu.org/archive/html/bug-ncurses/2026-04/msg00009.html
-  mouseinterval(1);
-  mousemask(BUTTON1_PRESSED | BUTTON1_RELEASED | BUTTON2_PRESSED | BUTTON2_RELEASED | BUTTON3_PRESSED |
-              BUTTON3_RELEASED | BUTTON4_PRESSED | BUTTON5_PRESSED | BUTTON_SHIFT | BUTTON_CTRL | BUTTON_ALT |
-              REPORT_MOUSE_POSITION,
-            NULL);
-  timeout(100);
-  printf("\033[?1003h\033[5 q"); // enable mouse tracking and beam cursor
+  mousemask(0, NULL);
+  keyok(KEY_MOUSE, FALSE);
+  timeout(20);
+  printf("\033[?1003h\033[?1006h\033[5 q"); // enable mouse tracking (including SGR 1006) and beam cursor
+  kitty_enable();                           // Enable Kitty Keyboard Protocol (flags 1 and 2)
   fflush(stdout);
   // Color setup
   if (has_colors()) {
@@ -67,6 +64,7 @@ void gui_initNCurses(GUIContext* gui_context) {
       init_extended_color(BG_COLOR_HOVER, 200, 200, 200);
       init_extended_color(BG_COLOR_POPUP, 100, 100, 100);
       init_extended_color(COLOR_CYAN, 100, 700, 650);
+      init_extended_color(COLOR_TRUE_WHITE, 1000, 1000, 1000);
     }
 
     init_extended_pair(DEFAULT_COLOR_PAIR, COLOR_WHITE, BG_COLOR_DEFAULT);
@@ -80,17 +78,19 @@ void gui_initNCurses(GUIContext* gui_context) {
 
     init_extended_pair(INFO_COLOR_PAIR, COLOR_CYAN, BG_COLOR_POPUP);
     init_extended_pair(INFO_COLOR_HOVER_PAIR, COLOR_CYAN, BG_COLOR_HOVER);
+
+    init_extended_pair(STATUS_BAR_COLOR_PAIR, COLOR_TRUE_WHITE, BG_COLOR_HOVER);
   }
 }
 
-void gui_setFocus(GUIContext* gui_context, WINDOW* w) { gui_context->focus_w = w; }
+void gui_setFocus(gui_Context* gui_context, WINDOW* w) { gui_context->focus_w = w; }
 
-void gui_resetFocus(GUIContext* gui_context) { gui_context->focus_w = NULL; }
+void gui_resetFocus(gui_Context* gui_context) { gui_context->focus_w = NULL; }
 
 ////// -------------- PRINT FUNCTIONS --------------
 
 
-void gui_repaintGUI(GUIContext* gui_context, WindowHighlightDescriptor* highlight_descriptor, ExplorerFolder* explorer,
+void gui_repaintGUI(gui_Context* gui_context, WindowHighlightDescriptor* highlight_descriptor, ExplorerFolder* explorer,
                     FileContainer* files, int file_count, int current_file) {
   wnoutrefresh(stdscr);
   gui_repaintEDW(&gui_context->edw_context, files[current_file].cursor, files[current_file].select_cursor,
@@ -98,6 +98,8 @@ void gui_repaintGUI(GUIContext* gui_context, WindowHighlightDescriptor* highligh
                  files[current_file].lsp_datas.computed, LF_tab_size(files[current_file].feature));
   gui_repaintFEW(&gui_context->few_context, explorer);
   gui_repaintOFW(&gui_context->ofw_context, files, file_count, current_file);
+  gui_repaintSBW(&gui_context->edw_context, file_count > 0 ? &files[current_file] : NULL);
+  gui_repaintTPW(gui_context);
   doupdate();
 }
 
@@ -136,27 +138,27 @@ LineMarker gui_getMarkerForCurrentLine(int row, WindowHighlightDescriptor* highl
   return marker;
 }
 
-void gui_updateEDW(GUIContext* gui_context) { gui_context->edw_context.refresh_edw = true; }
+void gui_updateEDW(gui_Context* gui_context) { gui_context->edw_context.refresh_edw = true; }
 
-void gui_updateFEW(GUIContext* gui_context) { gui_context->few_context.refresh_few = true; }
+void gui_updateFEW(gui_Context* gui_context) { gui_context->few_context.refresh_few = true; }
 
-void gui_updateOFW(GUIContext* gui_context) { gui_context->ofw_context.refresh_ofw = true; }
+void gui_updateOFW(gui_Context* gui_context) { gui_context->ofw_context.refresh_ofw = true; }
 
-void gui_updateGUI(GUIContext* gui_context) {
+void gui_updateGUI(gui_Context* gui_context) {
   gui_updateEDW(gui_context);
   gui_updateFEW(gui_context);
   gui_updateOFW(gui_context);
 }
 
-bool gui_doesGUINeedRepaint(GUIContext* gui_context) {
+bool gui_doesGUINeedRepaint(gui_Context* gui_context) {
   return gui_context->edw_context.refresh_edw || gui_context->few_context.refresh_few ||
-    gui_context->ofw_context.refresh_ofw;
+         gui_context->ofw_context.refresh_ofw || gui_context->refresh_tpw;
 }
 
 ////// -------------- UTILS FUNCTIONS --------------
 
 
-void moveScreenToMatchCursor(GUIContext* context, Cursor cursor, int* screen_x, int* screen_y, int tab_size) {
+void moveScreenToMatchCursor(gui_Context* context, Cursor cursor, int* screen_x, int* screen_y, int tab_size) {
   int current_lines = getmaxy(context->edw_context.ftw);
   int current_columns = getmaxx(context->edw_context.ftw);
 
@@ -188,7 +190,7 @@ void moveScreenToMatchCursor(GUIContext* context, Cursor cursor, int* screen_x, 
   }
 }
 
-void centerCursorOnScreen(GUIContext* context, Cursor cursor, int* screen_x, int* screen_y, int tab_size) {
+void centerCursorOnScreen(gui_Context* context, Cursor cursor, int* screen_x, int* screen_y, int tab_size) {
   // center for y, but right for x.
   *screen_x = cursor.line_id.absolute_column - (COLS /*/ 2*/);
   *screen_y = cursor.file_id.absolute_row - (LINES / 2);

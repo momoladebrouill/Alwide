@@ -135,7 +135,7 @@ void LSP_closeLSPServer(LSP_Server* server) {
 
 void skipUntilContent(LSP_Server* server) {}
 
-#define BUFF_SIZE 256
+#define BUFF_SIZE          256
 #define HEADER_FIRST_FIELD "Content-Length:"
 
 char* LSP_readPacket(LSP_Server* server) {
@@ -242,7 +242,7 @@ cJSON* LSP_readPacketAsJSON(LSP_Server* server, bool block) {
   if (LSP_getPacketType(at_return) != LSP_RESPONSE) {
     if (strcmp("window/logMessage", LSP_getPacketMethod(at_return)) == 0) {
       cJSON* message_obj = cJSON_GetObjectItem(LSP_getNotificationParams(at_return), "message");
-      printf("Server log : %s\n", cJSON_GetStringValue(message_obj));
+      fprintf(stderr, "Server log : %s\n", cJSON_GetStringValue(message_obj));
       cJSON_Delete(at_return);
       free(content_str);
       return LSP_readPacketAsJSON(server, block);
@@ -283,7 +283,15 @@ static int _LSP_sendPacketInternal(LSP_Server* server, char* method, char* param
   snprintf(atSend, sizeof(atSend), "Content-Length: %d\r\n\r\n%s", content_length, content_str);
   int head_length = strlen(atSend) - content_length;
 
-  write(server->outpipefd[1], atSend, head_length + content_length);
+  if (write(server->outpipefd[1], atSend, head_length + content_length) < 0) {
+    server->pid = -1;
+    server->is_init_done = false;
+    free(content_str);
+    if (json_request_obj) {
+      cJSON_Delete(json_request_obj);
+    }
+    return 0;
+  }
 
   // Logging
   if (type == LSP_RESPONSE) {
@@ -485,6 +493,13 @@ static cJSON* buildInitPacket(LSP_Server* lsp, char* client_name, char* client_v
   cJSON_AddStringToObject(client_info, "version", client_version);
 
   cJSON* capabilities = cJSON_AddObjectToObject(init_params, "capabilities");
+
+  cJSON* general = cJSON_AddObjectToObject(capabilities, "general");
+  cJSON* positionEncodings = cJSON_AddArrayToObject(general, "positionEncodings");
+  cJSON_AddItemToArray(positionEncodings, cJSON_CreateString("utf-32"));
+  cJSON_AddItemToArray(positionEncodings, cJSON_CreateString("utf-8"));
+  cJSON_AddItemToArray(positionEncodings, cJSON_CreateString("utf-16"));
+
   cJSON* textDocument = cJSON_AddObjectToObject(capabilities, "textDocument");
 
   // Synchronization
@@ -535,16 +550,28 @@ static cJSON* buildInitPacket(LSP_Server* lsp, char* client_name, char* client_v
   cJSON_AddStringToObject(workspace, "name", basename(current_workspace_path));
   cJSON_AddItemToArray(workspace_array, workspace);
 
-  cJSON* general = cJSON_AddObjectToObject(init_params, "general");
-  cJSON* positionEncodings = cJSON_AddArrayToObject(general, "positionEncodings");
-  cJSON_AddItemToArray(positionEncodings, cJSON_CreateString("utf-8"));
   return init_params;
 }
 
 static void extractDataFromServerCapability(LSP_Server* lsp) {
   // Extract on-type trigger characters
   cJSON* server_capabilities = cJSON_GetObjectItem(lsp->init_result, "capabilities");
+
+  // Default to UTF-16
+  lsp->position_encoding = LSP_POSITION_ENCODING_UTF16;
+
   if (server_capabilities) {
+    cJSON* positionEncoding = cJSON_GetObjectItem(server_capabilities, "positionEncoding");
+    if (positionEncoding && cJSON_IsString(positionEncoding)) {
+      char* encoding_str = cJSON_GetStringValue(positionEncoding);
+      if (strcmp(encoding_str, "utf-32") == 0) {
+        lsp->position_encoding = LSP_POSITION_ENCODING_UTF32;
+      }
+      else if (strcmp(encoding_str, "utf-8") == 0) {
+        lsp->position_encoding = LSP_POSITION_ENCODING_UTF8;
+      }
+    }
+
     cJSON* onType = cJSON_GetObjectItem(server_capabilities, "documentOnTypeFormattingProvider");
     if (onType) {
       cJSON* first = cJSON_GetObjectItem(onType, "firstTriggerCharacter");
@@ -599,6 +626,9 @@ void LSP_initializeServer(LSP_Server* lsp, char* client_name, char* client_versi
   cJSON_Delete(content);
   lsp->is_init_done = true;
   pthread_mutex_unlock(&lsp->initDone);
+
+  // Mandatory 'initialized' notification after initialization handshake
+  LSP_sendPacket(lsp, "initialized", "{}", LSP_NOTIFICATION);
 
   // Flush pending packet to send
   pthread_mutex_lock(&lsp->pending_lock);
@@ -1333,15 +1363,16 @@ void LSP_getHoverFromJSON(cJSON* json, LSP_Hover* hover_list) {
 
   cJSON* contents = cJSON_GetObjectItem(json, "contents");
   if (cJSON_IsArray(contents)) {
-    hover_list->size = cJSON_GetArraySize(contents);
-    hover_list->contents = malloc(sizeof(LSP_MarkedString) * hover_list->size);
-    for (int i = 0; i < hover_list->size; i++) {
-      LSP_getMarkedStringFromJSON(cJSON_GetArrayItem(contents, i), &hover_list->contents[i]);
-      if (hover_list->contents[i].value[0] == '\0') {
-        i--;
-        hover_list->size--;
+    int array_size = cJSON_GetArraySize(contents);
+    hover_list->contents = malloc(sizeof(LSP_MarkedString) * array_size);
+    int valid_count = 0;
+    for (int i = 0; i < array_size; i++) {
+      LSP_getMarkedStringFromJSON(cJSON_GetArrayItem(contents, i), &hover_list->contents[valid_count]);
+      if (hover_list->contents[valid_count].value[0] != '\0') {
+        valid_count++;
       }
     }
+    hover_list->size = valid_count;
   }
   else {
     hover_list->size = 1;
@@ -1354,9 +1385,11 @@ void LSP_getHoverFromJSON(cJSON* json, LSP_Hover* hover_list) {
 }
 
 void LSP_getMarkedStringFromJSON(cJSON* json, LSP_MarkedString* item) {
+  item->value[0] = '\0';
+  item->documentationType = dt_PLAIN_TEXT;
+
   if (cJSON_IsString(json)) {
     strlcpy(item->value, cJSON_GetStringValue(json), MESSAGE_LENGTH);
-    item->documentationType = dt_PLAIN_TEXT;
   }
   else if (cJSON_IsObject(json)) {
     cJSON* kind = cJSON_GetObjectItem(json, "kind");
@@ -1365,9 +1398,6 @@ void LSP_getMarkedStringFromJSON(cJSON* json, LSP_MarkedString* item) {
       // MarkupContent
       if (strcmp(cJSON_GetStringValue(kind), "markdown") == 0) {
         item->documentationType = dt_MARKDOWN;
-      }
-      else {
-        item->documentationType = dt_PLAIN_TEXT;
       }
       strlcpy(item->value, cJSON_GetStringValue(value), MESSAGE_LENGTH);
     }
@@ -1381,7 +1411,6 @@ void LSP_getMarkedStringFromJSON(cJSON* json, LSP_MarkedString* item) {
        *  ```
        */
       strlcpy(item->value, cJSON_GetStringValue(value), MESSAGE_LENGTH);
-      item->documentationType = dt_PLAIN_TEXT;
     }
   }
 }
@@ -1496,7 +1525,7 @@ void LSP_destroySignatureHelp(LSP_SignatureHelp* help) {
 
 bool LSP_dispatchOnReceive(LSP_Server* lsp, void (*dispatcher)(cJSON* packet, LSP_Server* lsp, void* payload),
                            void* payload) {
-  if (lsp == NULL || !lsp->is_init_done) {
+  if (lsp == NULL || lsp->pid == -1 || !lsp->is_init_done) {
     return false;
   }
 
@@ -1524,6 +1553,19 @@ void LSP_notifyLspFileDidOpen(LSP_Server* lsp, char* file_name, char* file_conte
 
 
   LSP_sendPacketWithJSON(lsp, "textDocument/didOpen", request_content, LSP_NOTIFICATION);
+
+  cJSON_Delete(request_content);
+}
+
+
+void LSP_notifyLspFileDidClose(LSP_Server* lsp, char* file_name) {
+  cJSON* request_content = cJSON_CreateObject();
+
+  cJSON* text_document = LSP_getJSONTextDocumentIdentifier(file_name);
+  cJSON_AddItemToObject(request_content, "textDocument", text_document);
+
+
+  LSP_sendPacketWithJSON(lsp, "textDocument/didClose", request_content, LSP_NOTIFICATION);
 
   cJSON_Delete(request_content);
 }

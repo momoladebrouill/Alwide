@@ -2,48 +2,50 @@
 #include "lsp_dispatcher.h"
 
 #include <assert.h>
-#include <string.h>
 #include <libgen.h>
+#include <string.h>
 
-#include "../../utils/tools.h"
 #include "../../terminal/term_handler.h"
+#include "../../utils/tools.h"
 #include "lsp_notification_dispatcher.h"
 #include "lsp_response_dispatcher.h"
 
 #include "lsp-features/lsp_tools.h"
 
 void handleServerRequest(cJSON* packet, LSP_Server* lsp, ModuleContext* data) {
-    char* method = LSP_getPacketMethod(packet);
-    LSP_PacketID id = LSP_getPacketID(packet);
-    cJSON* params = cJSON_GetObjectItem(packet, "params");
+  char* method = LSP_getPacketMethod(packet);
+  LSP_PacketID id = LSP_getPacketID(packet);
+  cJSON* params = cJSON_GetObjectItem(packet, "params");
 
-    if (strcmp(method, "workspace/applyEdit") == 0) {
-        cJSON* edit_json = cJSON_GetObjectItem(params, "edit");
-        LSP_WorkspaceEdit edit = LSP_getWorkspaceEditFromJSON(edit_json);
-        
-        // Find the active file to apply the edit
-        // (In a more complex setup, we'd find the FileContainer per URI)
-        int current_idx = getIndexFileContainerForName(data, data->view_port.gui->ofw_context.ofw ? "" : ""); // dummy for now
-        // Let's use getActiveFile equivalent logic
-        FileContainer* active_fc = &(*data->files_state.files)[0]; // Fallback to first if index logic is complex
-        // Actually, we can just try to apply it to all open files that match the URI in applyWorkspaceEdit
-        for(int i=0; i<*data->files_state.size; i++) {
-            applyWorkspaceEdit(&(*data->files_state.files)[i], data->cursor, &edit, data->payload_state_change);
-        }
+  if (strcmp(method, "workspace/applyEdit") == 0) {
+    cJSON* edit_json = cJSON_GetObjectItem(params, "edit");
+    LSP_WorkspaceEdit edit = LSP_getWorkspaceEditFromJSON(edit_json);
 
-        LSP_destroyWorkspaceEdit(&edit);
-
-        // Respond to server: { applied: true }
-        cJSON* result = cJSON_CreateObject();
-        cJSON_AddBoolToObject(result, "applied", true);
-        LSP_sendResponse(lsp, id, result);
-        
-        gui_updateGUI(data->view_port.gui);
-    } else {
-        fprintf(stderr, "Server request NOT SUPPORTED: %s\n", method);
-        // Minimum response for unknown requests
-        LSP_sendResponse(lsp, id, NULL);
+    // Find the active file to apply the edit
+    // (In a more complex setup, we'd find the FileContainer per URI)
+    int current_idx =
+      getIndexFileContainerForName(data, data->view_port.gui->ofw_context.ofw ? "" : ""); // dummy for now
+    // Let's use getActiveFile equivalent logic
+    FileContainer* active_fc = &(*data->files_state.files)[0]; // Fallback to first if index logic is complex
+    // Actually, we can just try to apply it to all open files that match the URI in applyWorkspaceEdit
+    for (int i = 0; i < *data->files_state.size; i++) {
+      applyWorkspaceEdit(&(*data->files_state.files)[i], data->cursor, &edit, data->payload_state_change);
     }
+
+    LSP_destroyWorkspaceEdit(&edit);
+
+    // Respond to server: { applied: true }
+    cJSON* result = cJSON_CreateObject();
+    cJSON_AddBoolToObject(result, "applied", true);
+    LSP_sendResponse(lsp, id, result);
+
+    gui_updateGUI(data->view_port.gui);
+  }
+  else {
+    fprintf(stderr, "Server request NOT SUPPORTED: %s\n", method);
+    // Minimum response for unknown requests
+    LSP_sendResponse(lsp, id, NULL);
+  }
 }
 
 void dispatcher(cJSON* packet, LSP_Server* lsp, void* payload) {

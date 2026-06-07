@@ -113,7 +113,7 @@ Cursor doReverseAction(Action* action_p, Cursor cursor,
         }
         return cursor;
       }
-      cursor = insertCharInLineC(tmp, readChar_U8FromInput(action.unique_ch));
+      cursor = insertCharInLineC(tmp, unicode_to_utf8(action.unique_ch));
       destroyAction(action);
       *action_p = createInsertAction(tmp, cursor_to_desc(cursor));
       if (onEachStateChange != NULL) {

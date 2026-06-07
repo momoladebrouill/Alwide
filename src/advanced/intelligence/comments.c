@@ -106,14 +106,16 @@ void ilj_toggleComments(FileContainer* fc, History** history_frame, PayloadState
         if (r == cursor_row) {
           if (cursor_col >= indent + prefix_len) {
             cursor_col -= prefix_len;
-          } else if (cursor_col > indent) {
+          }
+          else if (cursor_col > indent) {
             cursor_col = indent;
           }
         }
         if (r == select_row) {
           if (select_col >= indent + prefix_len) {
             select_col -= prefix_len;
-          } else if (select_col > indent) {
+          }
+          else if (select_col > indent) {
             select_col = indent;
           }
         }
@@ -132,7 +134,7 @@ void ilj_toggleComments(FileContainer* fc, History** history_frame, PayloadState
       if (!empty || start_row == end_row) {
         Cursor insert_pos = tryToReachAbsPosition(it, r, indent);
         insert_pos = insertCharArrayAtCursorWithState(history_frame, insert_pos, (char*)prefix, *payload_state_change,
-                                                     LF_tab(fc->feature));
+                                                      LF_tab(fc->feature));
 
         // Adjust column position if cursor or selection was on this line
         if (r == cursor_row) {

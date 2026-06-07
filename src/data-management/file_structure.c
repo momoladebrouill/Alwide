@@ -67,7 +67,7 @@ int* realloc_IntArray(int* array, int length) { return realloc(array, length * s
 int byteCountForLineNode(LineNode* line, int index_start, int length) {
   int count = 0;
   for (int i = index_start; i < index_start + length; i++) {
-    count += sizeChar_U8(line->ch[i]);
+    count += utf8_size(line->ch[i]);
   }
   return count;
 }
@@ -476,7 +476,7 @@ LineIdentifier insertCharInLine(LineIdentifier line_id, Char_U8 ch) {
     // Simple happend
     line->ch[column] = ch;
     line->element_number++;
-    line->byte_count += sizeChar_U8(ch);
+    line->byte_count += utf8_size(ch);
 #ifdef LOGS
     fprintf(stderr, "ADD AT THE END\r\n");
 #endif
@@ -490,7 +490,7 @@ LineIdentifier insertCharInLine(LineIdentifier line_id, Char_U8 ch) {
     memmove_CharU8Array(line->ch + column + 1, line->ch + column, line->element_number - column);
     line->ch[column] = ch;
     line->element_number++;
-    line->byte_count += sizeChar_U8(ch);
+    line->byte_count += utf8_size(ch);
   }
 
   line_id.line = line;
@@ -531,7 +531,7 @@ LineIdentifier removeCharInLine(LineIdentifier line_id) {
             line->element_number);
 #endif
     // fprintf(stderr, "At move : %d, first %d, ")
-    line->byte_count -= sizeChar_U8(line->ch[cursorPos]);
+    line->byte_count -= utf8_size(line->ch[cursorPos]);
     memmove_CharU8Array(line->ch + cursorPos, line->ch + cursorPos + 1, line->element_number - cursorPos - 1);
   }
   else {
@@ -1743,8 +1743,8 @@ Cursor insertCharInLineC(Cursor cursor, Char_U8 ch) {
   cursor.line_id = insertCharInLine(cursor.line_id, ch);
   cursor = moduloCursor(cursor);
   assert(cursor.file_id.relative_row > 0 && cursor.file_id.relative_row <= MAX_ELEMENT_NODE);
-  cursor.file_id.file->lines_byte_count[cursor.file_id.relative_row - 1] += sizeChar_U8(ch);
-  cursor.file_id.file->byte_count += sizeChar_U8(ch);
+  cursor.file_id.file->lines_byte_count[cursor.file_id.relative_row - 1] += utf8_size(ch);
+  cursor.file_id.file->byte_count += utf8_size(ch);
   return cursor;
 }
 
@@ -1753,8 +1753,8 @@ Cursor removeCharInLineC(Cursor cursor) {
   cursor.line_id = removeCharInLine(cursor.line_id);
   cursor = moduloCursor(cursor);
   assert(cursor.file_id.relative_row > 0 && cursor.file_id.relative_row <= MAX_ELEMENT_NODE);
-  cursor.file_id.file->lines_byte_count[cursor.file_id.relative_row - 1] += sizeChar_U8(ch);
-  cursor.file_id.file->byte_count -= sizeChar_U8(ch);
+  cursor.file_id.file->lines_byte_count[cursor.file_id.relative_row - 1] += utf8_size(ch);
+  cursor.file_id.file->byte_count -= utf8_size(ch);
   return cursor;
 }
 
@@ -2107,6 +2107,13 @@ Cursor tryToReachAbsPosition(Cursor cursor, int row, int column) {
     row = 1;
   }
   FileIdentifier new_file_id = tryToReachAbsRow(cursor.file_id, row);
+  // if the preferred row isn't found adapt the preferred column
+  if (new_file_id.absolute_row < row) {
+    column = INT_MAX;
+  }
+  if (new_file_id.absolute_row > row) {
+    column = 0;
+  }
   LineIdentifier new_line_id =
     tryToReachAbsColumn(moduloLineIdentifierR(getLineForFileIdentifier(new_file_id), 0), column);
   return cursorOf(new_file_id, new_line_id);
@@ -2247,7 +2254,7 @@ unsigned int getIndexForCursor(Cursor cursor) {
 
   // Adding current linenode chars
   for (int i = 0; i < cursor.line_id.relative_column; i++) {
-    index += sizeChar_U8(cursor.line_id.line->ch[i]);
+    index += utf8_size(cursor.line_id.line->ch[i]);
   }
 
   return index;
@@ -2291,7 +2298,7 @@ Cursor getCursorForIndex(Cursor cursor, unsigned int index) {
 
   int j = 0;
   int saved_size = 0;
-  while (current_index + (saved_size = sizeChar_U8(line_node->ch[j])) < index) {
+  while (current_index + (saved_size = utf8_size(line_node->ch[j])) < index) {
     current_index += saved_size;
     j++;
     assert(j < line_node->element_number);
@@ -2348,7 +2355,7 @@ int readNu8CharAtCursor(Cursor* cursor_p, char* dest, int utf8_char_length) {
         buff_length++;
       }
       else {
-        for (int i = 0; i < sizeChar_U8(cursor.line_id.line->ch[cursor.line_id.relative_column]); i++) {
+        for (int i = 0; i < utf8_size(cursor.line_id.line->ch[cursor.line_id.relative_column]); i++) {
           dest[buff_length] = cursor.line_id.line->ch[cursor.line_id.relative_column].t[i];
           buff_length++;
         }
@@ -2380,7 +2387,7 @@ int readNu8CharAtPosition(Cursor* cursor_p, int row_raw, int column_raw, char* d
     }
     else {
       while (current_column_raw < column_raw) {
-        current_column_raw += sizeChar_U8(line_id.line->ch[line_id.relative_column]);
+        current_column_raw += utf8_size(line_id.line->ch[line_id.relative_column]);
         line_id.relative_column++;
         line_id.absolute_column++;
       }
@@ -2437,7 +2444,7 @@ int readNBytesCharAtCursor(Cursor* cursor_p, char* dest, int length) {
         buff_length++;
       }
       else {
-        for (int i = 0; i < sizeChar_U8(cursor.line_id.line->ch[cursor.line_id.relative_column]); i++) {
+        for (int i = 0; i < utf8_size(cursor.line_id.line->ch[cursor.line_id.relative_column]); i++) {
           dest[buff_length] = cursor.line_id.line->ch[cursor.line_id.relative_column].t[i];
           buff_length++;
         }
@@ -2471,7 +2478,7 @@ int readNBytesAtPosition(Cursor* cursor_p, int row_raw, int column_raw, char* de
     }
     else {
       while (current_column_raw < column_raw) {
-        current_column_raw += sizeChar_U8(line_id.line->ch[line_id.relative_column]);
+        current_column_raw += utf8_size(line_id.line->ch[line_id.relative_column]);
         line_id.relative_column++;
         line_id.absolute_column++;
       }

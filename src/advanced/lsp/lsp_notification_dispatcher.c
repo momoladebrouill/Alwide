@@ -32,6 +32,10 @@ void notificationDispatcher(cJSON* packet, ModuleContext* data) {
   }
   LSP_ComputedData* computed_data = (*data->files_state.files)[index].lsp_datas.computed;
 
+  if (computed_data == NULL) {
+    return; // Ignore stale notifications if LSP has been disabled/cleaned up for this buffer
+  }
+
   if (strcmp(method, "textDocument/publishDiagnostics") == 0) {
     readPublishDiagnostic(params, computed_data);
   }

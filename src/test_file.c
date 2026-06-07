@@ -58,8 +58,9 @@ void disableRawMode() {
 }
 
 void enableRawMode() {
-  if (tcgetattr(STDIN_FILENO, &orig_termios) == -1)
+  if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) {
     die("tcgetattr");
+  }
   atexit(disableRawMode);
 
   struct termios raw = orig_termios;
@@ -70,8 +71,9 @@ void enableRawMode() {
   raw.c_cc[VMIN] = 0;
   raw.c_cc[VTIME] = 1;
 
-  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1)
+  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) {
     die("tcsetattr");
+  }
 }
 
 void printLine(LineNode* line, int index, bool sep) {
@@ -104,8 +106,9 @@ void printLine(LineNode* line, int index, bool sep) {
     }
 
     internal_index += line->element_number;
-    if (sep)
+    if (sep) {
       printf("|");
+    }
     if (index > internal_index && sep) {
       index++;
       internal_index++;
@@ -190,8 +193,9 @@ void printEditor(FileNode* file, Cursor cursor, bool sep) {
         }
 
         internal_index += line->element_number;
-        if (sep)
+        if (sep) {
           printf("|");
+        }
         if (column > internal_index && sep && current_row_index == row) {
           column++;
           internal_index++;
@@ -253,8 +257,9 @@ int main(int argc, char** args) {
       saveFile(root, args[1]);
     }
 
-    if (c == 0)
+    if (c == 0) {
       continue;
+    }
 
     if (iscntrl(c)) {
       // printf("%d\r\n", c);
@@ -283,12 +288,14 @@ int main(int argc, char** args) {
         printEditor(root, cursor, SEPARATOR);
       }
       else if (c == '\x1b') {
-        if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN)
+        if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) {
           die("read");
+        }
         printf("%c", c);
         if (c == '[') {
-          if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN)
+          if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) {
             die("read");
+          }
 
           if (c == 'C') {
             // move right
@@ -322,8 +329,9 @@ int main(int argc, char** args) {
             printEditor(root, cursor, SEPARATOR);
           }
           else if (c == '3') {
-            if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN)
+            if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) {
               die("read");
+            }
 
             if (c == '~') {
               printf("DEL !\r\n");

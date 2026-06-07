@@ -159,7 +159,7 @@ void JSONToWorkspaceSettings(WorkspaceSettings* settings, cJSON* json) {
   settings->file_explorer_size = cJSON_GetNumberValue(cJSON_GetObjectItem(json, "file_explorer_size"));
 }
 
-void setupWorkspace(WorkspaceSettings* loaded_settings, int* file_count, char*** file_names, GUIContext* gui_context,
+void setupWorkspace(WorkspaceSettings* loaded_settings, int* file_count, char*** file_names, gui_Context* gui_context,
                     int* current_file_index) {
   loaded_settings->is_used = false;
   if (*file_count == 1 || *file_count == 0) {

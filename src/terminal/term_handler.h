@@ -12,17 +12,17 @@
 
 ////// -------------- WINDOWS MANAGEMENTS --------------
 
-void gui_initGUIContext(GUIContext* gui_context);
+void gui_initGUIContext(gui_Context* gui_context);
 
-void gui_initNCurses(GUIContext* gui_context);
+void gui_initNCurses(gui_Context* gui_context);
 
-void gui_setFocus(GUIContext* gui_context, WINDOW* w);
+void gui_setFocus(gui_Context* gui_context, WINDOW* w);
 
-void gui_resetFocus(GUIContext* gui_context);
+void gui_resetFocus(gui_Context* gui_context);
 
 ////// -------------- PRINT FUNCTIONS --------------
 
-void gui_repaintGUI(GUIContext* gui_context, WindowHighlightDescriptor* highlight_descriptor, ExplorerFolder* explorer,
+void gui_repaintGUI(gui_Context* gui_context, WindowHighlightDescriptor* highlight_descriptor, ExplorerFolder* explorer,
                     FileContainer* files, int file_count, int current_file);
 
 void gui_printChar_U8ToNcurses(WINDOW* w, Char_U8 ch);
@@ -30,21 +30,21 @@ void gui_printChar_U8ToNcurses(WINDOW* w, Char_U8 ch);
 LineMarker gui_getMarkerForCurrentLine(int row, WindowHighlightDescriptor* highlight_descriptor, int whd_offset,
                                        void** diagnostic);
 
-void gui_updateEDW(GUIContext* gui_context);
+void gui_updateEDW(gui_Context* gui_context);
 
-void gui_updateFEW(GUIContext* gui_context);
+void gui_updateFEW(gui_Context* gui_context);
 
-void gui_updateOFW(GUIContext* gui_context);
+void gui_updateOFW(gui_Context* gui_context);
 
-void gui_updateGUI(GUIContext* gui_context);
+void gui_updateGUI(gui_Context* gui_context);
 
-bool gui_doesGUINeedRepaint(GUIContext* gui_context);
+bool gui_doesGUINeedRepaint(gui_Context* gui_context);
 
 ////// -------------- UTILS FUNCTIONS --------------
 
-void moveScreenToMatchCursor(GUIContext* context, Cursor cursor, int* screen_x, int* screen_y, int tab_size);
+void moveScreenToMatchCursor(gui_Context* context, Cursor cursor, int* screen_x, int* screen_y, int tab_size);
 
-void centerCursorOnScreen(GUIContext* context, Cursor cursor, int* screen_x, int* screen_y, int tab_size);
+void centerCursorOnScreen(gui_Context* context, Cursor cursor, int* screen_x, int* screen_y, int tab_size);
 
 int getScreenXForCursor(Cursor cursor, int screen_x, int tab_size);
 

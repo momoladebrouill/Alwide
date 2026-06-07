@@ -39,7 +39,7 @@ bool tphd_isCursorIn(TextPartHighlightDescriptor* self, Cursor cursor) {
   int column_end = self->end.abs_column;
 
   return (row_start < row || (row_start == row && column_start <= column)) &&
-    (row < row_end || (row == row_end && column <= column_end));
+         (row < row_end || (row == row_end && column <= column_end));
 }
 
 bool tphd_isCursorAfter(TextPartHighlightDescriptor* self, Cursor cursor) {
@@ -65,12 +65,12 @@ void whd_init(WindowHighlightDescriptor* self) {
 
 bool isPositionBeforePosition(FilePosition cursor, FilePosition position) {
   return position.abs_row > cursor.abs_row ||
-    (position.abs_row == cursor.abs_row && position.abs_column > cursor.abs_column);
+         (position.abs_row == cursor.abs_row && position.abs_column > cursor.abs_column);
 }
 
 bool isPositionAfterPosition(FilePosition cursor, FilePosition position) {
   return cursor.abs_row > position.abs_row ||
-    (position.abs_row == cursor.abs_row && cursor.abs_column > position.abs_column);
+         (position.abs_row == cursor.abs_row && cursor.abs_column > position.abs_column);
 }
 
 bool isPositionAfterOrEqualPosition(FilePosition cursor, FilePosition position) {

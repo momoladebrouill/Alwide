@@ -8,7 +8,8 @@
  * Handles auto-pairing of characters (e.g., inserting '}' after '{').
  * Returns true if the input was handled (either via auto-pairing or overtyping).
  */
-bool ilj_handleAutoPairs(FileContainer* fc, Char_U8 input, History** history_p, PayloadStateChange payload_state_change);
+bool ilj_handleAutoPairs(FileContainer* fc, Char_U8 input, History** history_p,
+                         PayloadStateChange payload_state_change);
 
 /**
  * Handles pair-aware backspace deletion.

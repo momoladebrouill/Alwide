@@ -124,6 +124,9 @@ void getTSLanguageFromString(const TSLanguage** lang, char* language) {
   else if (strcmp(language, "html") == 0) {
     *lang = tree_sitter_html();
   }
+  else if (strcmp(language, "latex") == 0) {
+    *lang = tree_sitter_latex();
+  }
   else {
     *lang = NULL;
   }

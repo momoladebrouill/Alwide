@@ -16,15 +16,33 @@ jobs:
       with:
         submodules: 'true'
 
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Cache Cargo registry and target
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          lib/**/target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
 
 # Dependencies
+    - name: Install tree-sitter CLI
+      run: npm install -g tree-sitter-cli
+
     - name: Building dependencies - tree-sitter
       run: sudo make -C lib/tree-sitter/ install
     
 
 # Check project status
     - name: Compile project - building - parsers, cJSON, al.
-      run: make
+      run: make -j$(nproc)
 
     - name: Executing installation script
       run: make install

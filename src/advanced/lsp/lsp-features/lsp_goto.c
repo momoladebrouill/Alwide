@@ -14,7 +14,8 @@ void jumpToLocation(ModuleContext* data, LSP_Location location) {
   FileContainer* current = *data->files_state.files + *data->files_state.current_file_index;
   // LSP rows are 0-based, WishWim rows are 1-based.
   // LSP columns are 0-based, WishWim columns are 0-based.
-  current->cursor = tryToReachAbsPosition(current->cursor, LSP_0_row_to_1_row(location.range.pos1.row), location.range.pos1.column);
+  current->cursor =
+    tryToReachAbsPosition(current->cursor, LSP_0_row_to_1_row(location.range.pos1.row), location.range.pos1.column);
 
   moveScreenToMatchCursor(data->view_port.gui, current->cursor, &current->screen_x, &current->screen_y,
                           LF_tab_size(current->feature));

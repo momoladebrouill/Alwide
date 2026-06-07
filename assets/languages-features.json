@@ -28,6 +28,35 @@
     }
   },
   {
+    "label": "Latex",
+    "id": "latex",
+    "detect": {
+      "extensions": [".tex", ".cls", ".sty"],
+      "file-name": [],
+      "shebang": []
+    },
+    "comments": {
+      "line": "%",
+      "block": []
+    },
+    "tabulation": {
+      "size": 2,
+      "space": true
+    },
+    "pairs": [
+      ["(", ")"],
+      ["{", "}"],
+      ["[", "]"],
+      ["\"", "\""],
+      ["'", "'"],
+      ["$", "$"]
+    ],
+    "lsp": {
+      "exe": "texlab",
+      "arguments": []
+    }
+  },
+  {
     "label": "C++",
     "id": "cpp",
     "detect": {
@@ -354,7 +383,6 @@
       ["(", ")"],
       ["{", "}"],
       ["\"", "\""],
-      ["'", "'"],
       ["`", "`"]
     ],
     "lsp": {

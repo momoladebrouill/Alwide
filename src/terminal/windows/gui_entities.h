@@ -4,6 +4,31 @@
 
 #include "../../data-management/file_structure.h"
 
+typedef struct gui_TPW gui_TPW;
+
+typedef void (*gui_TPW_paintCallback)(gui_TPW* popup, void* payload);
+typedef bool (*gui_TPW_inputCallback)(gui_TPW* popup, int key, MEVENT* m_event, void* payload);
+typedef void (*gui_TPW_destroyCallback)(gui_TPW* popup, void* payload);
+
+struct gui_TPW {
+  WINDOW* tpw;       // The NCurses window pointer
+  int y;             // Screen y position (top-left)
+  int x;             // Screen x position (top-left)
+  int height;        // Window height
+  int width;         // Window width
+  bool visible;      // Is the popup currently displayed
+  bool strong_focus; // Does the popup need to be closed to allow lower level to get input.
+
+  gui_TPW_paintCallback on_paint;     // Paint callback
+  gui_TPW_inputCallback on_input;     // Input handler callback
+  gui_TPW_destroyCallback on_destroy; // Cleanup callback
+
+  void* payload; // Custom data specific to this popup instance
+
+  gui_TPW* next; // Next popup in the linked list
+};
+
+
 typedef struct {
   // NCurses items
   WINDOW* ofw; // Opened Files Window
@@ -14,7 +39,7 @@ typedef struct {
   int current_file_offset;
   int ofw_height; // Height of Opened Files Window. 0 => Disabled on start.   OPENED_FILE_WINDOW_HEIGHT => Enabled on
   // start.
-} OFW_GUIContext;
+} gui_OFW;
 
 typedef struct {
   // NCurses items
@@ -28,7 +53,7 @@ typedef struct {
   int few_x_offset; /* TODO unused */
   int few_y_offset; // Y Scroll state of File Explorer Window
   int few_selected_line;
-} FEW_GUIContext;
+} gui_FEW;
 
 
 typedef enum { DIAGNOSTICS, COMPLETION, HOVER_DIAGNOSTICS, GOTO_CHOICE, SIGNATURE_HELP, NO_OWNER } PopupOwner;
@@ -38,9 +63,12 @@ typedef struct {
   WINDOW* ftw; // File Text Window
   WINDOW* lnw; // Line Number Window
   WINDOW* pow; // Popup Window
+  WINDOW* sbw; // Status Bar Window
 
   // Local data
   bool refresh_edw; // Need to reprint editor window
+  bool show_sbw;    // Status Bar Toggle
+  bool sbw_hovered; // Status Bar Hover state
 
   // lnw vars
   int length_line_number;
@@ -52,27 +80,22 @@ typedef struct {
   int item_select_offset_y;
   CursorDescriptor lastTextAnchor;
   CursorDescriptor lastMousePosition;
-} EDW_GUIContext;
+} gui_EDW;
 
 
 typedef struct {
   // Init GUI vars
-  EDW_GUIContext edw_context; // Editor Window Context
-  OFW_GUIContext ofw_context; // Opened File Context
-  FEW_GUIContext few_context; // File Explorer Context
+  gui_EDW edw_context; // Editor Window Context
+  gui_OFW ofw_context; // Opened File Context
+  gui_FEW few_context; // File Explorer Context
 
   // Used to set the window where start mouse drag
   WINDOW* focus_w;
-} GUIContext;
 
-
-// // TODO implement a toplevel popup
-// typedef struct {
-//   WINDOW* pow;      // Popup Window
-//   bool refresh_pow; // Need to repaint the current popup
-//
-//
-// } GUIPopup;
+  // Toplevel popup list head
+  gui_TPW* toplevel_popups;
+  bool refresh_tpw;
+} gui_Context;
 
 
 #endif // WISHWIM_GUI_ENTITIES_H

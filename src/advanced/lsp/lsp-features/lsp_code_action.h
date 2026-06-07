@@ -1,8 +1,8 @@
 #ifndef LSP_CODE_ACTION_H
 #define LSP_CODE_ACTION_H
 
-#include "../lsp_dispatcher.h"
 #include "../lsp_client.h"
+#include "../lsp_dispatcher.h"
 
 /**
  * Handles the response from textDocument/codeAction.

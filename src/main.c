@@ -1,8 +1,5 @@
 #include <assert.h>
-#include <ncurses.h>
-#include <stdio.h>
 
-#include "advanced/lsp/lsp_dispatcher.h"
 #include "advanced/tree-sitter/tree_manager.h"
 #include "config/config.h"
 #include "config/language_feature.h"
@@ -11,7 +8,6 @@
 #include "io-management/workspace_settings.h"
 #include "terminal/highlight.h"
 #include "terminal/term_handler.h"
-#include "utils/key_management.h"
 
 #include "core/editor_context.h"
 #include "core/editor_destroy.h"
@@ -21,15 +17,16 @@
 #include "core/editor_render.h"
 #include "core/editor_state.h"
 #include "environnement/setup.h"
+#include "terminal/key_management.h"
 
 // Global vars.
-int color_pair = 5;
+int color_pair = 6;
 int color_index = 20;
 cJSON* config;
+LF_LanguageFeatureList language_features;
 ParserList parsers;
 LSPServerLinkedList lsp_servers;
 WorkspaceSettings workspace_settings;
-LF_LanguageFeatureList language_features;
 
 
 int main(int file_count, char** args) {
@@ -80,13 +77,13 @@ int main(int file_count, char** args) {
 
     // read from input stream
   read_input:;
-    int c, hash;
-    readNextInput(&ctx, &c, &hash);
+    int key = readNextInput(&ctx);
+    logInput(key);
 
     //// ---- BEGIN background / delayed operations BLOCK ----
 
     // handle lsp servers
-    handleLspServers(&ctx, &c, &hash);
+    handleLspServers(&ctx, &key);
 
     // if lsp ask to refresh local_vars we have to execute post processing
     if (ctx.refresh_local_vars) {
@@ -96,31 +93,8 @@ int main(int file_count, char** args) {
 
     //// ---- END background / delayed operations BLOCK ----
 
-    // if input is empty, execute nothing and read again
-    if (hash == ERR) {
-      goto read_input;
-    }
-
-    // if input is mouse, fetch and detect mouse event
-    if (hash == KEY_MOUSE) {
-      if (getmouse(&ctx.m_event) != OK) {
-        fprintf(stderr, "MOUVE_EVENT_NOT_OK !\r\n");
-        goto read_input;
-      }
-      detectComplexMouseEvents(&ctx.m_event);
-    }
-
-    // setup default loop end behavior
-    EventLoopAction loopEnd = EVENT_READ_INPUT;
-
-    // first dispatch input to popup.
-    bool has_popup_handle_input = handlePopupInput(&ctx, c, hash);
-
-    // if popup hasn't consumed the input execute global key handling
-    if (!has_popup_handle_input) {
-      loopEnd = runKeyHandler(&ctx, c, hash);
-    }
-
+    // dispatch and process input
+    EventLoopAction loopEnd = dispatchInput(&ctx, key);
 
     // process the loop end behavior
     switch (loopEnd) {

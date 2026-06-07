@@ -8,16 +8,27 @@
 #include "../../advanced/lsp/lsp-features/lsp_completion.h"
 #include "../../advanced/lsp/lsp-features/lsp_goto.h"
 #include "../../io-management/viewport_history.h"
-#include "../../utils/key_management.h"
 #include "../click_handler.h"
+#include "../key_management.h"
 #include "../term_handler.h"
 #include "edw.h"
 
 
-bool gui_resumeHoverInformation(Cursor* cursor, ViewPort* view_port, LSP_Hover* hover, int tab_size) {
+bool gui_resumeHoverInformation(Cursor* cursor, ViewPort* view_port, FileContainer* file, LSP_Hover* hover,
+                                int tab_size) {
   assert(hover->is_range);
-  CursorDescriptor start_descriptor = positionToCursorDescriptor(hover->range.pos1);
-  CursorDescriptor end_descriptor = positionToCursorDescriptor(hover->range.pos2);
+
+  LSP_Server* lsp = getLSPServerForLanguage(&lsp_servers, file->lsp_datas.lang_id);
+  if (lsp == NULL) {
+    return false;
+  }
+
+  Cursor start_cur = LSP_tryToReachCursorForLSPPosition(lsp, *cursor, hover->range.pos1);
+  Cursor end_cur = LSP_tryToReachCursorForLSPPosition(lsp, *cursor, hover->range.pos2);
+
+  CursorDescriptor start_descriptor = cursor_to_desc(start_cur);
+  CursorDescriptor end_descriptor = cursor_to_desc(end_cur);
+
   fprintf(stderr, "Last position saved (%d, %d), in range (%d, %d) -> (%d, %d)\n",
           view_port->gui->edw_context.lastMousePosition.row, view_port->gui->edw_context.lastMousePosition.column,
           start_descriptor.row, start_descriptor.column, end_descriptor.row, end_descriptor.column);
@@ -31,7 +42,8 @@ bool gui_resumeHoverInformation(Cursor* cursor, ViewPort* view_port, LSP_Hover* 
   }
 
   fprintf(stderr, "opening popup !\n");
-  Cursor new_cur = tryToReachAbsPosition(*cursor, start_descriptor.row, start_descriptor.column);
+  // Set focus on the first character of the range (start_cur is before first char, so move right)
+  Cursor new_cur = moveRight(start_cur);
 
   // calculating the best popup size.
   int total_height = 0;
@@ -80,7 +92,7 @@ void gui_showGenericPopupWithTextAnchor(ViewPort* view_port, Cursor* cursor, int
                               getScreenXForCursor(*cursor, *view_port->screen_x, tab_size), height, width, popup_owner);
 }
 
-void gui_showGenericPopup(GUIContext* gui_context, int y, int x, int prefered_height, int prefered_width,
+void gui_showGenericPopup(gui_Context* gui_context, int y, int x, int prefered_height, int prefered_width,
                           PopupOwner popup_owner) {
   int height = min(getmaxy(gui_context->edw_context.ftw) - y, prefered_height);
   int width = min(getmaxx(gui_context->edw_context.ftw) - x, prefered_width);
@@ -97,11 +109,11 @@ void gui_showGenericPopup(GUIContext* gui_context, int y, int x, int prefered_he
   wbkgd(gui_context->edw_context.pow, COLOR_PAIR(INFO_COLOR_PAIR));
 }
 
-void gui_setLastTextAnchor(GUIContext* gui_context, CursorDescriptor descriptor) {
+void gui_setLastTextAnchor(gui_Context* gui_context, CursorDescriptor descriptor) {
   gui_context->edw_context.lastTextAnchor = descriptor;
 }
 
-void gui_showDiagnostic(GUIContext* gui_context, int y, int x, LSP_Diagnostic* diagnostic, int tab_size) {
+void gui_showDiagnostic(gui_Context* gui_context, int y, int x, LSP_Diagnostic* diagnostic, int tab_size) {
   if (diagnostic == NULL) {
     return;
   }
@@ -144,7 +156,7 @@ void gui_showDiagnostic(GUIContext* gui_context, int y, int x, LSP_Diagnostic* d
 }
 
 
-void gui_printCompletionPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
+void gui_printCompletionPopup(gui_EDW* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
   if (lsp_data == NULL) {
     fprintf(stderr, "INTERNAL ERROR : Asked to print the popup on a non lsp file.\n");
     return;
@@ -208,7 +220,7 @@ const char* gui_getGotoLabel(LSP_GOTO_TYPE type) {
   }
 }
 
-void gui_printGotoChoicePopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
+void gui_printGotoChoicePopup(gui_EDW* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
   int width = getmaxx(context->pow), height = getmaxy(context->pow);
   werase(context->pow);
 
@@ -240,7 +252,7 @@ void gui_printGotoChoicePopup(EDW_GUIContext* context, Cursor* cursor, LSP_Compu
   }
 }
 
-void gui_printHoverPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
+void gui_printHoverPopup(gui_EDW* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
   int width = getmaxx(context->pow), height = getmaxy(context->pow);
   werase(context->pow);
   wattr_set(context->pow, A_NORMAL, INFO_COLOR_PAIR, NULL);
@@ -274,7 +286,7 @@ void gui_printHoverPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedDa
 }
 
 
-void gui_printSignatureHelpPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
+void gui_printSignatureHelpPopup(gui_EDW* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
   int width = getmaxx(context->pow), height = getmaxy(context->pow);
   werase(context->pow);
 
@@ -364,7 +376,7 @@ void gui_printSignatureHelpPopup(EDW_GUIContext* context, Cursor* cursor, LSP_Co
 }
 
 
-void gui_printPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
+void gui_printPopup(gui_EDW* context, Cursor* cursor, LSP_ComputedData* lsp_data, int tab_size) {
   switch (context->pow_owner) {
     case COMPLETION:
       gui_printCompletionPopup(context, cursor, lsp_data, tab_size);
@@ -383,7 +395,7 @@ void gui_printPopup(EDW_GUIContext* context, Cursor* cursor, LSP_ComputedData* l
   }
 }
 
-bool gui_handleCompletionInput(GUIContext* context, FileContainer* fc, int c_hash, int c_raw,
+bool gui_handleCompletionInput(gui_Context* context, FileContainer* fc, int key,
                                PayloadStateChange payload_state_change, ModuleContext* payload, MEVENT* m_event) {
   Cursor* cursor = &fc->cursor;
   LSP_ComputedData* lsp_data = fc->lsp_datas.computed;
@@ -394,8 +406,7 @@ bool gui_handleCompletionInput(GUIContext* context, FileContainer* fc, int c_has
   int comp_size = lsp_data->completions.completions.size;
   int total_size = ca_size + comp_size;
 
-  if (c_hash == KEY_MOUSE && m_event != NULL) {
-
+  if (key == H_KEY_MOUSE && m_event != NULL) {
     if (m_event->bstate & BUTTON4_PRESSED) {
       if (context->edw_context.item_select_offset_y > 0) {
         context->edw_context.item_select_offset_y--;
@@ -423,8 +434,9 @@ bool gui_handleCompletionInput(GUIContext* context, FileContainer* fc, int c_has
           executeCodeAction(fc, cursor, &lsp_data->code_actions.items[clicked_item], payload);
         }
         else {
-          executeLSPCompletion(cursor, lsp_data->completions.completions.items + (clicked_item - ca_size), history_p,
-                               payload_state_change, LF_tab(fc->feature));
+          LSP_Server* lsp = getLSPServerForLanguage(&lsp_servers, fc->lsp_datas.lang_id);
+          executeLSPCompletion(lsp, cursor, lsp_data->completions.completions.items + (clicked_item - ca_size),
+                               history_p, payload_state_change, LF_tab(fc->feature));
         }
         gui_closePopup(context);
       }
@@ -433,7 +445,7 @@ bool gui_handleCompletionInput(GUIContext* context, FileContainer* fc, int c_has
     return true;
   }
 
-  switch (c_hash) {
+  switch (key) {
     case H_KEY_UP:
       if (context->edw_context.item_selected > 0) {
         context->edw_context.item_selected--;
@@ -453,17 +465,17 @@ bool gui_handleCompletionInput(GUIContext* context, FileContainer* fc, int c_has
       }
       gui_updateEDW(context);
       return true;
-    case '\n':
-    case KEY_ENTER:
-    case KEY_TAB:
+    case H_KEY_ENTER:
+    case H_KEY_TAB:
       if (context->edw_context.item_selected < total_size) {
         if (context->edw_context.item_selected < ca_size) {
           executeCodeAction(fc, cursor, &lsp_data->code_actions.items[context->edw_context.item_selected], payload);
         }
         else {
-          executeLSPCompletion(
-            cursor, lsp_data->completions.completions.items + (context->edw_context.item_selected - ca_size), history_p,
-            payload_state_change, LF_tab(fc->feature));
+          LSP_Server* lsp = getLSPServerForLanguage(&lsp_servers, fc->lsp_datas.lang_id);
+          executeLSPCompletion(lsp, cursor,
+                               lsp_data->completions.completions.items + (context->edw_context.item_selected - ca_size),
+                               history_p, payload_state_change, LF_tab(fc->feature));
         }
       }
       gui_closePopup(context);
@@ -475,12 +487,12 @@ bool gui_handleCompletionInput(GUIContext* context, FileContainer* fc, int c_has
   return false;
 }
 
-bool gui_handleGotoChoiceInput(GUIContext* context, FileContainer* fc, int c_hash, int c_raw,
+bool gui_handleGotoChoiceInput(gui_Context* context, FileContainer* fc, int key,
                                PayloadStateChange payload_state_change, ModuleContext* payload, MEVENT* m_event) {
   LSP_ComputedData* lsp_data = fc->lsp_datas.computed;
   int height = getmaxy(context->edw_context.pow) - 2;
 
-  if (c_hash == KEY_MOUSE && m_event != NULL) {
+  if (key == H_KEY_MOUSE && m_event != NULL) {
     int item_count = lsp_data->gotos.size;
     int items_per_page = height;
 
@@ -516,7 +528,7 @@ bool gui_handleGotoChoiceInput(GUIContext* context, FileContainer* fc, int c_has
     return true;
   }
 
-  switch (c_hash) {
+  switch (key) {
     case H_KEY_UP:
       if (context->edw_context.item_selected > 0) {
         context->edw_context.item_selected--;
@@ -536,9 +548,8 @@ bool gui_handleGotoChoiceInput(GUIContext* context, FileContainer* fc, int c_has
       }
       gui_updateEDW(context);
       return true;
-    case '\n':
-    case KEY_ENTER:
-    case KEY_TAB:
+    case H_KEY_ENTER:
+    case H_KEY_TAB:
       if (context->edw_context.item_selected < lsp_data->gotos.size && payload != NULL) {
         jumpToLocation(payload, lsp_data->gotos.items[context->edw_context.item_selected]);
       }
@@ -552,21 +563,21 @@ bool gui_handleGotoChoiceInput(GUIContext* context, FileContainer* fc, int c_has
 }
 
 
-bool gui_handlePopupInput(GUIContext* context, FileContainer* fc, int c_raw, int c_hash,
-                          PayloadStateChange payload_state_change, ModuleContext* payload, MEVENT* m_event) {
+bool gui_handlePopupInput(gui_Context* context, FileContainer* fc, int key, PayloadStateChange payload_state_change,
+                          ModuleContext* payload, MEVENT* m_event) {
   if (context->edw_context.show_pow == false || context->edw_context.pow == NULL) {
     return false;
   }
 
-  if (c_hash == KEY_MOUSE && m_event != NULL && !isClickInsideWindow(context->edw_context.pow, m_event)) {
+  if (key == H_KEY_MOUSE && m_event != NULL && !isClickInsideWindow(context->edw_context.pow, m_event)) {
     return false;
   }
 
   switch (context->edw_context.pow_owner) {
     case COMPLETION:
-      return gui_handleCompletionInput(context, fc, c_hash, c_raw, payload_state_change, payload, m_event);
+      return gui_handleCompletionInput(context, fc, key, payload_state_change, payload, m_event);
     case GOTO_CHOICE:
-      return gui_handleGotoChoiceInput(context, fc, c_hash, c_raw, payload_state_change, payload, m_event);
+      return gui_handleGotoChoiceInput(context, fc, key, payload_state_change, payload, m_event);
     case SIGNATURE_HELP:
       return false; // Let the editor handle typing, which will trigger updates
     default:

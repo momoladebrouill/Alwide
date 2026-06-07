@@ -1,5 +1,6 @@
 #include "setup.h"
 #include <locale.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,6 +9,7 @@
 #include "constants.h"
 
 void setupProgramEnvironnemnt() {
+  signal(SIGPIPE, SIG_IGN);
 #ifdef _SHOW_ERROR
   FILE* f = fopen("./.logs.txt", "w");
   if (f != NULL) {

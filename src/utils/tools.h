@@ -49,6 +49,8 @@ int mkdir_p(const char* path, mode_t mode);
 
 void countStringFrame(char* ch, int length, int* current_row, int* current_column, int* screen_max_width, int tab_size);
 
+int utf8_get_byte_offset(Char_U8* ch, int element_number, int character_column);
+
 char* trim(char* ch);
 
 void decodeURI(const char* src, char* dest, size_t dest_size);
@@ -59,9 +61,9 @@ CursorDescriptor positionToCursorDescriptor(LSP_Position position);
 
 // Strictly 0-based LSP position constructor
 // Convert from WishWim (1-based row, 0-based col) to LSP (0-based row, 0-based col)
-LSP_Position LSP_pos_from_cursor(int ww_row, int ww_col);
-LSP_Range LSP_range_from_cursor(int r1, int c1, int r2, int c2);
-Cursor LSP_tryToReachCursorForLSPPosition(Cursor cursor, LSP_Position position);
+LSP_Position LSP_pos_from_cursor(LSP_Server* server, Cursor cursor);
+LSP_Range LSP_range_from_cursor(LSP_Server* server, Cursor c1, Cursor c2);
+Cursor LSP_tryToReachCursorForLSPPosition(LSP_Server* server, Cursor cursor, LSP_Position position);
 int LSP_0_row_to_1_row(int lsp_row);
 
 
