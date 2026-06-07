@@ -45,4 +45,6 @@ jobs:
       run: make -j$(nproc)
 
     - name: Executing installation script
-      run: make install
+      run: |
+        make install-config
+        sudo make install-bin install-data

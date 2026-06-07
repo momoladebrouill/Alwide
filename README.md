@@ -74,17 +74,17 @@ Currently, you need to compile Alwide from source to use it.
 
 ### Submodules
 
-This project is based on many "lib" as submodule, you have to execute at the root folder to checkout submodules :
+This project depends on several external libraries as submodules. To make the checkout much faster, you can perform a **shallow clone** (only pulling the latest commit history) and download submodules in **parallel**:
 
-Clone using : 
+To clone the repository and its submodules quickly:
 ```bash
-git clone --recursive https://github.com/arnauda-gh/Alwide.git
+git clone --recurse-submodules --shallow-submodules --depth 1 https://github.com/arnauda-gh/Alwide.git
 cd Alwide
 ```
 
-Or afterward use :
+Or if you have already cloned the repository and want to fetch the submodules quickly:
 ```bash
-git submodule update --init --recursive
+git submodule update --init --recursive --depth 1 --jobs 8
 ```
 
 ### Dependencies :

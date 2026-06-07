@@ -184,14 +184,27 @@ clean_all: clean
 	find . -type d -name "target" -exec rm -rf {} +
 
 
-# !! DO NOT EXECUTE AS SUDO !!. To generate config you have to be as user. sudo will be asked to cp to
-# /bin/al
+# Installation configuration
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
 DATADIR ?= $(PREFIX)/share/alwide
 
-install: al
-	mkdir -p ~/.config/al && cp -r ./assets/* ~/.config/al && ./generate_config.sh
-	install -D al $(DESTDIR)$(BINDIR)/al
+# Combined install target
+install: install-config install-bin install-data
+
+# Install the binary
+install-bin: al
+	install -v -D al $(DESTDIR)$(BINDIR)/al
+
+# Install system-wide assets
+install-data:
 	mkdir -p $(DESTDIR)$(DATADIR)
-	cp -r assets/* $(DESTDIR)$(DATADIR)/
+	cp -rv assets/* $(DESTDIR)$(DATADIR)/
+
+# Initialize user-specific configuration (run as normal user)
+install-config:
+	mkdir -p $(HOME)/.config/al
+	cp -rv assets/* $(HOME)/.config/al
+	./generate_config.sh
+
+.PHONY: all release clean clean_all install install-bin install-data install-config

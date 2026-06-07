@@ -1,5 +1,6 @@
 #include "lsp_notification_dispatcher.h"
 
+#include <assert.h>
 #include <string.h>
 
 
@@ -27,7 +28,7 @@ void notificationDispatcher(cJSON* packet, ModuleContext* data) {
   int index = getIndexFileContainerForUri(data, params);
   if (index == -1) {
     fprintf(stderr, "ERROR : Couldn't find the file for the current packet.\n");
-    exit(-1); // TODO remove
+    assert(false); // TODO remove
     return;
   }
   LSP_ComputedData* computed_data = (*data->files_state.files)[index].lsp_datas.computed;
@@ -41,6 +42,6 @@ void notificationDispatcher(cJSON* packet, ModuleContext* data) {
   }
   else {
     fprintf(stderr, "Method NOT SUPPORTED !\n      => %s\n", method);
-    exit(-1); // TODO remove
+    assert(false); // TODO remove
   }
 }
