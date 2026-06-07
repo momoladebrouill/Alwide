@@ -78,6 +78,13 @@ May be useless now. Skip for first try.
  - Be in the root folder
  - `make -C lib/tree-sitter/ install`
 
+#### Install tree-sitter cli
+
+Some tree-sitter parsers need to use `tree-sitter generate` to convert grammars to `parser.c` (for now only latex need it).
+
+use :
+- `npm install -g tree-sitter-cli`
+
 #### Install rust/rustup/cargo packages
 
  - `rustc --version`
