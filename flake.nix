@@ -1,5 +1,5 @@
 {
-  description = "my project description";
+  description = "Adwaita compile environnement";
 
   inputs = {
 
