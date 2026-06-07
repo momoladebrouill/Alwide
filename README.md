@@ -130,30 +130,30 @@ You might find this useful : https://rustup.rs/
 
 #### Nix-based systems
 
-As always :
+Alwide provides a `flake.nix` and `shell.nix` for a reproducible development environment.
 
 ```bash
 git clone --recursive https://github.com/arnauda-gh/Alwide.git
 cd Alwide
 ```
-And then, depending on your preferences :
+
+To enter the development environment:
+```bash
+nix develop  # If using Nix flakes
+# OR
+nix-shell    # If not using flakes
 ```
-nix-shell
-```
-or 
-```
-nix develop
-```
-Then install rust dependencies :
+
+Once inside the shell, you have all the necessary tools (`clang`, `make`, `ncurses`, `rustup`, etc.). You can then compile and run Alwide:
+
 ```bash
 rustup update stable
+make release
+./al
 ```
 
-and compile `tree-sitter`:
-
-```bash
-sudo make -C lib/tree-sitter/ install
-```
+> [!TIP]
+> You don't need to install `tree-sitter` or other dependencies via `sudo` when using the Nix environment.
 
 #### Compile :
 
